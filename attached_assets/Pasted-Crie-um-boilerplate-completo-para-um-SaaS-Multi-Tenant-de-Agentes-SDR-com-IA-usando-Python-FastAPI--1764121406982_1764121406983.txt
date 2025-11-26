@@ -1,0 +1,38 @@
+Crie um boilerplate completo para um SaaS Multi-Tenant de Agentes SDR com IA usando Python/FastAPI. Siga EXATAMENTE esta estrutura:
+ESTRUTURA DE ARQUIVOS:
+
+Pasta raiz com: app/, docker/, sql/, requirements.txt, docker-compose.yml, .env.example, .dockerignore, .gitignore, README.md
+Dentro de app/: init.py, main.py, config.py, database.py, security.py
+Dentro de app/models/: init.py, agency.py
+Dentro de app/routes/: init.py, health.py, webhooks.py
+Dentro de app/services/: init.py, agency_service.py
+Dentro de docker/: Dockerfile
+Dentro de sql/: schema.sql
+
+REQUIREMENTS.TXT deve conter exatamente:
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+supabase==2.3.0
+python-dotenv==1.0.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+cryptography==42.0.0
+httpx==0.26.0
+APP/CONFIG.PY: Usar pydantic-settings BaseSettings para gerenciar estas variáveis de ambiente: SUPABASE_URL, SUPABASE_KEY, ENCRYPTION_KEY (chave mestra Fernet), ENVIRONMENT (dev/prod). Incluir validação de campos obrigatórios.
+APP/SECURITY.PY: Implementar classe EncryptionService usando cryptography.fernet.Fernet com a ENCRYPTION_KEY do config. Criar métodos encrypt(plaintext: str) retornando str e decrypt(encrypted: str) retornando str. Tratar exceções InvalidToken ao descriptografar.
+APP/DATABASE.PY: Importar supabase create_client e Client. Criar função get_supabase_client() que retorna Client usando URL e KEY do config. Criar função async health_check() que tenta fazer um select simples e retorna True ou False.
+SQL/SCHEMA.SQL: Criar tabela agencias com estes campos exatos: id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), nome VARCHAR(255) NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, prompt_config TEXT NOT NULL (super-prompt personalizado), modo_prospeccao BOOLEAN DEFAULT FALSE (flag ativa busca autônoma), token_rdstation_encrypted TEXT, whatsapp_token_encrypted TEXT, whatsapp_phone_id VARCHAR(100), rag_enabled BOOLEAN DEFAULT FALSE, status VARCHAR(20) DEFAULT 'active', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW(). Criar índices em email e status. Criar trigger para atualizar updated_at automaticamente em updates.
+APP/MODELS/AGENCY.PY: Criar modelo Pydantic Agency com todos os campos da tabela agencias. Usar tipos adequados: UUID para id, str, bool, datetime, Optional onde necessário. Incluir Config com from_attributes=True.
+APP/MAIN.PY: Criar app FastAPI com título "SDR Agent SaaS API", versão "1.0.0". Habilitar CORS para origins=["*"]. Incluir routers de health e webhooks. Criar startup event que testa conexão Supabase usando health_check() e loga resultado. Adicionar exception handler global para Exception.
+APP/ROUTES/HEALTH.PY: Criar router APIRouter. Endpoint GET /health que retorna JSON com status "ok", service "SDR Agent SaaS", e database "connected" ou "disconnected" baseado em health_check() do database.py. Usar async def.
+APP/ROUTES/WEBHOOKS.PY: Criar router APIRouter com prefix="/webhooks". Dois endpoints POST apenas com estrutura: /whatsapp que recebe Request e retorna status 200 com mensagem "WhatsApp webhook received", e /rdstation que recebe Request e retorna status 200 com mensagem "RD Station webhook received". Ambos async def. Adicionar comentário TODO para implementar lógica futura.
+APP/SERVICES/AGENCY_SERVICE.PY: Criar classe AgencyService que recebe supabase_client no construtor. Método async get_agency_by_id(agency_id: str) que busca agência e retorna dict ou None. Método async decrypt_agency_keys(agency: dict) que usa EncryptionService para descriptografar token_rdstation_encrypted e whatsapp_token_encrypted, retornando dict com chaves descriptografadas.
+DOCKER/DOCKERFILE: Multi-stage Python 3.11-slim. FROM python:3.11-slim AS builder, WORKDIR /app, COPY requirements.txt e RUN pip install --no-cache-dir -r requirements.txt. FROM python:3.11-slim, WORKDIR /app, COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/, COPY app/ app/. EXPOSE 8000. CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"].
+DOCKER-COMPOSE.YML: Version 3.8. Service api usando build context . e dockerfile docker/Dockerfile. Ports 8000:8000. Env_file .env. Volumes ./app:/app/app para hot reload em desenvolvimento. Restart unless-stopped.
+.ENV.EXAMPLE: Template com SUPABASE_URL=your_supabase_url_here, SUPABASE_KEY=your_supabase_anon_key_here, ENCRYPTION_KEY=your_32_byte_base64_key_here, ENVIRONMENT=development.
+.GITIGNORE: Incluir .env, pycache/, *.pyc, *.pyo, *.pyd, .Python, venv/, env/, .vscode/, .idea/, *.log.
+.DOCKERIGNORE: Incluir .env, pycache/, *.pyc, .git/, .gitignore, README.md, .vscode/, .idea/.
+README.MD: Seções com: 1) Descrição do projeto SaaS Multi-Tenant SDR, 2) Como gerar ENCRYPTION_KEY com exemplo Python usando Fernet.generate_key(), 3) Setup Supabase executar schema.sql, 4) Como rodar com docker-compose up --build, 5) Como rodar localmente com pip install -r requirements.txt e uvicorn, 6) Endpoints disponíveis GET /health e POST /webhooks/whatsapp e /webhooks/rdstation, 7) Próximos passos implementar lógica de webhooks e RAG.
+INSTRUÇÕES CRÍTICAS: Use type hints em TODO código Python. Implemente async/await em routes e database operations. Adicione docstrings em funções principais. Trate erros adequadamente com try/except. Todos init.py devem existir mesmo vazios. Código deve ser production-ready e seguir PEP 8.
+VALIDAÇÃO FINAL: O código deve permitir subir com docker-compose up, testar health check em localhost:8000/health, receber POST nos webhooks mesmo sem processar, e conectar Supabase quando credenciais forem fornecidas.
+Gere TODO o código necessário, arquivo por arquivo, completo e funcional.
