@@ -1,0 +1,30 @@
+
+Implemente a lógica completa do webhook WhatsApp conectando todos os serviços. Siga EXATAMENTE estas instruções:
+
+TAREFA 1 - Atualizar app/routes/webhooks.py: Substituir TODO o conteúdo do arquivo. Implemente dois endpoints POST com logging detalhado.
+
+ENDPOINT 1 - /webhooks/whatsapp: Função async receive_whatsapp_webhook que recebe Request. Extraia JSON do body com await request.json(). Adicione log “Webhook WhatsApp recebido: {json_completo}”. Extraia dados da Evolution API: data = payload.get(“data”, {}), remoteJid = data.get(“key”, {}).get(“remoteJid”, “”), pushName = data.get(“pushName”, “Desconhecido”), message_obj = data.get(“message”, {}), message_text = message_obj.get(“conversation”) or message_obj.get(“extendedTextMessage”, {}).get(“text”, “”). Valide se message_text existe, caso contrário retorne status 200 com mensagem “Mensagem sem texto ignorada”. Adicione log “Mensagem de {pushName} ({remoteJid}): {message_text}”.
+
+Identificar agência: Use settings.DEFAULT_AGENCY_ID se existir, caso contrário busque primeira agência ativa no Supabase com client.table(“agencias”).select(”*”).eq(“status”, “active”).limit(1).execute(). Se não encontrar agência, retorne erro 404 “Nenhuma agência configurada”. Adicione log “Agência identificada: {agency_name} (ID: {agency_id})”.
+
+Descriptografar tokens: Use AgencyService.decrypt_agency_keys para obter whatsapp_token. Valide se whatsapp_token existe. Adicione log “Tokens descriptografados”.
+
+Gerar resposta IA: Instancie AIService. Chame generate_response passando message_text e prompt_config da agência. Adicione log “Resposta IA gerada: {resposta}”.
+
+Enviar resposta: Instancie WhatsAppService com EVOLUTION_API_URL e whatsapp_token descriptografado. Limpe remoteJid removendo “@s.whatsapp.net” se existir. Chame send_text_message passando remoteJid e ai_response. Se sucesso retorne status 200 com “Mensagem processada e enviada”. Se falha retorne erro 500 “Erro ao enviar resposta”.
+
+Tratamento de erros: Envolva TUDO em try/except. Capture Exception geral. Adicione log “ERRO no webhook WhatsApp: {erro completo com traceback}”. Retorne erro 500 com detalhes.
+
+ENDPOINT 2 - /webhooks/rdstation: Mantenha estrutura simples existente apenas logando “Webhook RD Station recebido: {payload}”. Retorne status 200.
+
+TAREFA 2 - Atualizar imports: No topo de webhooks.py importe: from fastapi import APIRouter, Request, HTTPException, status, import logging, from app.config import settings, from app.database import get_supabase_client, from app.services.agency_service import AgencyService, from app.services.ai_service import AIService, from app.services.whatsapp_service import WhatsAppService, import traceback.
+
+TAREFA 3 - Configurar logging: Logo após imports adicione logging.basicConfig(level=logging.INFO, format=’%(asctime)s - %(name)s - %(levelname)s - %(message)s’). Crie logger = logging.getLogger(**name**).
+
+TAREFA 4 - Criar app/utils/logger.py: Arquivo novo com configuração centralizada de logging. Função setup_logger() que configura logging com formato detalhado incluindo timestamp, nome módulo, nível e mensagem. Retorna logger configurado.
+
+INSTRUÇÕES CRÍTICAS: Adicione logs DETALHADOS em CADA etapa do fluxo. Use logger.info para fluxo normal e logger.error para erros. Em exceções use logger.error com traceback completo usando traceback.format_exc(). Valide TODOS os campos antes de usar. Trate casos onde dados podem estar None. Use type hints em todas funções. Adicione comentários explicando lógica complexa. Código deve ser fácil de debugar pelo console.
+
+VALIDAÇÃO: O webhook deve processar mensagem completa: receber -> identificar agência -> gerar IA -> enviar resposta. Logs devem mostrar cada passo claramente. Erros devem ser capturados e logados sem quebrar aplicação.
+
+Gere TODO o código necessário de forma completa e funcional.
