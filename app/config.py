@@ -1,6 +1,7 @@
 """Configuration management using pydantic-settings."""
 from pydantic_settings import BaseSettings
 from pydantic import Field
+from typing import Optional
 import os
 
 
