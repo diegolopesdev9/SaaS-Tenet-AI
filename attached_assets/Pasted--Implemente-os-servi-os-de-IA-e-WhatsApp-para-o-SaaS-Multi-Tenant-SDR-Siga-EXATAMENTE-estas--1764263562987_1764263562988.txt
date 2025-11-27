@@ -1,0 +1,22 @@
+
+-----
+
+Implemente os serviços de IA e WhatsApp para o SaaS Multi-Tenant SDR. Siga EXATAMENTE estas instruções:
+
+TAREFA 1 - Atualizar requirements.txt: Adicione estas novas dependências mantendo as existentes: google-generativeai==0.3.2, python-logging==0.4.9.6
+
+TAREFA 2 - Atualizar app/config.py: Adicione estes novos campos na classe Settings mantendo os existentes: GEMINI_API_KEY com tipo str, EVOLUTION_API_URL com tipo str, EVOLUTION_API_KEY com tipo str, DEFAULT_AGENCY_ID com tipo Optional str e default None. Importe Optional do typing.
+
+TAREFA 3 - Criar app/services/ai_service.py: Implemente classe AIService com método assíncrono generate_response que recebe message_text como str e context_prompt como str, retorna str. Use google.generativeai configurado com GEMINI_API_KEY do settings. Use modelo gemini-1.5-flash. Combine context_prompt com message_text no formato: “Contexto: {context_prompt}\n\nMensagem do cliente: {message_text}\n\nResposta:”. Adicione tratamento de exceções completo com logging. Adicione logs detalhados em cada etapa: “Iniciando geração de resposta IA”, “Prompt montado”, “Resposta da IA recebida”, “Erro ao gerar resposta”. Use logging.info e logging.error. Faça validação se GEMINI_API_KEY existe.
+
+TAREFA 4 - Criar app/services/whatsapp_service.py: Implemente classe WhatsAppService que recebe evolution_api_url e evolution_api_key no construtor. Crie método assíncrono send_text_message que recebe phone_number como str e message como str, retorna bool indicando sucesso. Use httpx.AsyncClient para fazer POST em {evolution_api_url}/message/sendText com headers Authorization “Bearer {api_key}” e Content-Type “application/json”. Body JSON deve ter number (phone_number) e text (message). Adicione tratamento completo de exceções. Adicione logs detalhados: “Enviando mensagem para {phone_number}”, “Mensagem enviada com sucesso”, “Erro ao enviar mensagem: {erro}”. Use logging.info e logging.error. Retorne True se status 200-299, False caso contrário.
+
+TAREFA 5 - Atualizar .env.example: Adicione ao final do arquivo estas novas variáveis mantendo as existentes: GEMINI_API_KEY=your_gemini_api_key_here, EVOLUTION_API_URL=your_evolution_api_url_here, EVOLUTION_API_KEY=your_evolution_api_key_here, DEFAULT_AGENCY_ID=optional_default_agency_uuid.
+
+INSTRUÇÕES CRÍTICAS: Use type hints em TODO código. Use async/await nos métodos assíncronos. Importe logging no topo dos arquivos novos. Configure logging.basicConfig com level INFO. Adicione docstrings completas em todas as funções. Trate TODAS exceções possíveis com try/except. Valide se variáveis obrigatórias existem antes de usar. Adicione comentários explicativos em lógicas complexas.
+
+VALIDAÇÃO: Os arquivos devem estar prontos para importar sem erros. Logs devem ser informativos e ajudar no debug. Código deve seguir PEP 8.
+
+Gere TODO o código necessário, arquivo por arquivo, completo e funcional.
+
+-----
