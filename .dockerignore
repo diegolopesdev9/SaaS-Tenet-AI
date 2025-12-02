@@ -1,9 +1,18 @@
 
-.env
-__pycache__/
+__pycache__
 *.pyc
-.git/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+.git
 .gitignore
-README.md
-.vscode/
-.idea/
+.dockerignore
+.env
+.env.local
+*.log
+node_modules/
+.replit
+replit.nix
