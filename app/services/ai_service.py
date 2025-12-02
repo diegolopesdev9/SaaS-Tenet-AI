@@ -29,7 +29,7 @@ class AIService:
         
         # Configurar a API do Gemini com a chave de API
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
         logging.info("AIService inicializado com sucesso")
     
     async def generate_response(self, message_text: str, context_prompt: str) -> str:
