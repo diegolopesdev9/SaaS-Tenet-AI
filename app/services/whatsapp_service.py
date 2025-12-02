@@ -35,13 +35,14 @@ class WhatsAppService:
         self.evolution_api_key = evolution_api_key
         logging.info("WhatsAppService inicializado com sucesso")
     
-    async def send_text_message(self, phone_number: str, message: str) -> bool:
+    async def send_text_message(self, phone_number: str, message: str, instance_name: str = "agencia-teste") -> bool:
         """
         Envia uma mensagem de texto via WhatsApp.
         
         Args:
             phone_number: Número de telefone do destinatário (com código do país)
             message: Texto da mensagem a ser enviada
+            instance_name: Nome da instância Evolution API (padrão: "agencia-teste")
             
         Returns:
             bool: True se a mensagem foi enviada com sucesso, False caso contrário
@@ -51,7 +52,7 @@ class WhatsAppService:
             
             # Preparar headers para autenticação
             headers = {
-                "Authorization": f"Bearer {self.evolution_api_key}",
+                "apikey": self.evolution_api_key,
                 "Content-Type": "application/json"
             }
             
@@ -62,7 +63,7 @@ class WhatsAppService:
             }
             
             # Montar URL completa para envio de mensagem de texto
-            url = f"{self.evolution_api_url}/message/sendText"
+            url = f"{self.evolution_api_url}/message/sendText/{instance_name}"
             
             # Fazer requisição POST para a Evolution API
             async with httpx.AsyncClient() as client:
