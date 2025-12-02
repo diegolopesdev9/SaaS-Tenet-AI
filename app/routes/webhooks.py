@@ -84,7 +84,7 @@ async def receive_whatsapp_webhook(request: Request):
         logger.info(f"Agência identificada: {agency.get('nome')} (ID: {agency_id})")
         
         # Descriptografar tokens da agência
-        decrypted_keys = await agency_service.decrypt_agency_keys(agency)
+        decrypted_keys = await agency_service.decrypt_agency_keys(agency_id)
         logger.info("Tokens descriptografados")
         
         whatsapp_token = decrypted_keys.get('whatsapp_token')
