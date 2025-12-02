@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # AI Configuration
     GEMINI_API_KEY: str = Field(..., description="Gemini API Key")
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # WhatsApp Configuration
     EVOLUTION_API_URL: str = Field(..., description="Evolution API URL")
