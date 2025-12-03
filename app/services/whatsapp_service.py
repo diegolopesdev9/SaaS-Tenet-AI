@@ -59,7 +59,9 @@ class WhatsAppService:
             # Preparar corpo da requisição
             payload = {
                 "number": phone_number,
-                "text": message
+                "textMessage": {
+                    "text": message
+                }
             }
             
             # Montar URL completa para envio de mensagem de texto
