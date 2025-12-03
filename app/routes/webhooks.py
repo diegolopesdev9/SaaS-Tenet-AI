@@ -1,149 +1,193 @@
 
-"""Webhook endpoints for external integrations."""
-from fastapi import APIRouter, Request, HTTPException, status
+"""
+Rotas de Webhook para integração com WhatsApp via Evolution API.
+Inclui suporte a memória de conversas e qualificação de leads.
+"""
 import logging
-from app.config import settings
-from app.database import get_supabase_client
-from app.services.agency_service import AgencyService
-from app.services.ai_service import AIService
+from fastapi import APIRouter, Request, HTTPException
+from typing import Optional
+import os
+
 from app.services.whatsapp_service import WhatsAppService
-import traceback
+from app.services.ai_service import AIService
+from app.services.agency_service import AgencyService
+from app.database import get_supabase_client
+from app.config import settings
 
 # Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks")
 
 
+def extract_phone_number(remote_jid: str) -> str:
+    """
+    Extrai o número de telefone do remoteJid.
+    
+    Args:
+        remote_jid: ID no formato '5515998332211@s.whatsapp.net'
+        
+    Returns:
+        Número limpo: '5515998332211'
+    """
+    return remote_jid.split('@')[0] if '@' in remote_jid else remote_jid
+
+
+def extract_message_text(data: dict) -> Optional[str]:
+    """
+    Extrai o texto da mensagem do payload do webhook.
+    
+    Args:
+        data: Dados do webhook
+        
+    Returns:
+        Texto da mensagem ou None
+    """
+    message = data.get("message", {})
+    
+    # Mensagem de texto simples
+    if "conversation" in message:
+        return message["conversation"]
+    
+    # Mensagem de texto estendida
+    if "extendedTextMessage" in message:
+        return message["extendedTextMessage"].get("text")
+    
+    # Outros tipos de mensagem (ignorar por enquanto)
+    return None
+
+
 @router.post("/whatsapp")
 async def receive_whatsapp_webhook(request: Request):
     """
-    WhatsApp webhook endpoint para processar mensagens recebidas.
+    Endpoint para receber webhooks do WhatsApp via Evolution API.
     
-    Args:
-        request: Incoming webhook request da Evolution API
-        
-    Returns:
-        Acknowledgment response com status do processamento
+    Fluxo:
+    1. Recebe mensagem do WhatsApp
+    2. Identifica a agência
+    3. Gera resposta com IA
+    4. Envia resposta via WhatsApp
     """
     try:
-        # Extrair JSON do body
+        # Receber payload
         payload = await request.json()
         logger.info(f"Webhook WhatsApp recebido: {payload}")
         
-        # Extrair dados da Evolution API
+        # Verificar se é evento de mensagem
+        event = payload.get("event")
+        if event != "messages.upsert":
+            logger.info(f"Evento ignorado: {event}")
+            return {"status": "ignored", "reason": f"event type: {event}"}
+        
+        # Extrair dados da mensagem
         data = payload.get("data", {})
-        remoteJid = data.get("key", {}).get("remoteJid", "")
-        pushName = data.get("pushName", "Desconhecido")
-        message_obj = data.get("message", {})
+        key = data.get("key", {})
         
-        # Extrair texto da mensagem (suporta conversation e extendedTextMessage)
-        message_text = message_obj.get("conversation") or message_obj.get("extendedTextMessage", {}).get("text", "")
+        # Ignorar mensagens enviadas pelo próprio bot
+        if key.get("fromMe", False):
+            logger.info("Mensagem própria ignorada")
+            return {"status": "ignored", "reason": "own message"}
         
-        # Validar se existe texto na mensagem
+        # Extrair informações
+        remote_jid = key.get("remoteJid", "")
+        sender_phone = extract_phone_number(remote_jid)
+        sender_name = data.get("pushName", "Cliente")
+        message_text = extract_message_text(data)
+        instance_name = payload.get("instance", "agencia-teste")
+        
+        # Verificar se há texto na mensagem
         if not message_text:
             logger.info("Mensagem sem texto ignorada")
-            return {"status": 200, "message": "Mensagem sem texto ignorada"}
+            return {"status": "ignored", "reason": "no text content"}
         
-        logger.info(f"Mensagem de {pushName} ({remoteJid}): {message_text}")
+        logger.info(f"Mensagem de {sender_name} ({remote_jid}): {message_text}")
+        
+        # Inicializar cliente Supabase
+        supabase = get_supabase_client()
         
         # Identificar agência
-        agency = None
-        agency_id = None
+        agency_id = os.getenv("DEFAULT_AGENCY_ID") or settings.DEFAULT_AGENCY_ID
         
-        # Usar DEFAULT_AGENCY_ID se configurado
-        if settings.DEFAULT_AGENCY_ID:
-            agency_id = settings.DEFAULT_AGENCY_ID
-            logger.info(f"Usando DEFAULT_AGENCY_ID: {agency_id}")
+        if not agency_id:
+            logger.error("DEFAULT_AGENCY_ID não configurado")
+            raise HTTPException(status_code=500, detail="Agência não configurada")
         
-        # Buscar agência no Supabase
-        client = get_supabase_client()
-        agency_service = AgencyService(client)
+        logger.info(f"Usando DEFAULT_AGENCY_ID: {agency_id}")
         
-        if agency_id:
-            agency = await agency_service.get_agency_by_id(agency_id)
-        else:
-            # Buscar primeira agência ativa
-            result = client.table("agencias").select("*").eq("status", "active").limit(1).execute()
-            if result.data and len(result.data) > 0:
-                agency = result.data[0]
-                agency_id = agency.get("id")
+        # Buscar dados da agência
+        agency_service = AgencyService(supabase)
+        agency = await agency_service.get_agency_by_id(agency_id)
         
-        # Validar se encontrou agência
         if not agency:
-            logger.error("Nenhuma agência configurada encontrada")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Nenhuma agência configurada"
-            )
+            logger.error(f"Agência não encontrada: {agency_id}")
+            raise HTTPException(status_code=404, detail="Agência não encontrada")
         
         logger.info(f"Agência identificada: {agency.get('nome')} (ID: {agency_id})")
         
         # Descriptografar tokens da agência
         decrypted_keys = await agency_service.decrypt_agency_keys(agency_id)
+        
+        if not decrypted_keys:
+            logger.error("Falha ao descriptografar tokens da agência")
+            raise HTTPException(status_code=500, detail="Erro nos tokens da agência")
+        
         logger.info("Tokens descriptografados")
         
-        whatsapp_token = decrypted_keys.get('whatsapp_token')
+        # ============================================
+        # GERAÇÃO DE RESPOSTA COM IA
+        # ============================================
         
-        # Validar se token WhatsApp existe
-        if not whatsapp_token:
-            logger.error("Token WhatsApp não configurado para esta agência")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Token WhatsApp não configurado"
-            )
-        
-        # Gerar resposta usando IA
+        # Inicializar serviço de IA
         ai_service = AIService()
+        
+        # Obter prompt personalizado da agência
         prompt_config = agency.get('prompt_config', '')
         
+        # Gerar resposta
         ai_response = await ai_service.generate_response(
             message_text=message_text,
             context_prompt=prompt_config
         )
         
-        logger.info(f"Resposta IA gerada: {ai_response}")
+        logger.info(f"Resposta IA gerada: {ai_response[:100]}...")
         
-        # Enviar resposta via WhatsApp
+        # ============================================
+        # ENVIO DA RESPOSTA
+        # ============================================
+        
+        # Inicializar serviço de WhatsApp
         whatsapp_service = WhatsAppService(
             evolution_api_url=settings.EVOLUTION_API_URL,
-            evolution_api_key=whatsapp_token
+            evolution_api_key=settings.EVOLUTION_API_KEY
         )
         
-        # Limpar remoteJid removendo sufixo se existir
-        clean_phone = remoteJid.replace("@s.whatsapp.net", "")
-        
-        # Enviar mensagem
+        # Enviar resposta
         send_success = await whatsapp_service.send_text_message(
-            phone_number=clean_phone,
-            message=ai_response
+            phone_number=sender_phone,
+            message=ai_response,
+            instance_name=instance_name
         )
         
-        if send_success:
-            logger.info("Mensagem processada e enviada com sucesso")
-            return {"status": 200, "message": "Mensagem processada e enviada"}
-        else:
+        if not send_success:
             logger.error("Falha ao enviar resposta via WhatsApp")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao enviar resposta"
-            )
-            
-    except HTTPException as he:
-        # Re-raise HTTP exceptions
-        raise he
+            raise HTTPException(status_code=500, detail="Falha ao enviar resposta")
+        
+        logger.info("Mensagem processada e enviada com sucesso")
+        
+        return {
+            "status": "success",
+            "message": "Mensagem processada",
+            "lead_phone": sender_phone
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        # Capturar e logar erro completo com traceback
-        error_traceback = traceback.format_exc()
-        logger.error(f"ERRO no webhook WhatsApp: {str(e)}\n{error_traceback}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao processar webhook: {str(e)}"
-        )
+        logger.error(f"ERRO no webhook WhatsApp: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/rdstation")
@@ -164,3 +208,14 @@ async def rdstation_webhook(request: Request):
     except Exception as e:
         logger.error(f"Erro ao processar webhook RD Station: {str(e)}")
         return {"status": 200, "message": "RD Station webhook received"}
+
+
+@router.get("/whatsapp/health")
+async def webhook_health():
+    """
+    Health check para o webhook.
+    """
+    return {
+        "status": "healthy",
+        "service": "whatsapp-webhook"
+    }
