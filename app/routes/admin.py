@@ -243,3 +243,61 @@ async def update_conversation_status(
     except Exception as e:
         logger.error(f"Erro ao atualizar status da conversa: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar status: {str(e)}")
+
+
+@router.get("/{agency_id}/metrics")
+async def get_agency_metrics(agency_id: str):
+    """
+    Retorna métricas consolidadas de conversas da agência.
+    
+    Args:
+        agency_id: UUID da agência
+        
+    Returns:
+        Objeto com métricas: total de leads, mensagens, taxa de qualificação e contagem por status
+    """
+    logger.info(f"Calculando métricas da agência {agency_id}")
+    
+    # Inicializar cliente Supabase
+    supabase = get_supabase_client()
+    
+    try:
+        # Buscar todas as conversas da agência
+        response = supabase.table("conversas").select(
+            "lead_status, total_mensagens"
+        ).eq(
+            "agencia_id", agency_id
+        ).execute()
+        
+        conversas = response.data or []
+        
+        # Calcular métricas
+        total_leads = len(conversas)
+        total_mensagens = sum(c.get("total_mensagens", 0) for c in conversas)
+        
+        # Contar status
+        status_counts = {}
+        for conversa in conversas:
+            status = conversa.get("lead_status", "em_andamento")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Calcular taxa de qualificação
+        qualificados = status_counts.get("qualificado", 0)
+        agendados = status_counts.get("agendado", 0)
+        taxa_qualificacao = 0.0
+        
+        if total_leads > 0:
+            taxa_qualificacao = round(((qualificados + agendados) / total_leads) * 100, 1)
+        
+        logger.info(f"Métricas calculadas: {total_leads} leads, taxa {taxa_qualificacao}%")
+        
+        return {
+            "total_leads": total_leads,
+            "total_mensagens": total_mensagens,
+            "taxa_qualificacao": taxa_qualificacao,
+            "por_status": status_counts
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular métricas: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao calcular métricas: {str(e)}")
