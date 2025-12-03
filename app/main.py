@@ -24,6 +24,10 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(webhooks.router)
 
+# Admin routes
+from app.routes import admin
+app.include_router(admin.router)
+
 
 @app.on_event("startup")
 async def startup_event():
