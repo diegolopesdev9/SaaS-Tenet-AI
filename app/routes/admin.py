@@ -135,3 +135,48 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
     except Exception as e:
         logger.error(f"Erro ao atualizar agência: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar configurações: {str(e)}")
+
+
+@router.get("/{agency_id}/conversas/{conversation_id}")
+async def get_conversation(agency_id: str, conversation_id: str):
+    """
+    Busca uma conversa específica por ID.
+    
+    Args:
+        agency_id: UUID da agência
+        conversation_id: UUID da conversa
+        
+    Returns:
+        Objeto completo da conversa incluindo histórico
+        
+    Raises:
+        HTTPException: 404 se conversa não for encontrada
+    """
+    logger.info(f"Buscando conversa {conversation_id} da agência {agency_id}")
+    
+    # Inicializar cliente Supabase
+    supabase = get_supabase_client()
+    
+    try:
+        # Buscar conversa no Supabase
+        response = supabase.table("conversas").select("*").eq(
+            "id", conversation_id
+        ).eq(
+            "agencia_id", agency_id
+        ).execute()
+        
+        # Verificar se encontrou a conversa
+        if not response.data or len(response.data) == 0:
+            logger.warning(f"Conversa não encontrada: {conversation_id}")
+            raise HTTPException(status_code=404, detail="Conversa não encontrada")
+        
+        conversa = response.data[0]
+        logger.info(f"Conversa encontrada: {conversa.get('lead_phone')}")
+        
+        return conversa
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar conversa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar conversa: {str(e)}")
