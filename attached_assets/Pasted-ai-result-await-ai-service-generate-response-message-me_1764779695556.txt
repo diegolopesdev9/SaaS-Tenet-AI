@@ -1,0 +1,110 @@
+ai_result = await ai_service.generate_response(
+    message=message_text,
+    agency_name=agency.get("nome"),
+    conversation_history=history_formatted,
+    lead_data=known_lead_data
+)
+```
+
+---
+
+## 📋 Prompt Corrigido para o Replit Assistant
+
+Cole este prompt no Replit para corrigir o `webhooks.py`:
+```
+Atualize o arquivo app/routes/webhooks.py para integrar a memória de conversas.
+
+## Alterações necessárias:
+
+### 1. Adicionar import do ConversationService:
+No topo do arquivo, adicione:
+from app.services.conversation_service import ConversationService
+
+### 2. Após a linha "logger.info("Tokens descriptografados")", adicione o bloco de MEMÓRIA:
+
+        # ============================================
+        # MEMÓRIA DE CONVERSAS
+        # ============================================
+        
+        # Inicializar serviço de conversas
+        conversation_service = ConversationService(supabase)
+        
+        # Buscar histórico da conversa
+        conversation_data = await conversation_service.get_conversation_history(
+            agencia_id=agency_id,
+            lead_phone=sender_phone,
+            limit_messages=10
+        )
+        
+        # Formatar histórico para o prompt
+        history_formatted = conversation_service.format_history_for_prompt(
+            conversation_data.get("history", [])
+        )
+        
+        # Obter dados já conhecidos do lead
+        known_lead_data = conversation_data.get("lead_data", {})
+        
+        if conversation_data.get("exists"):
+            logger.info(f"Histórico carregado: {conversation_data.get('total_messages', 0)} mensagens")
+        else:
+            logger.info("Nova conversa iniciada")
+
+### 3. Alterar a chamada do ai_service.generate_response para:
+
+        # Gerar resposta com histórico e contexto
+        ai_result = await ai_service.generate_response(
+            message=message_text,
+            agency_name=agency.get("nome", "Agência"),
+            agency_prompt=agency.get("prompt_config"),
+            conversation_history=history_formatted,
+            lead_data=known_lead_data
+        )
+        
+        ai_response = ai_result.get("response", "")
+        extracted_data = ai_result.get("extracted_data", {})
+        
+        logger.info(f"Resposta IA gerada: {ai_response[:100]}...")
+        
+        if extracted_data:
+            logger.info(f"Dados extraídos: {extracted_data}")
+
+### 4. Após "logger.info("Mensagem processada e enviada com sucesso")", adicione:
+
+        # ============================================
+        # ATUALIZAÇÃO DO HISTÓRICO
+        # ============================================
+        
+        # Salvar histórico atualizado
+        await conversation_service.update_conversation_history(
+            agencia_id=agency_id,
+            lead_phone=sender_phone,
+            user_message=message_text,
+            assistant_message=ai_response,
+            lead_data=extracted_data if extracted_data else None
+        )
+
+### 5. Atualizar o return para incluir mais informações:
+
+        return {
+            "status": "success",
+            "message": "Mensagem processada",
+            "lead_phone": sender_phone,
+            "conversation_exists": conversation_data.get("exists"),
+            "data_extracted": bool(extracted_data)
+        }
+
+### 6. Atualizar o health check:
+
+@router.get("/whatsapp/health")
+async def webhook_health():
+    return {
+        "status": "healthy",
+        "service": "whatsapp-webhook",
+        "memory_enabled": True,
+        "qualification_enabled": True
+    }
+
+## IMPORTANTE:
+- NÃO altere as outras rotas (rdstation)
+- NÃO remova imports existentes
+- Mantenha o tratamento de erros existente
