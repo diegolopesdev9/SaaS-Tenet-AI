@@ -3,10 +3,12 @@
 Rotas administrativas para gerenciamento de agências.
 """
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from app.database import get_supabase_client
 from app.services.agency_service import AgencyService
-from app.schemas.admin import AgencyConfigResponse
+from app.schemas.admin import AgencyConfigResponse, AgencyConfigUpdate, ApiResponse
+from app.utils.security import EncryptionService
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -59,3 +61,77 @@ async def get_agency_config(agency_id: str):
     logger.info(f"Configurações retornadas para agência: {agency.get('nome')}")
     
     return response
+
+
+@router.post("/{agency_id}/config", response_model=ApiResponse)
+async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
+    """
+    Atualiza configurações de uma agência.
+    
+    Args:
+        agency_id: UUID da agência
+        config: Dados de configuração a atualizar
+        
+    Returns:
+        ApiResponse com resultado da operação
+        
+    Raises:
+        HTTPException: 404 se agência não for encontrada
+    """
+    logger.info(f"Atualizando configurações da agência: {agency_id}")
+    
+    # Inicializar cliente Supabase e serviço
+    supabase = get_supabase_client()
+    agency_service = AgencyService(supabase)
+    
+    # Verificar se agência existe
+    agency = await agency_service.get_agency_by_id(agency_id)
+    
+    if not agency:
+        logger.warning(f"Agência não encontrada: {agency_id}")
+        raise HTTPException(status_code=404, detail="Agência não encontrada")
+    
+    # Montar dict de atualização apenas com campos preenchidos
+    update_data = {}
+    
+    if config.nome is not None:
+        update_data["nome"] = config.nome
+    
+    if config.prompt_config is not None:
+        update_data["prompt_config"] = config.prompt_config
+    
+    if config.whatsapp_phone_id is not None:
+        update_data["whatsapp_phone_id"] = config.whatsapp_phone_id
+    
+    # Encriptar WhatsApp token se fornecido
+    if config.whatsapp_token is not None:
+        encryption_service = EncryptionService()
+        encrypted_token = encryption_service.encrypt(config.whatsapp_token)
+        update_data["whatsapp_token_encrypted"] = encrypted_token
+        logger.info("WhatsApp token encriptado")
+    
+    # Encriptar Gemini API key se fornecida
+    if config.gemini_api_key is not None:
+        encryption_service = EncryptionService()
+        encrypted_key = encryption_service.encrypt(config.gemini_api_key)
+        update_data["gemini_api_key_encrypted"] = encrypted_key
+        logger.info("Gemini API key encriptada")
+    
+    # Adicionar timestamp de atualização
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Executar update no Supabase
+    try:
+        result = supabase.table("agencias").update(update_data).eq("id", agency_id).execute()
+        
+        logger.info(f"Agência {agency_id} atualizada com sucesso")
+        
+        return ApiResponse(
+            success=True,
+            message="Configurações atualizadas com sucesso",
+            data={"agency_id": agency_id, "updated_fields": list(update_data.keys())}
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro ao atualizar agência: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar configurações: {str(e)}")
