@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.routes import health, webhooks
+from app.routes.admin import router as admin_router
 from app.database import health_check
 
 app = FastAPI(
@@ -23,10 +24,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router)
 app.include_router(webhooks.router)
-
-# Admin routes
-from app.routes import admin
-app.include_router(admin.router)
+app.include_router(admin_router)
 
 
 @app.on_event("startup")
