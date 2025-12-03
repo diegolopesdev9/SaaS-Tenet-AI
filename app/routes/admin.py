@@ -180,3 +180,66 @@ async def get_conversation(agency_id: str, conversation_id: str):
     except Exception as e:
         logger.error(f"Erro ao buscar conversa: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao buscar conversa: {str(e)}")
+
+
+@router.patch("/{agency_id}/conversas/{conversation_id}/status")
+async def update_conversation_status(
+    agency_id: str,
+    conversation_id: str,
+    new_status: str
+):
+    """
+    Atualiza o status de uma conversa.
+    
+    Args:
+        agency_id: UUID da agência
+        conversation_id: UUID da conversa
+        new_status: Novo status do lead
+        
+    Returns:
+        Objeto com sucesso e mensagem
+        
+    Raises:
+        HTTPException: 400 se status inválido, 404 se conversa não encontrada
+    """
+    logger.info(f"Atualizando status da conversa {conversation_id} para: {new_status}")
+    
+    # Validar status
+    valid_statuses = ["iniciada", "em_andamento", "qualificado", "perdido", "agendado"]
+    if new_status not in valid_statuses:
+        logger.warning(f"Status inválido: {new_status}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Status inválido. Use um dos seguintes: {', '.join(valid_statuses)}"
+        )
+    
+    # Inicializar cliente Supabase
+    supabase = get_supabase_client()
+    
+    try:
+        # Executar update no Supabase
+        response = supabase.table("conversas").update({
+            "lead_status": new_status
+        }).eq(
+            "id", conversation_id
+        ).eq(
+            "agencia_id", agency_id
+        ).execute()
+        
+        # Verificar se encontrou e atualizou o registro
+        if not response.data or len(response.data) == 0:
+            logger.warning(f"Conversa não encontrada: {conversation_id}")
+            raise HTTPException(status_code=404, detail="Conversa não encontrada")
+        
+        logger.info(f"Status atualizado com sucesso para: {new_status}")
+        
+        return {
+            "success": True,
+            "message": f"Status atualizado para: {new_status}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar status da conversa: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar status: {str(e)}")
