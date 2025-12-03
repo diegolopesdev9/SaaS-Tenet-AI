@@ -1,0 +1,370 @@
+
+"""
+Serviço de Gerenciamento de Conversas e Memória.
+Responsável por armazenar e recuperar histórico de conversas no Supabase.
+"""
+import logging
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timezone
+from supabase import Client
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class ConversationService:
+    """
+    Serviço para gerenciamento de conversas e histórico de mensagens.
+    """
+    
+    def __init__(self, supabase_client: Client):
+        """
+        Inicializa o serviço de conversas.
+        
+        Args:
+            supabase_client: Cliente Supabase configurado
+        """
+        self.supabase = supabase_client
+        logger.info("ConversationService inicializado com sucesso")
+    
+    async def get_conversation_history(
+        self, 
+        agencia_id: str, 
+        lead_phone: str,
+        limit_messages: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Busca o histórico de conversas de um lead específico.
+        
+        Args:
+            agencia_id: UUID da agência
+            lead_phone: Número de telefone do lead (sem @s.whatsapp.net)
+            limit_messages: Limite de mensagens a retornar (padrão: 10 últimas)
+            
+        Returns:
+            Dict contendo histórico, status e dados do lead
+        """
+        try:
+            logger.info(f"Buscando histórico para lead {lead_phone} da agência {agencia_id}")
+            
+            # Buscar conversa existente
+            response = self.supabase.table("conversas").select("*").eq(
+                "agencia_id", agencia_id
+            ).eq(
+                "lead_phone", lead_phone
+            ).execute()
+            
+            if response.data and len(response.data) > 0:
+                conversa = response.data[0]
+                historico = conversa.get("historico_json", [])
+                
+                # Limitar quantidade de mensagens retornadas (últimas N)
+                if len(historico) > limit_messages:
+                    historico = historico[-limit_messages:]
+                
+                logger.info(f"Histórico encontrado: {len(historico)} mensagens")
+                
+                return {
+                    "conversation_id": conversa.get("id"),
+                    "history": historico,
+                    "lead_status": conversa.get("lead_status", "iniciada"),
+                    "lead_data": conversa.get("lead_data", {}),
+                    "total_messages": conversa.get("total_mensagens", 0),
+                    "exists": True
+                }
+            else:
+                logger.info(f"Nenhum histórico encontrado para {lead_phone}")
+                return {
+                    "conversation_id": None,
+                    "history": [],
+                    "lead_status": "iniciada",
+                    "lead_data": {},
+                    "total_messages": 0,
+                    "exists": False
+                }
+                
+        except Exception as e:
+            logger.error(f"Erro ao buscar histórico: {str(e)}")
+            return {
+                "conversation_id": None,
+                "history": [],
+                "lead_status": "iniciada",
+                "lead_data": {},
+                "total_messages": 0,
+                "exists": False,
+                "error": str(e)
+            }
+    
+    async def update_conversation_history(
+        self,
+        agencia_id: str,
+        lead_phone: str,
+        user_message: str,
+        assistant_message: str,
+        lead_data: Optional[Dict[str, Any]] = None,
+        lead_status: Optional[str] = None
+    ) -> bool:
+        """
+        Atualiza o histórico de conversas com novas mensagens.
+        Cria uma nova conversa se não existir (upsert).
+        
+        Args:
+            agencia_id: UUID da agência
+            lead_phone: Número de telefone do lead
+            user_message: Mensagem enviada pelo usuário
+            assistant_message: Resposta do assistente
+            lead_data: Dados extraídos do lead (opcional)
+            lead_status: Novo status do lead (opcional)
+            
+        Returns:
+            bool: True se atualizado com sucesso
+        """
+        try:
+            logger.info(f"Atualizando histórico para lead {lead_phone}")
+            
+            # Obter timestamp atual
+            now = datetime.now(timezone.utc).isoformat()
+            
+            # Criar novos turnos de conversa
+            new_turns = [
+                {
+                    "role": "user",
+                    "content": user_message,
+                    "timestamp": now
+                },
+                {
+                    "role": "assistant",
+                    "content": assistant_message,
+                    "timestamp": now
+                }
+            ]
+            
+            # Buscar conversa existente
+            existing = await self.get_conversation_history(agencia_id, lead_phone)
+            
+            if existing.get("exists"):
+                # Atualizar conversa existente
+                historico_atual = existing.get("history", [])
+                
+                # Buscar histórico completo (sem limite)
+                full_response = self.supabase.table("conversas").select(
+                    "historico_json"
+                ).eq(
+                    "agencia_id", agencia_id
+                ).eq(
+                    "lead_phone", lead_phone
+                ).execute()
+                
+                if full_response.data:
+                    historico_atual = full_response.data[0].get("historico_json", [])
+                
+                # Adicionar novos turnos
+                historico_atualizado = historico_atual + new_turns
+                
+                # Preparar dados para update
+                update_data = {
+                    "historico_json": historico_atualizado,
+                    "total_mensagens": len(historico_atualizado),
+                    "last_message_at": now
+                }
+                
+                # Atualizar status se fornecido
+                if lead_status:
+                    update_data["lead_status"] = lead_status
+                elif existing.get("lead_status") == "iniciada":
+                    update_data["lead_status"] = "em_andamento"
+                
+                # Atualizar dados do lead se fornecidos
+                if lead_data:
+                    # Merge com dados existentes
+                    existing_lead_data = existing.get("lead_data", {})
+                    merged_data = {**existing_lead_data, **lead_data}
+                    # Remover valores None ou vazios
+                    merged_data = {k: v for k, v in merged_data.items() if v}
+                    update_data["lead_data"] = merged_data
+                
+                # Executar update
+                response = self.supabase.table("conversas").update(
+                    update_data
+                ).eq(
+                    "agencia_id", agencia_id
+                ).eq(
+                    "lead_phone", lead_phone
+                ).execute()
+                
+                logger.info(f"Histórico atualizado: {len(historico_atualizado)} mensagens")
+                
+            else:
+                # Criar nova conversa
+                insert_data = {
+                    "agencia_id": agencia_id,
+                    "lead_phone": lead_phone,
+                    "historico_json": new_turns,
+                    "lead_status": lead_status or "em_andamento",
+                    "lead_data": lead_data or {},
+                    "total_mensagens": 2,
+                    "last_message_at": now
+                }
+                
+                response = self.supabase.table("conversas").insert(insert_data).execute()
+                logger.info(f"Nova conversa criada para {lead_phone}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao atualizar histórico: {str(e)}")
+            return False
+    
+    async def update_lead_status(
+        self,
+        agencia_id: str,
+        lead_phone: str,
+        new_status: str
+    ) -> bool:
+        """
+        Atualiza apenas o status do lead.
+        
+        Args:
+            agencia_id: UUID da agência
+            lead_phone: Número de telefone do lead
+            new_status: Novo status (iniciada, em_andamento, qualificado, perdido, agendado)
+            
+        Returns:
+            bool: True se atualizado com sucesso
+        """
+        try:
+            valid_statuses = ["iniciada", "em_andamento", "qualificado", "perdido", "agendado"]
+            if new_status not in valid_statuses:
+                logger.error(f"Status inválido: {new_status}")
+                return False
+            
+            response = self.supabase.table("conversas").update({
+                "lead_status": new_status
+            }).eq(
+                "agencia_id", agencia_id
+            ).eq(
+                "lead_phone", lead_phone
+            ).execute()
+            
+            logger.info(f"Status do lead {lead_phone} atualizado para: {new_status}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao atualizar status: {str(e)}")
+            return False
+    
+    async def update_lead_data(
+        self,
+        agencia_id: str,
+        lead_phone: str,
+        lead_data: Dict[str, Any]
+    ) -> bool:
+        """
+        Atualiza os dados extraídos do lead (qualificação).
+        
+        Args:
+            agencia_id: UUID da agência
+            lead_phone: Número de telefone do lead
+            lead_data: Dados do lead (nome, empresa, desafio, etc.)
+            
+        Returns:
+            bool: True se atualizado com sucesso
+        """
+        try:
+            # Buscar dados existentes para merge
+            existing = await self.get_conversation_history(agencia_id, lead_phone)
+            existing_data = existing.get("lead_data", {})
+            
+            # Merge dos dados
+            merged_data = {**existing_data, **lead_data}
+            # Remover valores None ou vazios
+            merged_data = {k: v for k, v in merged_data.items() if v}
+            
+            response = self.supabase.table("conversas").update({
+                "lead_data": merged_data
+            }).eq(
+                "agencia_id", agencia_id
+            ).eq(
+                "lead_phone", lead_phone
+            ).execute()
+            
+            logger.info(f"Dados do lead {lead_phone} atualizados: {list(merged_data.keys())}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao atualizar dados do lead: {str(e)}")
+            return False
+    
+    async def get_leads_by_status(
+        self,
+        agencia_id: str,
+        status: str,
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca todos os leads de uma agência com um determinado status.
+        
+        Args:
+            agencia_id: UUID da agência
+            status: Status do lead
+            limit: Limite de resultados
+            
+        Returns:
+            Lista de leads
+        """
+        try:
+            response = self.supabase.table("conversas").select(
+                "id, lead_phone, lead_status, lead_data, total_mensagens, last_message_at"
+            ).eq(
+                "agencia_id", agencia_id
+            ).eq(
+                "lead_status", status
+            ).order(
+                "last_message_at", desc=True
+            ).limit(limit).execute()
+            
+            return response.data or []
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar leads por status: {str(e)}")
+            return []
+    
+    def format_history_for_prompt(
+        self,
+        history: List[Dict[str, str]],
+        max_chars: int = 3000
+    ) -> str:
+        """
+        Formata o histórico para incluir no prompt do Gemini.
+        
+        Args:
+            history: Lista de mensagens do histórico
+            max_chars: Limite de caracteres para o histórico
+            
+        Returns:
+            String formatada com o histórico
+        """
+        if not history:
+            return ""
+        
+        formatted_lines = []
+        total_chars = 0
+        
+        # Processar do mais recente para o mais antigo
+        for msg in reversed(history):
+            role = "Cliente" if msg.get("role") == "user" else "Você"
+            content = msg.get("content", "")
+            line = f"{role}: {content}"
+            
+            # Verificar limite de caracteres
+            if total_chars + len(line) > max_chars:
+                break
+                
+            formatted_lines.insert(0, line)
+            total_chars += len(line)
+        
+        if formatted_lines:
+            return "=== HISTÓRICO DA CONVERSA ===\n" + "\n".join(formatted_lines) + "\n=== FIM DO HISTÓRICO ===\n\n"
+        
+        return ""
