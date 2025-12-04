@@ -137,7 +137,7 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar configurações: {str(e)}")
 
 
-@router.get("/{agency_id}/conversas/{conversation_id}")
+@router.get("/{agencia_id}/conversas/{conversation_id}")
 async def get_conversation(agency_id: str, conversation_id: str):
     """
     Busca uma conversa específica por ID.
