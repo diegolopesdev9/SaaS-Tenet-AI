@@ -1,8 +1,10 @@
 
 """Main FastAPI application."""
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
 from app.routes import health, webhooks
 from app.routes.admin import router as admin_router
 from app.database import health_check
@@ -25,6 +27,35 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(webhooks.router)
 app.include_router(admin_router)
+
+# Servir frontend em produção
+frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+
+if os.path.exists(frontend_dist):
+    # Montar assets estáticos
+    assets_path = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="static-assets")
+    
+    # Rota raiz serve index.html
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+    
+    # Catch-all para React Router (SPA) - deve ser a ÚLTIMA rota
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Ignorar rotas de API
+        if full_path.startswith("api") or full_path.startswith("webhooks"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        
+        # Verificar se é um arquivo estático
+        file_path = os.path.join(frontend_dist, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # Retornar index.html para rotas do React
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
 
 
 @app.on_event("startup")
