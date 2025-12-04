@@ -137,7 +137,52 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar configurações: {str(e)}")
 
 
-@router.get("/{agencia_id}/conversas/{conversa_id}")
+@router.get("/{agency_id}/conversas")
+async def list_conversations(
+    agency_id: str,
+    status: str = None,
+    limit: int = 50
+):
+    """
+    Lista todas as conversas de uma agência.
+    
+    Args:
+        agency_id: UUID da agência
+        status: Filtrar por status (opcional)
+        limit: Limite de resultados (padrão 50)
+        
+    Returns:
+        Lista de conversas com total
+    """
+    logger.info(f"Listando conversas da agência {agency_id}")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        # Construir query
+        query = supabase.table("conversas").select(
+            "id, lead_phone, lead_status, lead_data, total_mensagens, last_message_at, created_at"
+        ).eq("agencia_id", agency_id)
+        
+        # Filtrar por status se fornecido
+        if status:
+            query = query.eq("lead_status", status)
+        
+        # Ordenar e limitar
+        response = query.order("last_message_at", desc=True).limit(limit).execute()
+        
+        conversas = response.data or []
+        
+        logger.info(f"Encontradas {len(conversas)} conversas")
+        
+        return conversas
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar conversas: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao listar conversas: {str(e)}")
+
+
+@router.get("/{agency_id}/conversas/{conversation_id}")
 async def get_conversation(agency_id: str, conversation_id: str):
     """
     Busca uma conversa específica por ID.
