@@ -8,6 +8,14 @@ run = ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
 localPort = 8000
 externalPort = 8000
 
