@@ -130,7 +130,7 @@ export default function ConversationDetail({ agencyId }) {
   }
 
   const leadData = conversation.lead_data || {}
-  const history = conversation.historico || []
+  const history = conversation.historico_json || []
   const currentStatus = conversation.lead_status || 'iniciada'
   const statusInfo = statusConfig[currentStatus] || statusConfig.em_andamento
   const StatusIcon = statusInfo.icon
