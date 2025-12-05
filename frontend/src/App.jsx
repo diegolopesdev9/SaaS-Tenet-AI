@@ -12,7 +12,7 @@ import ConversationDetail from './pages/ConversationDetail'
 
 function App() {
   // Pegar agencyId do ambiente ou usar UUID temporário
-  const agencyId = import.meta.env.VITE_AGENCY_ID || '00000000-0000-0000-0000-000000000000'
+  const agencyId = import.meta.env.VITE_AGENCY_ID || 'd6f20d80-9212-472d-873e-d5f610edbb54'
 
   return (
     <Routes>
