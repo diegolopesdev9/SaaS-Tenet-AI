@@ -44,12 +44,15 @@ export const authService = {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     
+    // Guardar referência para usar no callback
+    const logout = this.logout.bind(this);
+    
     // Interceptor para tratar 401
     api.interceptors.response.use(
       response => response,
       error => {
         if (error.response && error.response.status === 401) {
-          this.logout();
+          logout();
         }
         return Promise.reject(error);
       }
