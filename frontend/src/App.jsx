@@ -1,31 +1,75 @@
 
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import authService from './services/auth';
 
-import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+// Pages
+import Login from './pages/Login';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Conversations from './pages/Conversations';
+import ConversationDetail from './pages/ConversationDetail';
+import AgentConfig from './pages/AgentConfig';
 
-// Importar componentes (serão criados depois)
-import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import AgentConfig from './pages/AgentConfig'
-import Conversations from './pages/Conversations'
-import ConversationDetail from './pages/ConversationDetail'
-
-function App() {
-  // Pegar agencyId do ambiente ou usar UUID temporário
-  const agencyId = import.meta.env.VITE_AGENCY_ID || 'd6f20d80-9212-472d-873e-d5f610edbb54'
-
-  return (
-    <Routes>
-      <Route path="/" element={<Layout agencyId={agencyId} />}>
-        <Route index element={<Dashboard agencyId={agencyId} />} />
-        <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
-        <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
-        <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
-  )
+// Componente de rota protegida
+function ProtectedRoute({ children }) {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 }
 
-export default App
+// Componente de rota pública (redireciona se já logado)
+function PublicRoute({ children }) {
+  if (authService.isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
 
+function App() {
+  // Obter agencyId do usuário logado ou fallback
+  const user = authService.getUser();
+  const agencyId = user?.agencia_id || 'd6f20d80-9212-472d-873e-d5f610edbb54';
+
+  useEffect(() => {
+    // Configurar interceptors do axios na inicialização
+    authService.setupAxiosInterceptors();
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Rota pública - Login */}
+        <Route 
+          path="/login" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
+        
+        {/* Rotas protegidas */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout agencyId={agencyId} />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard agencyId={agencyId} />} />
+          <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
+          <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
+          <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
+        </Route>
+
+        {/* Redirecionar rotas não encontradas */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
