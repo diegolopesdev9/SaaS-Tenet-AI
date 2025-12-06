@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import authService from './services/auth';
 
 // Pages
@@ -38,37 +38,35 @@ function App() {
   }, []);
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rota pública - Login */}
-        <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        
-        {/* Rotas protegidas */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout agencyId={agencyId} />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard agencyId={agencyId} />} />
-          <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
-          <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
-          <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
-        </Route>
+    <Routes>
+      {/* Rota pública - Login */}
+      <Route 
+        path="/login" 
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        } 
+      />
+      
+      {/* Rotas protegidas */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout agencyId={agencyId} />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Dashboard agencyId={agencyId} />} />
+        <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
+        <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
+        <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
+      </Route>
 
-        {/* Redirecionar rotas não encontradas */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+      {/* Redirecionar rotas não encontradas */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
