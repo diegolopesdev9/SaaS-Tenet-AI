@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
-from app.routes import health, webhooks, auth
+from app.routes import health, webhooks
+from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
 from app.database import health_check
 
@@ -25,8 +26,8 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router)
 app.include_router(webhooks.router)
+app.include_router(auth_router)
 app.include_router(admin_router)
-app.include_router(auth.router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
