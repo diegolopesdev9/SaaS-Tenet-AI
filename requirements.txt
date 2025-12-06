@@ -9,3 +9,5 @@ httpx==0.27.0
 google-generativeai==0.3.2
 python-jose[cryptography]
 passlib[bcrypt]
+email-validator
+email-validator
