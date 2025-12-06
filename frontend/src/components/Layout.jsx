@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut } from 'lucide-react'
 import api from '../services/api'
+import authService from '../services/auth'
 
 export default function Layout({ agencyId }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -25,6 +26,11 @@ export default function Layout({ agencyId }) {
       loadAgencyConfig()
     }
   }, [agencyId])
+
+  // Função de logout
+  const handleLogout = () => {
+    authService.logout();
+  };
 
   // Definir navegação
   const navigation = [
@@ -79,6 +85,16 @@ export default function Layout({ agencyId }) {
                 </NavLink>
               )
             })}
+            
+            <div className="mt-auto pt-4 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sair</span>
+              </button>
+            </div>
           </nav>
 
           {/* Footer da sidebar */}
