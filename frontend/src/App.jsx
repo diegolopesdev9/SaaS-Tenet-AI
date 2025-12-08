@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard';
 import Conversations from './pages/Conversations';
 import ConversationDetail from './pages/ConversationDetail';
 import AgentConfig from './pages/AgentConfig';
+import Agencias from './pages/admin/Agencias';
+import Usuarios from './pages/admin/Usuarios';
 
 // Componente de rota protegida
 function ProtectedRoute({ children }) {
@@ -62,6 +64,8 @@ function App() {
         <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
         <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
         <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
+        <Route path="admin/agencias" element={<Agencias />} />
+        <Route path="admin/usuarios" element={<Usuarios />} />
       </Route>
 
       {/* Redirecionar rotas não encontradas */}
