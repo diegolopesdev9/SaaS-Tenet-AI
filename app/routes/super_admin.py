@@ -35,6 +35,7 @@ async def require_super_admin(current_user: dict = Depends(get_current_user)):
 
 class AgenciaCreate(BaseModel):
     nome: str = Field(..., max_length=100)
+    email: EmailStr
     instance_name: str = Field(..., max_length=100)
     whatsapp_phone_id: Optional[str] = None
     prompt_config: Optional[str] = None
@@ -110,6 +111,7 @@ async def create_agencia(
         # Criar agência
         data = {
             "nome": agencia.nome,
+            "email": agencia.email,
             "instance_name": agencia.instance_name,
             "whatsapp_phone_id": agencia.whatsapp_phone_id,
             "prompt_config": agencia.prompt_config,
