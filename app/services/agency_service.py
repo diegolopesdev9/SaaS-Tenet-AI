@@ -35,6 +35,25 @@ class AgencyService:
             print(f"Error fetching agency: {e}")
             return None
 
+    async def get_agency_by_instance(self, instance_name: str) -> Optional[Dict]:
+        """
+        Retrieve agency by Evolution API instance name.
+
+        Args:
+            instance_name: Nome da instância na Evolution API (ex: 'agencia-teste')
+
+        Returns:
+            Agency data as dict or None if not found
+        """
+        try:
+            result = self.client.table('agencias').select('*').eq('instance_name', instance_name).execute()
+            if result.data and len(result.data) > 0:
+                return result.data[0]
+            return None
+        except Exception as e:
+            print(f"Error fetching agency by instance: {e}")
+            return None
+
     async def decrypt_agency_keys(self, agency_id: str) -> Optional[Dict]:
         """
         Decrypt sensitive agency keys by agency ID.
