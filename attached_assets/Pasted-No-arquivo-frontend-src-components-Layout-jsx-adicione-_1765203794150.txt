@@ -1,0 +1,80 @@
+No arquivo frontend/src/components/Layout.jsx, adicione o menu do Super Admin visível apenas para usuários com role 'super_admin'.
+
+1. Adicione os imports de ícones adicionais (atualize a linha de import do lucide-react):
+
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Building2, Users, Shield } from 'lucide-react'
+
+2. Adicione um state para o user após os outros useState (aproximadamente linha 10):
+
+  const [user, setUser] = useState(null)
+
+3. Dentro do useEffect existente, após carregar o config da agência, adicione a lógica para carregar o usuário:
+
+  useEffect(() => {
+    const loadAgencyConfig = async () => {
+      try {
+        const response = await api.get(`/agencias/${agencyId}/config`)
+        setAgencyName(response.data.nome || 'Agência')
+      } catch (error) {
+        console.error('Erro ao carregar configurações da agência:', error)
+        setAgencyName('Agência')
+      }
+    }
+
+    // Carregar dados do usuário
+    const loadUser = async () => {
+      try {
+        const response = await api.get('/auth/me')
+        setUser(response.data)
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error)
+      }
+    }
+
+    if (agencyId) {
+      loadAgencyConfig()
+    }
+    loadUser()
+  }, [agencyId])
+
+4. Adicione a navegação do Super Admin após a definição de navigation:
+
+  // Navegação Super Admin (apenas para super_admin)
+  const superAdminNavigation = [
+    { name: 'Agências', href: '/admin/agencias', icon: Building2 },
+    { name: 'Usuários', href: '/admin/usuarios', icon: Users },
+  ]
+
+5. Dentro do nav, APÓS o map da navigation e ANTES do div com mt-auto (botão Sair), adicione:
+
+            {/* Menu Super Admin */}
+            {user?.role === 'super_admin' && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-400 uppercase">
+                  <Shield className="w-4 h-4" />
+                  Super Admin
+                </div>
+                {superAdminNavigation.map((item) => {
+                  const Icon = item.icon
+                  const isActive = location.pathname === item.href
+                  
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-purple-50 text-purple-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            )}
+
+NÃO altere nenhum outro código do arquivo.
