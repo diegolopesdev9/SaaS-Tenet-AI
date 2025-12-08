@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import api from '../services/api'
@@ -9,18 +8,19 @@ export default function AgentConfig({ agencyId }) {
     prompt_config: '',
     whatsapp_phone_id: '',
     whatsapp_token: '',
-    gemini_api_key: ''
+    gemini_api_key: '',
+    instance_name: '' // Added instance_name to initial state
   })
-  
+
   const [originalConfig, setOriginalConfig] = useState({
     has_whatsapp_token: false,
     has_gemini_key: false
   })
-  
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
-  
+
   const [showTokens, setShowTokens] = useState({
     whatsapp: false,
     gemini: false
@@ -34,22 +34,23 @@ export default function AgentConfig({ agencyId }) {
     try {
       setLoading(true)
       const response = await api.get(`/agencias/${agencyId}/config`)
-      
+
       const data = response.data
-      
+
       setConfig({
         nome: data.nome || '',
         prompt_config: data.prompt_config || '',
         whatsapp_phone_id: data.whatsapp_phone_id || '',
         whatsapp_token: '',
-        gemini_api_key: ''
+        gemini_api_key: '',
+        instance_name: data.instance_name || '' // Load instance_name from response
       })
-      
+
       setOriginalConfig({
         has_whatsapp_token: !!data.whatsapp_token,
         has_gemini_key: !!data.gemini_api_key
       })
-      
+
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
       setMessage({ type: 'error', text: 'Erro ao carregar configurações' })
@@ -62,47 +63,51 @@ export default function AgentConfig({ agencyId }) {
     try {
       setSaving(true)
       setMessage(null)
-      
+
       // Preparar payload apenas com campos preenchidos
       const payload = {
         nome: config.nome
       }
-      
+
+      if (config.instance_name) { // Added instance_name to payload
+        payload.instance_name = config.instance_name
+      }
+
       if (config.prompt_config) {
         payload.prompt_config = config.prompt_config
       }
-      
+
       if (config.whatsapp_phone_id) {
         payload.whatsapp_phone_id = config.whatsapp_phone_id
       }
-      
+
       if (config.whatsapp_token) {
         payload.whatsapp_token = config.whatsapp_token
       }
-      
+
       if (config.gemini_api_key) {
         payload.gemini_api_key = config.gemini_api_key
       }
-      
+
       await api.post(`/agencias/${agencyId}/config`, payload)
-      
+
       setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
-      
+
       // Limpar campos de token
       setConfig(prev => ({
         ...prev,
         whatsapp_token: '',
         gemini_api_key: ''
       }))
-      
+
       // Recarregar config
       await loadConfig()
-      
+
     } catch (error) {
       console.error('Erro ao salvar configurações:', error)
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.detail || 'Erro ao salvar configurações' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.detail || 'Erro ao salvar configurações'
       })
     } finally {
       setSaving(false)
@@ -139,8 +144,8 @@ export default function AgentConfig({ agencyId }) {
       {/* Mensagem de feedback */}
       {message && (
         <div className={`mb-6 p-4 rounded-lg border flex items-start gap-3 ${
-          message.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800' 
+          message.type === 'success'
+            ? 'bg-green-50 border-green-200 text-green-800'
             : 'bg-red-50 border-red-200 text-red-800'
         }`}>
           {message.type === 'success' ? (
@@ -174,8 +179,24 @@ export default function AgentConfig({ agencyId }) {
               value={config.nome}
               onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Ex: Agência Digital Marketing"
+              placeholder="Ex: Agência Digital XYZ"
             />
+          </div>
+
+          <div className="mt-4"> {/* Added input for instance_name */}
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nome da Instância (Evolution API)
+            </label>
+            <input
+              type="text"
+              value={config.instance_name}
+              onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              placeholder="Ex: agencia-teste"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              Nome da instância configurada na Evolution API. Usado para identificar automaticamente a agência.
+            </p>
           </div>
         </div>
 
