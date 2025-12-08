@@ -72,7 +72,12 @@ async def login(request: LoginRequest):
     
     # Criar token
     access_token = auth_service.create_access_token(
-        data={"sub": user["id"], "email": user["email"], "agencia_id": user["agencia_id"]},
+        data={
+            "sub": user["id"],
+            "email": user["email"],
+            "agencia_id": user["agencia_id"],
+            "role": user.get("role", "admin")
+        },
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     
@@ -84,7 +89,8 @@ async def login(request: LoginRequest):
             "id": user["id"],
             "email": user["email"],
             "nome": user["nome"],
-            "agencia_id": user["agencia_id"]
+            "agencia_id": user["agencia_id"],
+            "role": user.get("role", "admin")
         }
     )
 
@@ -98,7 +104,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "id": current_user["id"],
         "email": current_user["email"],
         "nome": current_user["nome"],
-        "agencia_id": current_user["agencia_id"]
+        "agencia_id": current_user["agencia_id"],
+        "role": current_user.get("role", "admin")
     }
 
 
