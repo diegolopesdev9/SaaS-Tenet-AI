@@ -109,24 +109,35 @@ async def receive_whatsapp_webhook(request: Request):
         # Inicializar cliente Supabase
         supabase = get_supabase_client()
 
-        # Identificar agência
-        agency_id = os.getenv("DEFAULT_AGENCY_ID") or settings.DEFAULT_AGENCY_ID
-
-        if not agency_id:
-            logger.error("DEFAULT_AGENCY_ID não configurado")
-            raise HTTPException(status_code=500, detail="Agência não configurada")
-
-        logger.info(f"Usando DEFAULT_AGENCY_ID: {agency_id}")
-
-        # Buscar dados da agência
+        # Inicializar serviço de agências
         agency_service = AgencyService(supabase)
-        agency = await agency_service.get_agency_by_id(agency_id)
 
-        if not agency:
-            logger.error(f"Agência não encontrada: {agency_id}")
-            raise HTTPException(status_code=404, detail="Agência não encontrada")
+        # ============================================
+        # IDENTIFICAÇÃO DINÂMICA DA AGÊNCIA
+        # ============================================
 
-        logger.info(f"Agência identificada: {agency.get('nome')} (ID: {agency_id})")
+        # Tentar identificar agência pelo instance_name (multi-agência)
+        agency = await agency_service.get_agency_by_instance(instance_name)
+
+        if agency:
+            agency_id = agency.get("id")
+            logger.info(f"Agência identificada por instance_name '{instance_name}': {agency.get('nome')} (ID: {agency_id})")
+        else:
+            # Fallback: usar DEFAULT_AGENCY_ID se instance não encontrada
+            agency_id = os.getenv("DEFAULT_AGENCY_ID") or settings.DEFAULT_AGENCY_ID
+            
+            if not agency_id:
+                logger.error(f"Agência não encontrada para instance '{instance_name}' e DEFAULT_AGENCY_ID não configurado")
+                raise HTTPException(status_code=404, detail=f"Agência não encontrada para instance: {instance_name}")
+            
+            logger.warning(f"Instance '{instance_name}' não encontrada, usando fallback DEFAULT_AGENCY_ID: {agency_id}")
+            agency = await agency_service.get_agency_by_id(agency_id)
+            
+            if not agency:
+                logger.error(f"Agência fallback não encontrada: {agency_id}")
+                raise HTTPException(status_code=404, detail="Agência não encontrada")
+
+        logger.info(f"Agência ativa: {agency.get('nome')} (ID: {agency_id})")
 
         # Descriptografar tokens da agência
         decrypted_keys = await agency_service.decrypt_agency_keys(agency_id)
