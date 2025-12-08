@@ -7,6 +7,7 @@ import os
 from app.routes import health, webhooks
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
+from app.routes.super_admin import router as super_admin_router
 from app.database import health_check
 
 app = FastAPI(
@@ -28,6 +29,7 @@ app.include_router(health.router)
 app.include_router(webhooks.router)
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(super_admin_router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
