@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut } from 'lucide-react'
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
@@ -9,6 +8,7 @@ export default function Layout({ agencyId }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [agencyName, setAgencyName] = useState('Carregando...')
   const location = useLocation()
+  const user = authService.getCurrentUser() // Assumindo que authService tem uma função para obter o usuário atual
 
   // Carregar nome da agência
   useEffect(() => {
@@ -37,6 +37,12 @@ export default function Layout({ agencyId }) {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Conversas', href: '/conversas', icon: MessageSquare },
     { name: 'Configurações', href: '/config', icon: Settings },
+  ]
+
+  // Navegação Super Admin
+  const superAdminNavigation = [
+    { name: 'Usuários', href: '/super-admin/usuarios', icon: Settings }, // Exemplo de link
+    { name: 'Configurações Gerais', href: '/super-admin/configuracoes', icon: Settings }, // Exemplo de link
   ]
 
   return (
@@ -68,7 +74,7 @@ export default function Layout({ agencyId }) {
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.href
-              
+
               return (
                 <NavLink
                   key={item.name}
@@ -85,23 +91,46 @@ export default function Layout({ agencyId }) {
                 </NavLink>
               )
             })}
-            
-            <div className="mt-auto pt-4 border-t border-gray-200">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </nav>
 
-          {/* Footer da sidebar */}
-          <div className="px-6 py-4 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
-              Powered by SDR Agent
-            </p>
+            {/* Menu Super Admin */}
+            {user?.role === 'super_admin' && (
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-400 uppercase">
+                  <Shield className="w-4 h-4" />
+                  Super Admin
+                </div>
+                {superAdminNavigation.map((item) => {
+                  const Icon = item.icon
+                  const isActive = location.pathname === item.href
+
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.href}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-purple-50 text-purple-600'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            )}
+
+          {/* Botão Sair */}
+          <div className="mt-auto pt-4 border-t border-gray-200">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sair</span>
+            </button>
           </div>
         </div>
       </div>
