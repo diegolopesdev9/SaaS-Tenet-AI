@@ -12,6 +12,7 @@ export default function Agencias() {
   
   const [form, setForm] = useState({
     nome: '',
+    email: '',
     instance_name: '',
     whatsapp_phone_id: ''
   });
@@ -41,7 +42,7 @@ export default function Agencias() {
     try {
       await api.post('/admin/agencias', form);
       setMessage({ type: 'success', text: 'Agência criada com sucesso!' });
-      setForm({ nome: '', instance_name: '', whatsapp_phone_id: '' });
+      setForm({ nome: '', email: '', instance_name: '', whatsapp_phone_id: '' });
       setShowForm(false);
       loadAgencias();
     } catch (error) {
@@ -102,7 +103,7 @@ export default function Agencias() {
       {showForm && (
         <div className="bg-white rounded-lg border p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Nova Agência</h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
               <input
@@ -111,6 +112,17 @@ export default function Agencias() {
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="Nome da agência"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="contato@agencia.com"
                 required
               />
             </div>
@@ -135,7 +147,7 @@ export default function Agencias() {
                 placeholder="5511999999999"
               />
             </div>
-            <div className="md:col-span-3 flex justify-end gap-3">
+            <div className="md:col-span-2 lg:col-span-4 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
