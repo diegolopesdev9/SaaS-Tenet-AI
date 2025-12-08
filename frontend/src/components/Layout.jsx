@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield } from 'lucide-react'
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
@@ -8,7 +8,7 @@ export default function Layout({ agencyId }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [agencyName, setAgencyName] = useState('Carregando...')
   const location = useLocation()
-  const user = authService.getCurrentUser() // Assumindo que authService tem uma função para obter o usuário atual
+  const [user, setUser] = useState(null)
 
   // Carregar nome da agência
   useEffect(() => {
@@ -25,6 +25,17 @@ export default function Layout({ agencyId }) {
     if (agencyId) {
       loadAgencyConfig()
     }
+
+    // Carregar dados do usuário logado
+    const loadUser = async () => {
+      try {
+        const response = await api.get('/auth/me')
+        setUser(response.data)
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error)
+      }
+    }
+    loadUser()
   }, [agencyId])
 
   // Função de logout
@@ -39,10 +50,10 @@ export default function Layout({ agencyId }) {
     { name: 'Configurações', href: '/config', icon: Settings },
   ]
 
-  // Navegação Super Admin
+  // Navegação Super Admin (apenas para super_admin)
   const superAdminNavigation = [
-    { name: 'Usuários', href: '/super-admin/usuarios', icon: Settings }, // Exemplo de link
-    { name: 'Configurações Gerais', href: '/super-admin/configuracoes', icon: Settings }, // Exemplo de link
+    { name: 'Agências', href: '/admin/agencias', icon: Building2 },
+    { name: 'Usuários', href: '/admin/usuarios', icon: Users },
   ]
 
   return (
