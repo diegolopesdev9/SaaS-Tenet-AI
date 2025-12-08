@@ -52,6 +52,7 @@ async def get_agency_config(agency_id: str):
     response = AgencyConfigResponse(
         id=agency.get("id"),
         nome=agency.get("nome"),
+        instance_name=agency.get("instance_name"),
         prompt_config=agency.get("prompt_config"),
         whatsapp_phone_id=agency.get("whatsapp_phone_id"),
         has_whatsapp_token=has_whatsapp_token,
@@ -102,6 +103,9 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
     
     if config.whatsapp_phone_id is not None:
         update_data["whatsapp_phone_id"] = config.whatsapp_phone_id
+    
+    if config.instance_name is not None:
+        update_data["instance_name"] = config.instance_name
     
     # Encriptar WhatsApp token se fornecido
     if config.whatsapp_token is not None:
