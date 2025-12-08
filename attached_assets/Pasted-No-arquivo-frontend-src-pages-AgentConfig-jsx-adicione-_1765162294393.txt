@@ -1,0 +1,51 @@
+No arquivo frontend/src/pages/AgentConfig.jsx, adicione o campo instance_name para configurar o nome da instância Evolution API.
+
+FAÇA AS SEGUINTES ALTERAÇÕES:
+
+1. No useState inicial do config (aproximadamente linha 7), adicione instance_name:
+
+  const [config, setConfig] = useState({
+    nome: '',
+    instance_name: '',
+    prompt_config: '',
+    whatsapp_phone_id: '',
+    whatsapp_token: '',
+    gemini_api_key: ''
+  })
+
+2. Na função loadConfig, dentro do setConfig (aproximadamente linha 38), adicione instance_name:
+
+      setConfig({
+        nome: data.nome || '',
+        instance_name: data.instance_name || '',
+        prompt_config: data.prompt_config || '',
+        whatsapp_phone_id: data.whatsapp_phone_id || '',
+        whatsapp_token: '',
+        gemini_api_key: ''
+      })
+
+3. Na função handleSave, após a linha que define payload.nome (aproximadamente linha 62), adicione:
+
+      if (config.instance_name) {
+        payload.instance_name = config.instance_name
+      }
+
+4. Na seção "Informações Básicas", APÓS o campo "Nome da Agência" e ANTES do fechamento da div da seção, adicione este novo campo:
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nome da Instância (Evolution API)
+            </label>
+            <input
+              type="text"
+              value={config.instance_name}
+              onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              placeholder="Ex: agencia-teste"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              Nome da instância configurada na Evolution API. Usado para identificar automaticamente a agência.
+            </p>
+          </div>
+
+NÃO altere nenhum outro código do arquivo.
