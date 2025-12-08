@@ -11,6 +11,7 @@ class AgencyConfigResponse(BaseModel):
     
     id: str
     nome: str
+    instance_name: Optional[str] = None
     prompt_config: Optional[str] = None
     whatsapp_phone_id: Optional[str] = None
     has_whatsapp_token: bool = False
@@ -21,6 +22,7 @@ class AgencyConfigUpdate(BaseModel):
     """Schema para atualização de configuração de agência."""
     
     nome: Optional[str] = Field(None, max_length=100)
+    instance_name: Optional[str] = Field(None, max_length=100)
     prompt_config: Optional[str] = Field(None, max_length=5000)
     whatsapp_phone_id: Optional[str] = None
     whatsapp_token: Optional[str] = None
