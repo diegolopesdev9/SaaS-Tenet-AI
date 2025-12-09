@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import authService from './services/auth';
 
@@ -12,6 +12,9 @@ import ConversationDetail from './pages/ConversationDetail';
 import AgentConfig from './pages/AgentConfig';
 import Agencias from './pages/admin/Agencias';
 import Usuarios from './pages/admin/Usuarios';
+
+// Configurar token imediatamente ao carregar o módulo
+authService.setupAxiosInterceptors();
 
 // Componente de rota protegida
 function ProtectedRoute({ children }) {
@@ -33,11 +36,6 @@ function App() {
   // Obter agencyId do usuário logado ou fallback
   const user = authService.getUser();
   const agencyId = user?.agencia_id || 'd6f20d80-9212-472d-873e-d5f610edbb54';
-
-  useEffect(() => {
-    // Configurar interceptors do axios na inicialização
-    authService.setupAxiosInterceptors();
-  }, []);
 
   return (
     <Routes>
