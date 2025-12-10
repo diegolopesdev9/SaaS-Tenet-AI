@@ -119,7 +119,7 @@ export default function AgentConfig({ agencyId }) {
         payload.gemini_api_key = config.gemini_api_key
       }
 
-      await api.put(`/agencias/${agencyId}`, payload)
+      await api.post(`/agencias/${agencyId}/config`, payload)
 
       setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
 
