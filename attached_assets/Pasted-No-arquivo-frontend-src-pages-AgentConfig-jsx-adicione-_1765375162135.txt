@@ -1,0 +1,219 @@
+No arquivo frontend/src/pages/AgentConfig.jsx, adicione os campos de configuração do prompt customizável.
+
+1. No useState do config, ADICIONE os novos campos após instance_name:
+
+  const [config, setConfig] = useState({
+    nome: '',
+    prompt_config: '',
+    whatsapp_phone_id: '',
+    whatsapp_token: '',
+    gemini_api_key: '',
+    instance_name: '',
+    agent_name: '',
+    personality: '',
+    welcome_message: '',
+    qualification_questions: [],
+    qualification_criteria: '',
+    closing_message: ''
+  })
+
+2. No setConfig dentro de loadConfig, ADICIONE os novos campos após instance_name:
+
+      setConfig({
+        nome: data.nome || '',
+        prompt_config: data.prompt_config || '',
+        whatsapp_phone_id: data.whatsapp_phone_id || '',
+        whatsapp_token: '',
+        gemini_api_key: '',
+        instance_name: data.instance_name || '',
+        agent_name: data.agent_name || 'Assistente',
+        personality: data.personality || 'profissional e amigável',
+        welcome_message: data.welcome_message || 'Olá! 👋 Sou o assistente virtual. Como posso ajudá-lo hoje?',
+        qualification_questions: data.qualification_questions || ['Qual seu nome?', 'Qual seu email?', 'Qual seu interesse?', 'Qual seu orçamento aproximado?'],
+        qualification_criteria: data.qualification_criteria || 'Lead qualificado quando: tem nome, email, demonstra interesse claro e menciona orçamento.',
+        closing_message: data.closing_message || 'Obrigado pelo contato! Em breve nossa equipe entrará em contato com você. 🚀'
+      })
+
+3. No handleSave, dentro do payload, ADICIONE após o bloco do instance_name:
+
+      if (config.agent_name) {
+        payload.agent_name = config.agent_name
+      }
+      if (config.personality) {
+        payload.personality = config.personality
+      }
+      if (config.welcome_message) {
+        payload.welcome_message = config.welcome_message
+      }
+      if (config.qualification_questions && config.qualification_questions.length > 0) {
+        payload.qualification_questions = config.qualification_questions
+      }
+      if (config.qualification_criteria) {
+        payload.qualification_criteria = config.qualification_criteria
+      }
+      if (config.closing_message) {
+        payload.closing_message = config.closing_message
+      }
+
+4. No import do lucide-react, ADICIONE os ícones MessageSquare e List:
+
+import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff, MessageSquare, List } from 'lucide-react'
+
+5. ADICIONE uma nova seção APÓS a seção "Personalidade do Agente" e ANTES da seção "Chaves de Integração". Cole este bloco completo:
+
+        {/* Seção: Configuração do Bot */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Configuração do Bot</h2>
+              <p className="text-sm text-gray-600">Personalize as mensagens e comportamento do agente</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Nome do Agente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome do Agente
+                </label>
+                <input
+                  type="text"
+                  value={config.agent_name}
+                  onChange={(e) => setConfig(prev => ({ ...prev, agent_name: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  placeholder="Ex: Sofia, Carlos, Assistente"
+                />
+              </div>
+
+              {/* Personalidade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Personalidade
+                </label>
+                <select
+                  value={config.personality}
+                  onChange={(e) => setConfig(prev => ({ ...prev, personality: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                >
+                  <option value="profissional e amigável">Profissional e Amigável</option>
+                  <option value="formal e técnico">Formal e Técnico</option>
+                  <option value="informal e descontraído">Informal e Descontraído</option>
+                  <option value="consultivo e especialista">Consultivo e Especialista</option>
+                  <option value="empático e acolhedor">Empático e Acolhedor</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Mensagem de Boas-vindas */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mensagem de Boas-vindas
+              </label>
+              <textarea
+                value={config.welcome_message}
+                onChange={(e) => setConfig(prev => ({ ...prev, welcome_message: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
+                placeholder="Primeira mensagem enviada ao lead..."
+              />
+            </div>
+
+            {/* Mensagem de Encerramento */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Mensagem de Encerramento
+              </label>
+              <textarea
+                value={config.closing_message}
+                onChange={(e) => setConfig(prev => ({ ...prev, closing_message: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
+                placeholder="Mensagem ao finalizar qualificação..."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Seção: Qualificação de Leads */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+              <List className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Qualificação de Leads</h2>
+              <p className="text-sm text-gray-600">Defina as perguntas e critérios de qualificação</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Perguntas de Qualificação */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Perguntas de Qualificação
+              </label>
+              <div className="space-y-2">
+                {config.qualification_questions.map((question, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={question}
+                      onChange={(e) => {
+                        const newQuestions = [...config.qualification_questions]
+                        newQuestions[index] = e.target.value
+                        setConfig(prev => ({ ...prev, qualification_questions: newQuestions }))
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                      placeholder={`Pergunta ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newQuestions = config.qualification_questions.filter((_, i) => i !== index)
+                        setConfig(prev => ({ ...prev, qualification_questions: newQuestions }))
+                      }}
+                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfig(prev => ({
+                      ...prev,
+                      qualification_questions: [...prev.qualification_questions, '']
+                    }))
+                  }}
+                  className="w-full px-4 py-2 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-colors"
+                >
+                  + Adicionar Pergunta
+                </button>
+              </div>
+            </div>
+
+            {/* Critérios de Qualificação */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Critérios de Qualificação
+              </label>
+              <textarea
+                value={config.qualification_criteria}
+                onChange={(e) => setConfig(prev => ({ ...prev, qualification_criteria: e.target.value }))}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
+                placeholder="Defina quando um lead deve ser considerado qualificado..."
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                Descreva as condições para o lead ser marcado como qualificado automaticamente
+              </p>
+            </div>
+          </div>
+        </div>
+
+NÃO altere nenhum outro código do arquivo.
