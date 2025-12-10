@@ -2,7 +2,7 @@
 """
 Schemas Pydantic para endpoints administrativos.
 """
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 
 
@@ -16,6 +16,12 @@ class AgencyConfigResponse(BaseModel):
     whatsapp_phone_id: Optional[str] = None
     has_whatsapp_token: bool = False
     has_gemini_key: bool = False
+    agent_name: Optional[str] = None
+    personality: Optional[str] = None
+    welcome_message: Optional[str] = None
+    qualification_questions: Optional[List[str]] = None
+    qualification_criteria: Optional[str] = None
+    closing_message: Optional[str] = None
 
 
 class AgencyConfigUpdate(BaseModel):
@@ -27,6 +33,12 @@ class AgencyConfigUpdate(BaseModel):
     whatsapp_phone_id: Optional[str] = None
     whatsapp_token: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    agent_name: Optional[str] = Field(None, max_length=100)
+    personality: Optional[str] = Field(None, max_length=100)
+    welcome_message: Optional[str] = Field(None, max_length=1000)
+    qualification_questions: Optional[List[str]] = None
+    qualification_criteria: Optional[str] = Field(None, max_length=2000)
+    closing_message: Optional[str] = Field(None, max_length=1000)
 
 
 class ConversationSummary(BaseModel):
