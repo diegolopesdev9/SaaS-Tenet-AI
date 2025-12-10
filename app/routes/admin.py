@@ -56,7 +56,13 @@ async def get_agency_config(agency_id: str):
         prompt_config=agency.get("prompt_config"),
         whatsapp_phone_id=agency.get("whatsapp_phone_id"),
         has_whatsapp_token=has_whatsapp_token,
-        has_gemini_key=has_gemini_key
+        has_gemini_key=has_gemini_key,
+        agent_name=agency.get("agent_name"),
+        personality=agency.get("personality"),
+        welcome_message=agency.get("welcome_message"),
+        qualification_questions=agency.get("qualification_questions"),
+        qualification_criteria=agency.get("qualification_criteria"),
+        closing_message=agency.get("closing_message")
     )
     
     logger.info(f"Configurações retornadas para agência: {agency.get('nome')}")
@@ -106,6 +112,24 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
     
     if config.instance_name is not None:
         update_data["instance_name"] = config.instance_name
+    
+    if config.agent_name is not None:
+        update_data["agent_name"] = config.agent_name
+    
+    if config.personality is not None:
+        update_data["personality"] = config.personality
+    
+    if config.welcome_message is not None:
+        update_data["welcome_message"] = config.welcome_message
+    
+    if config.qualification_questions is not None:
+        update_data["qualification_questions"] = config.qualification_questions
+    
+    if config.qualification_criteria is not None:
+        update_data["qualification_criteria"] = config.qualification_criteria
+    
+    if config.closing_message is not None:
+        update_data["closing_message"] = config.closing_message
     
     # Encriptar WhatsApp token se fornecido
     if config.whatsapp_token is not None:
