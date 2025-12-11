@@ -8,7 +8,7 @@ from app.database import get_supabase_client
 from app.services.agency_service import AgencyService
 from app.schemas.admin import AgencyConfigResponse, AgencyConfigUpdate, ApiResponse
 from app.utils.security import EncryptionService
-from app.utils.auth import get_current_user
+from app.routes.auth import get_current_user
 
 # Configurar logging
 logger = logging.getLogger(__name__)
