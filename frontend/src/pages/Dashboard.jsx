@@ -1,31 +1,34 @@
 
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle } from 'lucide-react'
+import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle, BarChart3, Filter } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 import api from '../services/api'
 
 export default function Dashboard({ agencyId }) {
   const [metrics, setMetrics] = useState(null)
+  const [advancedMetrics, setAdvancedMetrics] = useState(null)
   const [recentLeads, setRecentLeads] = useState([])
   const [loading, setLoading] = useState(true)
+  const [period, setPeriod] = useState('7d')
 
   useEffect(() => {
     loadData()
-  }, [agencyId])
+  }, [agencyId, period])
 
   const loadData = async () => {
     try {
       setLoading(true)
 
-      // Carregar métricas
-      const metricsResponse = await api.get(`/agencias/${agencyId}/metrics`)
-      setMetrics(metricsResponse.data)
+      const [metricsRes, advancedRes, leadsRes] = await Promise.all([
+        api.get(`/agencias/${agencyId}/metrics`),
+        api.get(`/agencias/${agencyId}/metrics/advanced?period=${period}`),
+        api.get(`/agencias/${agencyId}/conversas`, { params: { limit: 5 } })
+      ])
 
-      // Carregar leads recentes
-      const leadsResponse = await api.get(`/agencias/${agencyId}/conversas`, {
-        params: { limit: 5 }
-      })
-      setRecentLeads(leadsResponse.data || [])
+      setMetrics(metricsRes.data)
+      setAdvancedMetrics(advancedRes.data)
+      setRecentLeads(leadsRes.data || [])
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
@@ -34,39 +37,19 @@ export default function Dashboard({ agencyId }) {
     }
   }
 
-  // Configuração de cores por status
   const statusConfig = {
-    iniciada: {
-      label: 'Iniciada',
-      color: 'bg-gray-100 text-gray-800 border-gray-300',
-      icon: Clock
-    },
-    em_andamento: {
-      label: 'Em Andamento',
-      color: 'bg-blue-100 text-blue-800 border-blue-300',
-      icon: MessageSquare
-    },
-    qualificado: {
-      label: 'Qualificado',
-      color: 'bg-green-100 text-green-800 border-green-300',
-      icon: CheckCircle
-    },
-    perdido: {
-      label: 'Perdido',
-      color: 'bg-red-100 text-red-800 border-red-300',
-      icon: XCircle
-    },
-    agendado: {
-      label: 'Agendado',
-      color: 'bg-purple-100 text-purple-800 border-purple-300',
-      icon: Calendar
-    }
+    iniciada: { label: 'Iniciada', color: 'bg-gray-100 text-gray-800 border-gray-300', icon: Clock },
+    em_andamento: { label: 'Em Andamento', color: 'bg-blue-100 text-blue-800 border-blue-300', icon: MessageSquare },
+    qualificado: { label: 'Qualificado', color: 'bg-green-100 text-green-800 border-green-300', icon: CheckCircle },
+    perdido: { label: 'Perdido', color: 'bg-red-100 text-red-800 border-red-300', icon: XCircle },
+    agendado: { label: 'Agendado', color: 'bg-purple-100 text-purple-800 border-purple-300', icon: Calendar }
   }
+
+  const funnelColors = ['#3B82F6', '#60A5FA', '#34D399', '#A78BFA']
 
   const getStatusBadge = (status) => {
     const config = statusConfig[status] || statusConfig.em_andamento
     const Icon = config.icon
-
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${config.color}`}>
         <Icon className="w-3.5 h-3.5" />
@@ -88,24 +71,35 @@ export default function Dashboard({ agencyId }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Visão geral das suas conversas e métricas
-        </p>
+      {/* Header com Filtro */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">Visão geral das suas conversas e métricas</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="7d">Últimos 7 dias</option>
+            <option value="15d">Últimos 15 dias</option>
+            <option value="30d">Últimos 30 dias</option>
+            <option value="90d">Últimos 90 dias</option>
+          </select>
+        </div>
       </div>
 
       {/* Cards de Métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total de Leads */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total de Leads</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {metrics?.total_leads || 0}
-              </p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_leads || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">no período</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <Users className="w-6 h-6 text-blue-600" />
@@ -113,44 +107,38 @@ export default function Dashboard({ agencyId }) {
           </div>
         </div>
 
-        {/* Total de Mensagens */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Mensagens</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {metrics?.total_mensagens || 0}
-              </p>
+              <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
+              <p className="mt-2 text-3xl font-bold text-green-600">{advancedMetrics?.conversion_rate || 0}%</p>
+              <p className="text-xs text-gray-500 mt-1">leads qualificados</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-green-600" />
+              <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        {/* Taxa de Qualificação */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Taxa Qualificação</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {metrics?.taxa_qualificacao || 0}%
-              </p>
+              <p className="text-sm font-medium text-gray-600">Tempo Médio</p>
+              <p className="mt-2 text-3xl font-bold text-purple-600">{advancedMetrics?.avg_conversation_hours || 0}h</p>
+              <p className="text-xs text-gray-500 mt-1">por conversa</p>
             </div>
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
+              <Clock className="w-6 h-6 text-purple-600" />
             </div>
           </div>
         </div>
 
-        {/* Leads Qualificados */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Qualificados</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">
-                {(metrics?.por_status?.qualificado || 0) + (metrics?.por_status?.agendado || 0)}
-              </p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.status_breakdown?.qualificado || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">prontos para vendas</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -159,20 +147,80 @@ export default function Dashboard({ agencyId }) {
         </div>
       </div>
 
-      {/* Leads por Status */}
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de Linha - Leads por Dia */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Leads por Dia</h2>
+          </div>
+          {advancedMetrics?.chart_data?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={advancedMetrics.chart_data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="#9CA3AF" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#9CA3AF" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                  labelStyle={{ fontWeight: 'bold' }}
+                />
+                <Line type="monotone" dataKey="total" stroke="#3B82F6" strokeWidth={2} dot={{ fill: '#3B82F6' }} name="Total" />
+                <Line type="monotone" dataKey="qualificado" stroke="#10B981" strokeWidth={2} dot={{ fill: '#10B981' }} name="Qualificados" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[250px] text-gray-500">
+              <p>Sem dados no período selecionado</p>
+            </div>
+          )}
+        </div>
+
+        {/* Gráfico de Funil */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Funil de Conversão</h2>
+          </div>
+          {advancedMetrics?.funnel_data ? (
+            <div className="space-y-3">
+              {advancedMetrics.funnel_data.map((item, index) => (
+                <div key={item.stage} className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700">{item.stage}</span>
+                    <span className="text-sm font-bold text-gray-900">{item.count} ({item.percentage}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-8 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-3"
+                      style={{ 
+                        width: `${Math.max(item.percentage, 5)}%`,
+                        backgroundColor: funnelColors[index]
+                      }}
+                    >
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[250px] text-gray-500">
+              <p>Sem dados no período selecionado</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status Breakdown */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Leads por Status</h2>
         <div className="flex flex-wrap gap-3">
           {Object.keys(statusConfig).map((status) => {
             const config = statusConfig[status]
             const Icon = config.icon
-            const count = metrics?.por_status?.[status] || 0
-
+            const count = advancedMetrics?.status_breakdown?.[status] || 0
             return (
-              <div
-                key={status}
-                className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${config.color}`}
-              >
+              <div key={status} className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${config.color}`}>
                 <Icon className="w-5 h-5" />
                 <div>
                   <p className="text-xs font-medium">{config.label}</p>
@@ -189,15 +237,11 @@ export default function Dashboard({ agencyId }) {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Leads Recentes</h2>
-            <Link
-              to="/conversas"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
+            <Link to="/conversas" className="text-sm font-medium text-blue-600 hover:text-blue-700">
               Ver todos
             </Link>
           </div>
         </div>
-
         <div className="divide-y divide-gray-200">
           {recentLeads.length === 0 ? (
             <div className="px-6 py-12 text-center">
