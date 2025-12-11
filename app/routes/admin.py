@@ -376,9 +376,9 @@ async def get_agency_metrics(agency_id: str):
         raise HTTPException(status_code=500, detail=f"Erro ao calcular métricas: {str(e)}")
 
 
-@router.get("/agencias/{agencia_id}/metrics/advanced")
+@router.get("/{agency_id}/metrics/advanced")
 async def get_advanced_metrics(
-    agencia_id: str,
+    agency_id: str,
     period: str = "7d",
     current_user: dict = Depends(get_current_user)
 ):
@@ -390,7 +390,7 @@ async def get_advanced_metrics(
     from datetime import datetime, timedelta, timezone
 
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agency_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
 
     # Calcular data inicial baseado no período
@@ -404,7 +404,7 @@ async def get_advanced_metrics(
         # Buscar todas as conversas do período
         response = supabase.table("conversas").select(
             "id, lead_status, total_mensagens, created_at, last_message_at, lead_data"
-        ).eq("agencia_id", agencia_id).gte(
+        ).eq("agencia_id", agency_id).gte(
             "created_at", start_date.isoformat()
         ).execute()
 
