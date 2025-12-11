@@ -1,0 +1,108 @@
+No arquivo app/routes/admin.py, adicione um novo endpoint para métricas avançadas do dashboard.
+
+Adicione este novo endpoint APÓS o endpoint existente de /agencias/{agencia_id}/metrics:
+
+@router.get("/agencias/{agencia_id}/metrics/advanced")
+async def get_advanced_metrics(
+    agencia_id: str,
+    period: str = "7d",
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Retorna métricas avançadas para o dashboard.
+    
+    Periods: 7d, 15d, 30d, 90d
+    """
+    from datetime import datetime, timedelta, timezone
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    # Calcular data inicial baseado no período
+    days_map = {"7d": 7, "15d": 15, "30d": 30, "90d": 90}
+    days = days_map.get(period, 7)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    supabase = get_supabase_client()
+    
+    try:
+        # Buscar todas as conversas do período
+        response = supabase.table("conversas").select(
+            "id, lead_status, total_mensagens, created_at, last_message_at, lead_data"
+        ).eq("agencia_id", agencia_id).gte(
+            "created_at", start_date.isoformat()
+        ).execute()
+        
+        conversas = response.data or []
+        
+        # Agrupar leads por dia
+        leads_by_day = {}
+        status_counts = {"iniciada": 0, "em_andamento": 0, "qualificado": 0, "perdido": 0, "agendado": 0}
+        total_response_time = 0
+        response_count = 0
+        
+        for conv in conversas:
+            # Contagem por status
+            status = conv.get("lead_status", "em_andamento")
+            if status in status_counts:
+                status_counts[status] += 1
+            
+            # Agrupar por dia
+            created = conv.get("created_at", "")[:10]  # YYYY-MM-DD
+            if created:
+                if created not in leads_by_day:
+                    leads_by_day[created] = {"total": 0, "qualificado": 0}
+                leads_by_day[created]["total"] += 1
+                if status == "qualificado":
+                    leads_by_day[created]["qualificado"] += 1
+            
+            # Calcular tempo médio (diferença entre created_at e last_message_at)
+            if conv.get("created_at") and conv.get("last_message_at"):
+                try:
+                    created_dt = datetime.fromisoformat(conv["created_at"].replace("Z", "+00:00"))
+                    last_dt = datetime.fromisoformat(conv["last_message_at"].replace("Z", "+00:00"))
+                    diff_hours = (last_dt - created_dt).total_seconds() / 3600
+                    if diff_hours > 0:
+                        total_response_time += diff_hours
+                        response_count += 1
+                except:
+                    pass
+        
+        # Formatar dados para gráfico (ordenados por data)
+        chart_data = []
+        for date in sorted(leads_by_day.keys()):
+            chart_data.append({
+                "date": date,
+                "label": datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m"),
+                "total": leads_by_day[date]["total"],
+                "qualificado": leads_by_day[date]["qualificado"]
+            })
+        
+        # Calcular funil
+        total_leads = len(conversas)
+        funnel_data = [
+            {"stage": "Leads Recebidos", "count": total_leads, "percentage": 100},
+            {"stage": "Em Andamento", "count": status_counts["em_andamento"], "percentage": round(status_counts["em_andamento"] / max(total_leads, 1) * 100)},
+            {"stage": "Qualificados", "count": status_counts["qualificado"], "percentage": round(status_counts["qualificado"] / max(total_leads, 1) * 100)},
+            {"stage": "Agendados", "count": status_counts["agendado"], "percentage": round(status_counts["agendado"] / max(total_leads, 1) * 100)},
+        ]
+        
+        # Tempo médio em horas
+        avg_response_time = round(total_response_time / max(response_count, 1), 1)
+        
+        return {
+            "period": period,
+            "total_leads": total_leads,
+            "chart_data": chart_data,
+            "funnel_data": funnel_data,
+            "status_breakdown": status_counts,
+            "avg_conversation_hours": avg_response_time,
+            "conversion_rate": round(status_counts["qualificado"] / max(total_leads, 1) * 100, 1)
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular métricas avançadas: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+NÃO altere nenhum outro código do arquivo.
