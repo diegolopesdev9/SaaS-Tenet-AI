@@ -182,13 +182,24 @@ async def receive_whatsapp_webhook(request: Request):
         # GERAÇÃO DE RESPOSTA COM IA
         # ============================================
 
-        # Gerar resposta com histórico e contexto
+        # Montar configurações do agente
+        agent_config = {
+            "agent_name": agency.get("agent_name", "Assistente"),
+            "personality": agency.get("personality", "profissional e amigável"),
+            "welcome_message": agency.get("welcome_message"),
+            "qualification_questions": agency.get("qualification_questions", []),
+            "qualification_criteria": agency.get("qualification_criteria"),
+            "closing_message": agency.get("closing_message")
+        }
+
+        # Gerar resposta com histórico, contexto e configurações personalizadas
         ai_result = await ai_service.generate_response(
             message=message_text,
             agency_name=agency.get("nome", "Agência"),
             agency_prompt=agency.get("prompt_config"),
             conversation_history=history_formatted,
-            lead_data=known_lead_data
+            lead_data=known_lead_data,
+            agent_config=agent_config
         )
 
         ai_response = ai_result.get("response", "")
