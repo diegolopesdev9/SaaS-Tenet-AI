@@ -1,0 +1,98 @@
+No arquivo app/services/ai_service.py, atualize o método generate_response para aceitar as novas configurações personalizadas.
+
+1. SUBSTITUA a assinatura do método generate_response (aproximadamente linha 42-51) por:
+
+    async def generate_response(
+        self,
+        message: str,
+        agency_name: str,
+        agency_prompt: Optional[str] = None,
+        conversation_history: Optional[str] = None,
+        lead_data: Optional[Dict[str, Any]] = None,
+        agent_config: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Gera uma resposta usando o Gemini AI.
+        
+        Args:
+            message: Mensagem do usuário
+            agency_name: Nome da agência
+            agency_prompt: Prompt personalizado da agência (opcional)
+            conversation_history: Histórico formatado da conversa (opcional)
+            lead_data: Dados já conhecidos do lead (opcional)
+            agent_config: Configurações do agente (nome, personalidade, mensagens, perguntas)
+            
+        Returns:
+            Dict contendo resposta e dados extraídos do lead
+        """
+
+2. SUBSTITUA o bloco que monta o base_prompt (aproximadamente linha 85) por:
+
+            # Montar o prompt base com configurações personalizadas
+            if agent_config:
+                base_prompt = self._build_custom_prompt(agency_name, agent_config)
+            elif agency_prompt:
+                base_prompt = agency_prompt
+            else:
+                base_prompt = self._get_default_prompt(agency_name)
+
+3. ADICIONE este novo método APÓS o método _get_default_prompt (no final da classe, antes do método analyze_qualification_status):
+
+    def _build_custom_prompt(self, agency_name: str, config: Dict[str, Any]) -> str:
+        """
+        Constrói um prompt personalizado com base nas configurações da agência.
+        
+        Args:
+            agency_name: Nome da agência
+            config: Configurações do agente
+            
+        Returns:
+            Prompt personalizado
+        """
+        agent_name = config.get("agent_name", "Assistente")
+        personality = config.get("personality", "profissional e amigável")
+        welcome_message = config.get("welcome_message", "")
+        qualification_questions = config.get("qualification_questions", [])
+        qualification_criteria = config.get("qualification_criteria", "")
+        closing_message = config.get("closing_message", "")
+        
+        # Formatar perguntas de qualificação
+        questions_text = ""
+        if qualification_questions:
+            questions_list = "\n".join([f"- {q}" for q in qualification_questions if q])
+            questions_text = f"""
+Perguntas importantes para fazer durante a conversa (de forma natural, não todas de uma vez):
+{questions_list}
+"""
+        
+        # Formatar critérios de qualificação
+        criteria_text = ""
+        if qualification_criteria:
+            criteria_text = f"""
+Critérios para considerar o lead qualificado:
+{qualification_criteria}
+"""
+        
+        return f"""Você é {agent_name}, assistente virtual de vendas da {agency_name}.
+
+Sua personalidade: {personality}
+
+Seu objetivo é:
+1. Entender as necessidades do cliente
+2. Apresentar os serviços da agência de forma consultiva
+3. Qualificar o lead coletando informações importantes
+4. Agendar uma reunião com um especialista quando apropriado
+
+Diretrizes de comunicação:
+- Seja {personality}
+- Use linguagem adequada ao contexto brasileiro
+- Faça perguntas abertas para entender melhor o cliente
+- Não seja invasivo ao coletar informações
+- Use emojis com moderação para tornar a conversa mais amigável
+{questions_text}
+{criteria_text}
+Quando o lead estiver qualificado ou demonstrar interesse claro, use uma mensagem como:
+"{closing_message or 'Obrigado pelo contato! Em breve nossa equipe entrará em contato com você.'}"
+"""
+
+NÃO altere nenhum outro código do arquivo.
