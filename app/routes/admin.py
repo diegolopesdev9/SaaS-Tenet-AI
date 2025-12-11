@@ -455,12 +455,20 @@ async def get_advanced_metrics(
 
         # Calcular funil
         total_leads = len(conversas)
-        funnel_data = [
-            {"stage": "Leads Recebidos", "count": total_leads, "percentage": 100},
-            {"stage": "Em Andamento", "count": status_counts["em_andamento"], "percentage": round(status_counts["em_andamento"] / max(total_leads, 1) * 100)},
-            {"stage": "Qualificados", "count": status_counts["qualificado"], "percentage": round(status_counts["qualificado"] / max(total_leads, 1) * 100)},
-            {"stage": "Agendados", "count": status_counts["agendado"], "percentage": round(status_counts["agendado"] / max(total_leads, 1) * 100)},
-        ]
+        if total_leads > 0:
+            funnel_data = [
+                {"stage": "Leads Recebidos", "count": total_leads, "percentage": 100},
+                {"stage": "Em Andamento", "count": status_counts["em_andamento"], "percentage": round(status_counts["em_andamento"] / total_leads * 100)},
+                {"stage": "Qualificados", "count": status_counts["qualificado"], "percentage": round(status_counts["qualificado"] / total_leads * 100)},
+                {"stage": "Agendados", "count": status_counts["agendado"], "percentage": round(status_counts["agendado"] / total_leads * 100)},
+            ]
+        else:
+            funnel_data = [
+                {"stage": "Leads Recebidos", "count": 0, "percentage": 0},
+                {"stage": "Em Andamento", "count": 0, "percentage": 0},
+                {"stage": "Qualificados", "count": 0, "percentage": 0},
+                {"stage": "Agendados", "count": 0, "percentage": 0},
+            ]
 
         # Tempo médio em horas
         avg_response_time = round(total_response_time / max(response_count, 1), 1)
