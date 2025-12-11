@@ -1,0 +1,46 @@
+No arquivo app/routes/webhooks.py, adicione o envio automático para CRMs quando o lead for qualificado.
+
+1. Adicione o import do CRMService junto com os outros imports (aproximadamente linha 10):
+
+from app.services.crm_service import CRMService
+
+2. APÓS o bloco "ATUALIZAÇÃO DO HISTÓRICO" (aproximadamente linha 190, após o await conversation_service.update_conversation_history), adicione o seguinte bloco:
+
+        # ============================================
+        # ENVIO PARA CRMs (se lead qualificado)
+        # ============================================
+
+        # Verificar se temos dados suficientes para enviar ao CRM
+        lead_has_minimum_data = known_lead_data.get("nome") or extracted_data.get("nome")
+        
+        if lead_has_minimum_data:
+            try:
+                # Preparar dados do lead para CRM
+                crm_lead_data = {
+                    "phone": sender_phone,
+                    "nome": extracted_data.get("nome") or known_lead_data.get("nome"),
+                    "email": extracted_data.get("email") or known_lead_data.get("email"),
+                    "empresa": extracted_data.get("empresa") or known_lead_data.get("empresa"),
+                    "cargo": extracted_data.get("cargo") or known_lead_data.get("cargo"),
+                    "interesse": extracted_data.get("desafio") or known_lead_data.get("desafio"),
+                    "orcamento": extracted_data.get("orcamento") or known_lead_data.get("orcamento")
+                }
+                
+                # Inicializar serviço de CRM
+                crm_service = CRMService(supabase)
+                
+                # Enviar para CRMs ativos
+                crm_result = await crm_service.send_lead_to_crms(
+                    agencia_id=agency_id,
+                    conversa_id=conversation_data.get("conversa_id"),
+                    lead_data=crm_lead_data
+                )
+                
+                if crm_result.get("sent", 0) > 0:
+                    logger.info(f"Lead enviado para {crm_result.get('sent')} CRM(s)")
+                    
+            except Exception as crm_error:
+                logger.error(f"Erro ao enviar para CRMs: {crm_error}")
+                # Não interrompe o fluxo principal
+
+NÃO altere nenhum outro código do arquivo.
