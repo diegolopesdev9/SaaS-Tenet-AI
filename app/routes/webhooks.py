@@ -11,6 +11,7 @@ from app.services.whatsapp_service import WhatsAppService
 from app.services.ai_service import AIService
 from app.services.agency_service import AgencyService
 from app.services.conversation_service import ConversationService
+from app.services.crm_service import CRMService
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -125,14 +126,14 @@ async def receive_whatsapp_webhook(request: Request):
         else:
             # Fallback: usar DEFAULT_AGENCY_ID se instance não encontrada
             agency_id = os.getenv("DEFAULT_AGENCY_ID") or settings.DEFAULT_AGENCY_ID
-            
+
             if not agency_id:
                 logger.error(f"Agência não encontrada para instance '{instance_name}' e DEFAULT_AGENCY_ID não configurado")
                 raise HTTPException(status_code=404, detail=f"Agência não encontrada para instance: {instance_name}")
-            
+
             logger.warning(f"Instance '{instance_name}' não encontrada, usando fallback DEFAULT_AGENCY_ID: {agency_id}")
             agency = await agency_service.get_agency_by_id(agency_id)
-            
+
             if not agency:
                 logger.error(f"Agência fallback não encontrada: {agency_id}")
                 raise HTTPException(status_code=404, detail="Agência não encontrada")
@@ -237,15 +238,54 @@ async def receive_whatsapp_webhook(request: Request):
         # ============================================
         # ATUALIZAÇÃO DO HISTÓRICO
         # ============================================
-
-        # Salvar histórico atualizado
         await conversation_service.update_conversation_history(
-            agencia_id=agency_id,
-            lead_phone=sender_phone,
-            user_message=message_text,
-            assistant_message=ai_response,
-            lead_data=extracted_data if extracted_data else None
+            conversation_data.get("conversa_id"),
+            message_text,
+            ai_result.get("response", ""),
+            ai_result.get("extracted_data", {})
         )
+
+        # ============================================
+        # ENVIO PARA CRMs (se lead qualificado)
+        # ============================================
+
+        # Verificar se temos dados suficientes para enviar ao CRM
+        lead_has_minimum_data = known_lead_data.get("nome") or extracted_data.get("nome")
+
+        if lead_has_minimum_data:
+            try:
+                # Preparar dados do lead para CRM
+                crm_lead_data = {
+                    "phone": sender_phone,
+                    "nome": extracted_data.get("nome") or known_lead_data.get("nome"),
+                    "email": extracted_data.get("email") or known_lead_data.get("email"),
+                    "empresa": extracted_data.get("empresa") or known_lead_data.get("empresa"),
+                    "cargo": extracted_data.get("cargo") or known_lead_data.get("cargo"),
+                    "interesse": extracted_data.get("desafio") or known_lead_data.get("desafio"),
+                    "orcamento": extracted_data.get("orcamento") or known_lead_data.get("orcamento")
+                }
+
+                # Inicializar serviço de CRM
+                crm_service = CRMService(supabase)
+
+                # Enviar para CRMs ativos
+                crm_result = await crm_service.send_lead_to_crms(
+                    agencia_id=agency_id,
+                    conversa_id=conversation_data.get("conversa_id"),
+                    lead_data=crm_lead_data
+                )
+
+                if crm_result.get("sent", 0) > 0:
+                    logger.info(f"Lead enviado para {crm_result.get('sent')} CRM(s)")
+
+            except Exception as crm_error:
+                logger.error(f"Erro ao enviar para CRMs: {crm_error}")
+                # Não interrompe o fluxo principal
+
+        # ============================================
+        # ENVIO DA RESPOSTA
+        # ============================================
+
 
         return {
             "status": "success",
