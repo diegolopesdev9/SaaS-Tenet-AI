@@ -1,0 +1,198 @@
+Crie o arquivo app/routes/notifications.py com o seguinte conteúdo:
+
+"""
+Rotas para gerenciamento de notificações por email.
+"""
+import logging
+from typing import Optional, List
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, EmailStr
+from app.database import get_supabase_client
+from app.services.notification_service import NotificationService
+from app.routes.auth import get_current_user
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
+
+
+# ============================================
+# SCHEMAS
+# ============================================
+
+class NotificationConfigUpdate(BaseModel):
+    email_ativo: bool = False
+    emails_destinatarios: List[str] = []
+    notificar_lead_qualificado: bool = True
+    notificar_lead_agendado: bool = True
+    notificar_resumo_diario: bool = False
+    smtp_host: Optional[str] = None
+    smtp_port: int = 587
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    smtp_from_name: Optional[str] = None
+
+
+class SMTPTestRequest(BaseModel):
+    smtp_host: str
+    smtp_port: int = 587
+    smtp_user: str
+    smtp_password: str
+
+
+# ============================================
+# ROTAS
+# ============================================
+
+@router.get("/{agencia_id}/config")
+async def get_notification_config(
+    agencia_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Busca configuração de notificações da agência."""
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    supabase = get_supabase_client()
+    notification_service = NotificationService(supabase)
+    
+    config = await notification_service.get_notification_config(agencia_id)
+    
+    if not config:
+        # Retornar config padrão se não existir
+        return {
+            "email_ativo": False,
+            "emails_destinatarios": [],
+            "notificar_lead_qualificado": True,
+            "notificar_lead_agendado": True,
+            "notificar_resumo_diario": False,
+            "smtp_host": None,
+            "smtp_port": 587,
+            "smtp_user": None,
+            "smtp_from_email": None,
+            "smtp_from_name": None,
+            "has_smtp_password": False
+        }
+    
+    # Não expor senha
+    return {
+        "email_ativo": config.get("email_ativo", False),
+        "emails_destinatarios": config.get("emails_destinatarios", []),
+        "notificar_lead_qualificado": config.get("notificar_lead_qualificado", True),
+        "notificar_lead_agendado": config.get("notificar_lead_agendado", True),
+        "notificar_resumo_diario": config.get("notificar_resumo_diario", False),
+        "smtp_host": config.get("smtp_host"),
+        "smtp_port": config.get("smtp_port", 587),
+        "smtp_user": config.get("smtp_user"),
+        "smtp_from_email": config.get("smtp_from_email"),
+        "smtp_from_name": config.get("smtp_from_name"),
+        "has_smtp_password": bool(config.get("smtp_password_encrypted"))
+    }
+
+
+@router.post("/{agencia_id}/config")
+async def save_notification_config(
+    agencia_id: str,
+    config: NotificationConfigUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Salva configuração de notificações."""
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    supabase = get_supabase_client()
+    notification_service = NotificationService(supabase)
+    
+    result = await notification_service.save_notification_config(
+        agencia_id=agencia_id,
+        config=config.model_dump()
+    )
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    return {"success": True, "message": "Configurações de notificação salvas com sucesso"}
+
+
+@router.post("/{agencia_id}/test-smtp")
+async def test_smtp_connection(
+    agencia_id: str,
+    smtp_config: SMTPTestRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Testa conexão SMTP."""
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    supabase = get_supabase_client()
+    notification_service = NotificationService(supabase)
+    
+    result = await notification_service.test_smtp_connection(smtp_config.model_dump())
+    
+    return result
+
+
+@router.post("/{agencia_id}/test-email")
+async def send_test_email(
+    agencia_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Envia email de teste."""
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    supabase = get_supabase_client()
+    notification_service = NotificationService(supabase)
+    
+    # Dados de teste
+    test_lead = {
+        "nome": "Lead de Teste",
+        "phone": "5511999999999",
+        "empresa": "Empresa Teste",
+        "cargo": "Diretor",
+        "interesse": "Teste de notificação do sistema"
+    }
+    
+    success = await notification_service.send_lead_notification(
+        agencia_id=agencia_id,
+        lead_data=test_lead,
+        notification_type="qualificado"
+    )
+    
+    if success:
+        return {"success": True, "message": "Email de teste enviado com sucesso"}
+    else:
+        raise HTTPException(status_code=500, detail="Falha ao enviar email de teste. Verifique as configurações.")
+
+
+@router.get("/{agencia_id}/logs")
+async def get_notification_logs(
+    agencia_id: str,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """Lista logs de notificações enviadas."""
+    
+    # Verificar permissão
+    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        response = supabase.table("notificacoes_log").select(
+            "id, tipo, destinatario, assunto, status, lead_phone, created_at"
+        ).eq("agencia_id", agencia_id).order("created_at", desc=True).limit(limit).execute()
+        
+        return response.data or []
+    except Exception as e:
+        logger.error(f"Erro ao buscar logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
