@@ -62,7 +62,11 @@ async def get_agency_config(agency_id: str):
         welcome_message=agency.get("welcome_message"),
         qualification_questions=agency.get("qualification_questions"),
         qualification_criteria=agency.get("qualification_criteria"),
-        closing_message=agency.get("closing_message")
+        closing_message=agency.get("closing_message"),
+        whatsapp_api_type=agency.get("whatsapp_api_type", "evolution"),
+        meta_phone_number_id=agency.get("meta_phone_number_id"),
+        meta_business_account_id=agency.get("meta_business_account_id"),
+        has_meta_token=bool(agency.get("meta_access_token_encrypted"))
     )
 
     logger.info(f"Configurações retornadas para agência: {agency.get('nome')}")
@@ -130,6 +134,22 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
 
     if config.closing_message is not None:
         update_data["closing_message"] = config.closing_message
+
+    if config.whatsapp_api_type is not None:
+        update_data["whatsapp_api_type"] = config.whatsapp_api_type
+
+    if config.meta_phone_number_id is not None:
+        update_data["meta_phone_number_id"] = config.meta_phone_number_id
+
+    if config.meta_business_account_id is not None:
+        update_data["meta_business_account_id"] = config.meta_business_account_id
+
+    # Encriptar Meta Access Token se fornecido
+    if config.meta_access_token is not None:
+        encryption_service = EncryptionService()
+        encrypted_token = encryption_service.encrypt(config.meta_access_token)
+        update_data["meta_access_token_encrypted"] = encrypted_token
+        logger.info("Meta Access Token encriptado")
 
     # Encriptar WhatsApp token se fornecido
     if config.whatsapp_token is not None:
