@@ -22,6 +22,10 @@ class AgencyConfigResponse(BaseModel):
     qualification_questions: Optional[List[str]] = None
     qualification_criteria: Optional[str] = None
     closing_message: Optional[str] = None
+    whatsapp_api_type: Optional[str] = "evolution"
+    meta_phone_number_id: Optional[str] = None
+    meta_business_account_id: Optional[str] = None
+    has_meta_token: bool = False
 
 
 class AgencyConfigUpdate(BaseModel):
@@ -39,6 +43,10 @@ class AgencyConfigUpdate(BaseModel):
     qualification_questions: Optional[List[str]] = None
     qualification_criteria: Optional[str] = Field(None, max_length=2000)
     closing_message: Optional[str] = Field(None, max_length=1000)
+    whatsapp_api_type: Optional[str] = None
+    meta_phone_number_id: Optional[str] = None
+    meta_business_account_id: Optional[str] = None
+    meta_access_token: Optional[str] = None
 
 
 class ConversationSummary(BaseModel):
