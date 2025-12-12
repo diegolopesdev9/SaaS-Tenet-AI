@@ -1,0 +1,400 @@
+Crie o arquivo frontend/src/pages/Notifications.jsx com o seguinte conteúdo:
+
+import React, { useState, useEffect } from 'react'
+import { 
+  Mail, Bell, CheckCircle, XCircle, Loader2, Save, 
+  TestTube, Plus, Trash2, AlertCircle, Send
+} from 'lucide-react'
+import api from '../services/api'
+
+export default function Notifications({ agencyId }) {
+  const [config, setConfig] = useState({
+    email_ativo: false,
+    emails_destinatarios: [],
+    notificar_lead_qualificado: true,
+    notificar_lead_agendado: true,
+    notificar_resumo_diario: false,
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_user: '',
+    smtp_password: '',
+    smtp_from_email: '',
+    smtp_from_name: ''
+  })
+  const [logs, setLogs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [sendingTest, setSendingTest] = useState(false)
+  const [message, setMessage] = useState(null)
+  const [newEmail, setNewEmail] = useState('')
+
+  useEffect(() => {
+    loadConfig()
+    loadLogs()
+  }, [agencyId])
+
+  const loadConfig = async () => {
+    try {
+      const response = await api.get(`/notifications/${agencyId}/config`)
+      setConfig({ ...config, ...response.data, smtp_password: '' })
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadLogs = async () => {
+    try {
+      const response = await api.get(`/notifications/${agencyId}/logs?limit=20`)
+      setLogs(response.data)
+    } catch (error) {
+      console.error('Erro ao carregar logs:', error)
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setMessage(null)
+    
+    try {
+      await api.post(`/notifications/${agencyId}/config`, config)
+      setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
+      loadConfig()
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao salvar' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTestSMTP = async () => {
+    if (!config.smtp_host || !config.smtp_user || !config.smtp_password) {
+      setMessage({ type: 'error', text: 'Preencha host, usuário e senha SMTP' })
+      return
+    }
+    
+    setTesting(true)
+    setMessage(null)
+    
+    try {
+      const response = await api.post(`/notifications/${agencyId}/test-smtp`, {
+        smtp_host: config.smtp_host,
+        smtp_port: config.smtp_port,
+        smtp_user: config.smtp_user,
+        smtp_password: config.smtp_password
+      })
+      
+      if (response.data.success) {
+        setMessage({ type: 'success', text: 'Conexão SMTP estabelecida com sucesso!' })
+      } else {
+        setMessage({ type: 'error', text: response.data.message })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao testar conexão SMTP' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleSendTestEmail = async () => {
+    if (config.emails_destinatarios.length === 0) {
+      setMessage({ type: 'error', text: 'Adicione pelo menos um email destinatário' })
+      return
+    }
+    
+    setSendingTest(true)
+    setMessage(null)
+    
+    try {
+      const response = await api.post(`/notifications/${agencyId}/test-email`)
+      setMessage({ type: 'success', text: 'Email de teste enviado! Verifique sua caixa de entrada.' })
+      loadLogs()
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao enviar email de teste' })
+    } finally {
+      setSendingTest(false)
+    }
+  }
+
+  const addEmail = () => {
+    if (newEmail && !config.emails_destinatarios.includes(newEmail)) {
+      setConfig({
+        ...config,
+        emails_destinatarios: [...config.emails_destinatarios, newEmail]
+      })
+      setNewEmail('')
+    }
+  }
+
+  const removeEmail = (email) => {
+    setConfig({
+      ...config,
+      emails_destinatarios: config.emails_destinatarios.filter(e => e !== email)
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Notificações por Email</h1>
+        <p className="mt-2 text-gray-600">
+          Receba alertas quando leads forem qualificados ou agendarem reuniões
+        </p>
+      </div>
+
+      {message && (
+        <div className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
+          message.type === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <span>{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto">×</button>
+        </div>
+      )}
+
+      {/* Ativar/Desativar */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${config.email_ativo ? 'bg-green-100' : 'bg-gray-100'}`}>
+              <Bell className={`w-6 h-6 ${config.email_ativo ? 'text-green-600' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Notificações por Email</h2>
+              <p className="text-sm text-gray-500">
+                {config.email_ativo ? 'Ativadas - você receberá alertas' : 'Desativadas'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setConfig({ ...config, email_ativo: !config.email_ativo })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              config.email_ativo ? 'bg-green-600' : 'bg-gray-200'
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              config.email_ativo ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tipos de Notificação */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quando Notificar</h3>
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.notificar_lead_qualificado}
+              onChange={(e) => setConfig({ ...config, notificar_lead_qualificado: e.target.checked })}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <div>
+              <p className="font-medium text-gray-900">Lead Qualificado</p>
+              <p className="text-sm text-gray-500">Quando um lead for marcado como qualificado</p>
+            </div>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={config.notificar_lead_agendado}
+              onChange={(e) => setConfig({ ...config, notificar_lead_agendado: e.target.checked })}
+              className="w-4 h-4 text-blue-600 rounded"
+            />
+            <div>
+              <p className="font-medium text-gray-900">Reunião Agendada</p>
+              <p className="text-sm text-gray-500">Quando um lead agendar uma reunião</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Emails Destinatários */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Emails Destinatários</h3>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="email@exemplo.com"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            onKeyPress={(e) => e.key === 'Enter' && addEmail()}
+          />
+          <button
+            onClick={addEmail}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {config.emails_destinatarios.map((email) => (
+            <span key={email} className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              <Mail className="w-3 h-3" />
+              {email}
+              <button onClick={() => removeEmail(email)} className="hover:text-red-600">
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          {config.emails_destinatarios.length === 0 && (
+            <p className="text-gray-500 text-sm">Nenhum email adicionado</p>
+          )}
+        </div>
+      </div>
+
+      {/* Configuração SMTP */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuração SMTP</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Servidor SMTP</label>
+            <input
+              type="text"
+              value={config.smtp_host}
+              onChange={(e) => setConfig({ ...config, smtp_host: e.target.value })}
+              placeholder="smtp.gmail.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Porta</label>
+            <input
+              type="number"
+              value={config.smtp_port}
+              onChange={(e) => setConfig({ ...config, smtp_port: parseInt(e.target.value) })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+            <input
+              type="text"
+              value={config.smtp_user}
+              onChange={(e) => setConfig({ ...config, smtp_user: e.target.value })}
+              placeholder="seu-email@gmail.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Senha / App Password</label>
+            <input
+              type="password"
+              value={config.smtp_password}
+              onChange={(e) => setConfig({ ...config, smtp_password: e.target.value })}
+              placeholder={config.has_smtp_password ? '••••••••' : 'Senha do SMTP'}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Remetente</label>
+            <input
+              type="email"
+              value={config.smtp_from_email}
+              onChange={(e) => setConfig({ ...config, smtp_from_email: e.target.value })}
+              placeholder="noreply@suaempresa.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nome Remetente</label>
+            <input
+              type="text"
+              value={config.smtp_from_name}
+              onChange={(e) => setConfig({ ...config, smtp_from_name: e.target.value })}
+              placeholder="SDR Agent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={handleTestSMTP}
+            disabled={testing}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
+          >
+            {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
+            Testar Conexão
+          </button>
+        </div>
+      </div>
+
+      {/* Botões de Ação */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Salvar Configurações
+        </button>
+        <button
+          onClick={handleSendTestEmail}
+          disabled={sendingTest || !config.email_ativo}
+          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+        >
+          {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Enviar Email de Teste
+        </button>
+      </div>
+
+      {/* Logs */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Envios</h3>
+        {logs.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">Nenhuma notificação enviada ainda</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Tipo</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Destinatário</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900 capitalize">{log.tipo}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">{log.destinatario}</td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
+                        log.status === 'success' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {log.status === 'success' ? 'Enviado' : 'Erro'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500">
+                      {new Date(log.created_at).toLocaleString('pt-BR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
