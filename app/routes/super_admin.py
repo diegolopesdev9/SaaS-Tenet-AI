@@ -82,7 +82,7 @@ async def list_all_agencies(current_user: dict = Depends(get_current_user)):
     
     try:
         response = supabase.table("agencias").select(
-            "id, nome, ativo, created_at, instance_name"
+            "id, nome, created_at, instance_name"
         ).order("nome").execute()
         
         return response.data or []
