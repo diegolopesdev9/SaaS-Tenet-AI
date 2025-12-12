@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users, Link2 } from 'lucide-react'
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users, Link2, Bell } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
@@ -44,6 +44,7 @@ export default function Layout({ agencyId }) {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Conversas', href: '/conversas', icon: MessageSquare },
     { name: 'Integrações', href: '/integracoes', icon: Link2 },
+    { name: 'Notificações', href: '/notificacoes', icon: Bell },
     { name: 'Configurações', href: '/config', icon: Settings },
   ]
 
