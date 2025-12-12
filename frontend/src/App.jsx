@@ -35,22 +35,20 @@ function PublicRoute({ children }) {
   return children;
 }
 
-function App() {
+// Componente que gerencia o estado de agência (só para usuários logados)
+function AuthenticatedApp() {
   const user = authService.getUser();
   const isSuperAdmin = user?.role === 'super_admin';
   
-  // Estado para agência selecionada (Super Admin pode trocar)
   const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
-    // Tentar recuperar do localStorage
     const saved = localStorage.getItem('selectedAgencyId');
     if (saved && isSuperAdmin) return saved;
     return user?.agencia_id || null;
   });
   
   const [agencies, setAgencies] = useState([]);
-  const [loadingAgencies, setLoadingAgencies] = useState(isSuperAdmin);
+  const [loading, setLoading] = useState(isSuperAdmin);
 
-  // Carregar lista de agências para Super Admin
   useEffect(() => {
     if (isSuperAdmin) {
       loadAgencies();
@@ -63,7 +61,6 @@ function App() {
       const agenciasList = response.data || [];
       setAgencies(agenciasList);
       
-      // Se não tem agência selecionada ou a selecionada não existe mais, selecionar a primeira
       if (agenciasList.length > 0) {
         const savedId = localStorage.getItem('selectedAgencyId');
         const savedExists = agenciasList.some(a => a.id === savedId);
@@ -76,21 +73,19 @@ function App() {
     } catch (error) {
       console.error('Erro ao carregar agências:', error);
     } finally {
-      setLoadingAgencies(false);
+      setLoading(false);
     }
   };
 
-  // Salvar agência selecionada no localStorage
   const handleAgencyChange = (agencyId) => {
     setSelectedAgencyId(agencyId);
     localStorage.setItem('selectedAgencyId', agencyId);
   };
 
-  // Usar agencyId do usuário se não for super admin
   const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
 
-  // Loading enquanto carrega agências para super admin
-  if (isSuperAdmin && (loadingAgencies || !agencyId)) {
+  // Loading para super admin
+  if (isSuperAdmin && (loading || !agencyId)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -101,7 +96,7 @@ function App() {
     );
   }
 
-  // Se não for super admin e não tiver agência, mostrar erro
+  // Usuário comum sem agência
   if (!isSuperAdmin && !agencyId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -119,6 +114,18 @@ function App() {
   }
 
   return (
+    <Layout 
+      agencyId={agencyId} 
+      agencies={agencies}
+      selectedAgencyId={selectedAgencyId}
+      onAgencyChange={handleAgencyChange}
+      isSuperAdmin={isSuperAdmin}
+    />
+  );
+}
+
+function App() {
+  return (
     <Routes>
       {/* Rota pública - Login */}
       <Route 
@@ -135,22 +142,16 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Layout 
-              agencyId={agencyId} 
-              agencies={agencies}
-              selectedAgencyId={selectedAgencyId}
-              onAgencyChange={handleAgencyChange}
-              isSuperAdmin={isSuperAdmin}
-            />
+            <AuthenticatedApp />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Dashboard agencyId={agencyId} />} />
-        <Route path="conversas" element={<Conversations agencyId={agencyId} />} />
-        <Route path="conversas/:conversationId" element={<ConversationDetail agencyId={agencyId} />} />
-        <Route path="config" element={<AgentConfig agencyId={agencyId} />} />
-        <Route path="integracoes" element={<Integrations agencyId={agencyId} />} />
-        <Route path="notificacoes" element={<Notifications agencyId={agencyId} />} />
+        <Route index element={<DashboardWrapper />} />
+        <Route path="conversas" element={<ConversationsWrapper />} />
+        <Route path="conversas/:conversationId" element={<ConversationDetailWrapper />} />
+        <Route path="config" element={<AgentConfigWrapper />} />
+        <Route path="integracoes" element={<IntegrationsWrapper />} />
+        <Route path="notificacoes" element={<NotificationsWrapper />} />
         <Route path="admin/agencias" element={<Agencias />} />
         <Route path="admin/usuarios" element={<Usuarios />} />
       </Route>
@@ -159,6 +160,48 @@ function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+}
+
+// Wrapper components para passar agencyId via contexto do Outlet
+function DashboardWrapper() {
+  const agencyId = useAgencyId();
+  return <Dashboard agencyId={agencyId} />;
+}
+
+function ConversationsWrapper() {
+  const agencyId = useAgencyId();
+  return <Conversations agencyId={agencyId} />;
+}
+
+function ConversationDetailWrapper() {
+  const agencyId = useAgencyId();
+  return <ConversationDetail agencyId={agencyId} />;
+}
+
+function AgentConfigWrapper() {
+  const agencyId = useAgencyId();
+  return <AgentConfig agencyId={agencyId} />;
+}
+
+function IntegrationsWrapper() {
+  const agencyId = useAgencyId();
+  return <Integrations agencyId={agencyId} />;
+}
+
+function NotificationsWrapper() {
+  const agencyId = useAgencyId();
+  return <Notifications agencyId={agencyId} />;
+}
+
+// Hook para pegar agencyId do localStorage ou do usuário
+function useAgencyId() {
+  const user = authService.getUser();
+  const isSuperAdmin = user?.role === 'super_admin';
+  
+  if (isSuperAdmin) {
+    return localStorage.getItem('selectedAgencyId');
+  }
+  return user?.agencia_id;
 }
 
 export default App;
