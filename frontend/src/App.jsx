@@ -6,6 +6,7 @@ import api from './services/api';
 
 // Pages
 import Login from './pages/Login';
+import ChangePassword from './pages/ChangePassword';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Conversations from './pages/Conversations';
@@ -37,7 +38,7 @@ function PublicRoute({ children }) {
 
 // Componente que gerencia o estado de agência (só para usuários logados)
 function AuthenticatedApp() {
-  const user = authService.getUser();
+  const [user, setUser] = useState(() => authService.getUser());
   const isSuperAdmin = user?.role === 'super_admin';
   
   const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
@@ -82,7 +83,18 @@ function AuthenticatedApp() {
     localStorage.setItem('selectedAgencyId', agencyId);
   };
 
+  const handlePasswordChanged = () => {
+    // Recarregar usuário do localStorage
+    const updatedUser = authService.getUser();
+    setUser(updatedUser);
+  };
+
   const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
+
+  // Verificar se precisa alterar senha
+  if (user?.deve_alterar_senha) {
+    return <ChangePassword onPasswordChanged={handlePasswordChanged} />;
+  }
 
   // Loading para super admin
   if (isSuperAdmin && (loading || !agencyId)) {
