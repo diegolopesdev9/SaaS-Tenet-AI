@@ -3,16 +3,19 @@
 Rotas de autenticação.
 """
 import logging
-from datetime import timedelta
-from fastapi import APIRouter, HTTPException, Depends
+from datetime import timedelta, datetime, timezone
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
+from passlib.context import CryptContext
 from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.database import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # Schemas
@@ -129,3 +132,41 @@ async def register(request: UserCreate):
         raise HTTPException(status_code=400, detail="Erro ao criar usuário. Email pode já existir.")
     
     return {"message": "Usuário criado com sucesso", "user_id": user["id"]}
+
+
+@router.post("/change-password")
+async def change_password(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    """Altera a senha do usuário."""
+    try:
+        body = await request.json()
+        nova_senha = body.get("nova_senha")
+        
+        if not nova_senha or len(nova_senha) < 6:
+            raise HTTPException(status_code=400, detail="Senha deve ter no mínimo 6 caracteres")
+        
+        supabase = get_supabase_client()
+        
+        # Hash da nova senha
+        nova_senha_hash = pwd_context.hash(nova_senha)
+        
+        # Atualizar senha e remover flag de alteração obrigatória
+        response = supabase.table("usuarios").update({
+            "senha_hash": nova_senha_hash,
+            "deve_alterar_senha": False,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", current_user["id"]).execute()
+        
+        if response.data:
+            logger.info(f"Senha alterada para usuário: {current_user['email']}")
+            return {"success": True, "message": "Senha alterada com sucesso"}
+        
+        raise HTTPException(status_code=500, detail="Erro ao alterar senha")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao alterar senha: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
