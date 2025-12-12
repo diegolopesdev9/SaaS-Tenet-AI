@@ -72,16 +72,18 @@ class UsuarioResponse(BaseModel):
 # ============================================
 
 @router.get("/agencias")
-async def list_agencias(current_user: dict = Depends(require_super_admin)):
-    """Lista todas as agências."""
-    logger.info(f"Super Admin {current_user['email']} listando agências")
+async def list_all_agencies(current_user: dict = Depends(get_current_user)):
+    """Lista todas as agências (apenas super_admin)."""
+    
+    if current_user.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito a super administradores")
     
     supabase = get_supabase_client()
     
     try:
         response = supabase.table("agencias").select(
-            "id, nome, instance_name, whatsapp_phone_id, created_at"
-        ).order("created_at", desc=True).execute()
+            "id, nome, ativo, created_at, instance_name"
+        ).order("nome").execute()
         
         return response.data or []
     except Exception as e:
