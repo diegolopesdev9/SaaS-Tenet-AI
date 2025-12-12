@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import authService from './services/auth';
+import api from './services/api';
 
 // Pages
 import Login from './pages/Login';
@@ -35,9 +36,63 @@ function PublicRoute({ children }) {
 }
 
 function App() {
-  // Obter agencyId do usuário logado ou fallback
   const user = authService.getUser();
-  const agencyId = user?.agencia_id || 'd6f20d80-9212-472d-873e-d5f610edbb54';
+  const isSuperAdmin = user?.role === 'super_admin';
+  
+  // Estado para agência selecionada (Super Admin pode trocar)
+  const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
+    // Tentar recuperar do localStorage
+    const saved = localStorage.getItem('selectedAgencyId');
+    if (saved && isSuperAdmin) return saved;
+    return user?.agencia_id || null;
+  });
+  
+  const [agencies, setAgencies] = useState([]);
+  const [loadingAgencies, setLoadingAgencies] = useState(isSuperAdmin);
+
+  // Carregar lista de agências para Super Admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      loadAgencies();
+    }
+  }, [isSuperAdmin]);
+
+  const loadAgencies = async () => {
+    try {
+      const response = await api.get('/super-admin/agencias');
+      setAgencies(response.data || []);
+      
+      // Se não tem agência selecionada, selecionar a primeira
+      if (!selectedAgencyId && response.data?.length > 0) {
+        setSelectedAgencyId(response.data[0].id);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar agências:', error);
+    } finally {
+      setLoadingAgencies(false);
+    }
+  };
+
+  // Salvar agência selecionada no localStorage
+  const handleAgencyChange = (agencyId) => {
+    setSelectedAgencyId(agencyId);
+    localStorage.setItem('selectedAgencyId', agencyId);
+  };
+
+  // Usar agencyId do usuário se não for super admin
+  const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
+
+  // Loading enquanto carrega agências para super admin
+  if (isSuperAdmin && loadingAgencies) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
@@ -56,7 +111,13 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <Layout agencyId={agencyId} />
+            <Layout 
+              agencyId={agencyId} 
+              agencies={agencies}
+              selectedAgencyId={selectedAgencyId}
+              onAgencyChange={handleAgencyChange}
+              isSuperAdmin={isSuperAdmin}
+            />
           </ProtectedRoute>
         }
       >
