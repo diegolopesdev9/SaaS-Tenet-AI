@@ -90,7 +90,8 @@ async def login(request: LoginRequest):
             "email": user["email"],
             "nome": user["nome"],
             "agencia_id": user["agencia_id"],
-            "role": user.get("role", "admin")
+            "role": user.get("role", "admin"),
+            "deve_alterar_senha": user.get("deve_alterar_senha", False)
         }
     )
 
