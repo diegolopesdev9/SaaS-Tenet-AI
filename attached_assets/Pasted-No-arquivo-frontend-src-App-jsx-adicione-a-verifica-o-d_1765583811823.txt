@@ -1,0 +1,108 @@
+No arquivo frontend/src/App.jsx, adicione a verificação de alteração de senha.
+
+1. Adicione o import no topo junto com os outros imports de páginas:
+
+import ChangePassword from './pages/ChangePassword';
+
+2. No componente AuthenticatedApp, SUBSTITUA todo o conteúdo da função por:
+
+function AuthenticatedApp() {
+  const [user, setUser] = useState(() => authService.getUser());
+  const isSuperAdmin = user?.role === 'super_admin';
+  
+  const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
+    const saved = localStorage.getItem('selectedAgencyId');
+    if (saved && isSuperAdmin) return saved;
+    return user?.agencia_id || null;
+  });
+  
+  const [agencies, setAgencies] = useState([]);
+  const [loading, setLoading] = useState(isSuperAdmin);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      loadAgencies();
+    }
+  }, [isSuperAdmin]);
+
+  const loadAgencies = async () => {
+    try {
+      const response = await api.get('/admin/agencias');
+      const agenciasList = response.data || [];
+      setAgencies(agenciasList);
+      
+      if (agenciasList.length > 0) {
+        const savedId = localStorage.getItem('selectedAgencyId');
+        const savedExists = agenciasList.some(a => a.id === savedId);
+        
+        if (!savedId || !savedExists) {
+          setSelectedAgencyId(agenciasList[0].id);
+          localStorage.setItem('selectedAgencyId', agenciasList[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar agências:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAgencyChange = (agencyId) => {
+    setSelectedAgencyId(agencyId);
+    localStorage.setItem('selectedAgencyId', agencyId);
+  };
+
+  const handlePasswordChanged = () => {
+    // Recarregar usuário do localStorage
+    const updatedUser = authService.getUser();
+    setUser(updatedUser);
+  };
+
+  const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
+
+  // Verificar se precisa alterar senha
+  if (user?.deve_alterar_senha) {
+    return <ChangePassword onPasswordChanged={handlePasswordChanged} />;
+  }
+
+  // Loading para super admin
+  if (isSuperAdmin && (loading || !agencyId)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando agências...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Usuário comum sem agência
+  if (!isSuperAdmin && !agencyId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Usuário não vinculado a nenhuma agência.</p>
+          <button 
+            onClick={() => authService.logout()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
+            Fazer logout
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Layout 
+      agencyId={agencyId} 
+      agencies={agencies}
+      selectedAgencyId={selectedAgencyId}
+      onAgencyChange={handleAgencyChange}
+      isSuperAdmin={isSuperAdmin}
+    />
+  );
+}
+
+NÃO altere nenhum outro código do arquivo.
