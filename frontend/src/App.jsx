@@ -60,11 +60,18 @@ function App() {
   const loadAgencies = async () => {
     try {
       const response = await api.get('/super-admin/agencias');
-      setAgencies(response.data || []);
+      const agenciasList = response.data || [];
+      setAgencies(agenciasList);
       
-      // Se não tem agência selecionada, selecionar a primeira
-      if (!selectedAgencyId && response.data?.length > 0) {
-        setSelectedAgencyId(response.data[0].id);
+      // Se não tem agência selecionada ou a selecionada não existe mais, selecionar a primeira
+      if (agenciasList.length > 0) {
+        const savedId = localStorage.getItem('selectedAgencyId');
+        const savedExists = agenciasList.some(a => a.id === savedId);
+        
+        if (!savedId || !savedExists) {
+          setSelectedAgencyId(agenciasList[0].id);
+          localStorage.setItem('selectedAgencyId', agenciasList[0].id);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar agências:', error);
@@ -83,12 +90,29 @@ function App() {
   const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
 
   // Loading enquanto carrega agências para super admin
-  if (isSuperAdmin && loadingAgencies) {
+  if (isSuperAdmin && (loadingAgencies || !agencyId)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <p className="mt-4 text-gray-600">Carregando agências...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não for super admin e não tiver agência, mostrar erro
+  if (!isSuperAdmin && !agencyId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">Usuário não vinculado a nenhuma agência.</p>
+          <button 
+            onClick={() => authService.logout()}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+          >
+            Fazer logout
+          </button>
         </div>
       </div>
     );
