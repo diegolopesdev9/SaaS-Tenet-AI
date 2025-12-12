@@ -1,0 +1,44 @@
+No arquivo app/routes/webhooks.py, adicione o envio de notificações quando o lead for qualificado.
+
+1. Adicione o import do NotificationService junto com os outros imports (no início do arquivo):
+
+from app.services.notification_service import NotificationService
+
+2. APÓS o bloco "ENVIO PARA CRMs" (após o except Exception as crm_error), adicione o seguinte bloco:
+
+        # ============================================
+        # NOTIFICAÇÕES POR EMAIL
+        # ============================================
+
+        # Verificar se lead foi qualificado para enviar notificação
+        current_status = conversation_data.get("lead_status", "em_andamento")
+        
+        if current_status == "qualificado" or (extracted_data.get("nome") and known_lead_data.get("nome") is None):
+            try:
+                # Preparar dados do lead para notificação
+                notification_lead_data = {
+                    "phone": sender_phone,
+                    "nome": extracted_data.get("nome") or known_lead_data.get("nome"),
+                    "email": extracted_data.get("email") or known_lead_data.get("email"),
+                    "empresa": extracted_data.get("empresa") or known_lead_data.get("empresa"),
+                    "cargo": extracted_data.get("cargo") or known_lead_data.get("cargo"),
+                    "interesse": extracted_data.get("desafio") or known_lead_data.get("desafio")
+                }
+                
+                # Inicializar serviço de notificações
+                notification_service = NotificationService(supabase)
+                
+                # Enviar notificação
+                await notification_service.send_lead_notification(
+                    agencia_id=agency_id,
+                    lead_data=notification_lead_data,
+                    notification_type="qualificado"
+                )
+                
+                logger.info("Notificação de lead qualificado enviada")
+                
+            except Exception as notif_error:
+                logger.error(f"Erro ao enviar notificação: {notif_error}")
+                # Não interrompe o fluxo principal
+
+NÃO altere nenhum outro código do arquivo.
