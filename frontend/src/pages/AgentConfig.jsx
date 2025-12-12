@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react'
-import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff, Shield, MessageSquare } from 'lucide-react'
 import api from '../services/api'
+import authService from '../services/auth'
 
 export default function AgentConfig({ agencyId }) {
   const [config, setConfig] = useState({
@@ -15,26 +17,43 @@ export default function AgentConfig({ agencyId }) {
     welcome_message: '',
     qualification_questions: [],
     qualification_criteria: '',
-    closing_message: ''
+    closing_message: '',
+    whatsapp_api_type: 'evolution',
+    meta_phone_number_id: '',
+    meta_business_account_id: '',
+    meta_access_token: ''
   })
 
   const [originalConfig, setOriginalConfig] = useState({
     has_whatsapp_token: false,
-    has_gemini_key: false
+    has_gemini_key: false,
+    has_meta_token: false
   })
 
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState(null)
 
   const [showTokens, setShowTokens] = useState({
     whatsapp: false,
-    gemini: false
+    gemini: false,
+    meta: false
   })
 
   useEffect(() => {
     loadConfig()
+    loadUser()
   }, [agencyId])
+
+  const loadUser = async () => {
+    try {
+      const response = await api.get('/auth/me')
+      setUser(response.data)
+    } catch (error) {
+      console.error('Erro ao carregar usuário:', error)
+    }
+  }
 
   const loadConfig = async () => {
     try {
@@ -55,12 +74,17 @@ export default function AgentConfig({ agencyId }) {
         welcome_message: data.welcome_message || 'Olá! 👋 Sou o assistente virtual. Como posso ajudá-lo hoje?',
         qualification_questions: data.qualification_questions || ['Qual seu nome?', 'Qual seu email?', 'Qual seu interesse?', 'Qual seu orçamento aproximado?'],
         qualification_criteria: data.qualification_criteria || 'Lead qualificado quando: tem nome, email, demonstra interesse claro e menciona orçamento.',
-        closing_message: data.closing_message || 'Obrigado pelo contato! Em breve nossa equipe entrará em contato com você. 🚀'
+        closing_message: data.closing_message || 'Obrigado pelo contato! Em breve nossa equipe entrará em contato com você. 🚀',
+        whatsapp_api_type: data.whatsapp_api_type || 'evolution',
+        meta_phone_number_id: data.meta_phone_number_id || '',
+        meta_business_account_id: data.meta_business_account_id || '',
+        meta_access_token: ''
       })
 
       setOriginalConfig({
-        has_whatsapp_token: !!data.whatsapp_token,
-        has_gemini_key: !!data.gemini_api_key
+        has_whatsapp_token: !!data.has_whatsapp_token,
+        has_gemini_key: !!data.has_gemini_key,
+        has_meta_token: !!data.has_meta_token
       })
 
     } catch (error) {
@@ -76,61 +100,43 @@ export default function AgentConfig({ agencyId }) {
       setSaving(true)
       setMessage(null)
 
-      // Preparar payload apenas com campos preenchidos
       const payload = {
         nome: config.nome
       }
 
-      if (config.instance_name) {
-        payload.instance_name = config.instance_name
-      }
-      if (config.agent_name) {
-        payload.agent_name = config.agent_name
-      }
-      if (config.personality) {
-        payload.personality = config.personality
-      }
-      if (config.welcome_message) {
-        payload.welcome_message = config.welcome_message
-      }
+      if (config.instance_name) payload.instance_name = config.instance_name
+      if (config.agent_name) payload.agent_name = config.agent_name
+      if (config.personality) payload.personality = config.personality
+      if (config.welcome_message) payload.welcome_message = config.welcome_message
       if (config.qualification_questions && config.qualification_questions.length > 0) {
         payload.qualification_questions = config.qualification_questions
       }
-      if (config.qualification_criteria) {
-        payload.qualification_criteria = config.qualification_criteria
-      }
-      if (config.closing_message) {
-        payload.closing_message = config.closing_message
-      }
+      if (config.qualification_criteria) payload.qualification_criteria = config.qualification_criteria
+      if (config.closing_message) payload.closing_message = config.closing_message
+      if (config.prompt_config) payload.prompt_config = config.prompt_config
+      if (config.whatsapp_phone_id) payload.whatsapp_phone_id = config.whatsapp_phone_id
+      if (config.whatsapp_token) payload.whatsapp_token = config.whatsapp_token
+      if (config.gemini_api_key) payload.gemini_api_key = config.gemini_api_key
 
-      if (config.prompt_config) {
-        payload.prompt_config = config.prompt_config
-      }
-
-      if (config.whatsapp_phone_id) {
-        payload.whatsapp_phone_id = config.whatsapp_phone_id
-      }
-
-      if (config.whatsapp_token) {
-        payload.whatsapp_token = config.whatsapp_token
-      }
-
-      if (config.gemini_api_key) {
-        payload.gemini_api_key = config.gemini_api_key
+      // Campos de API type (apenas super_admin pode alterar)
+      if (user?.role === 'super_admin') {
+        payload.whatsapp_api_type = config.whatsapp_api_type
+        if (config.meta_phone_number_id) payload.meta_phone_number_id = config.meta_phone_number_id
+        if (config.meta_business_account_id) payload.meta_business_account_id = config.meta_business_account_id
+        if (config.meta_access_token) payload.meta_access_token = config.meta_access_token
       }
 
       await api.post(`/agencias/${agencyId}/config`, payload)
 
       setMessage({ type: 'success', text: 'Configurações salvas com sucesso!' })
 
-      // Limpar campos de token
       setConfig(prev => ({
         ...prev,
         whatsapp_token: '',
-        gemini_api_key: ''
+        gemini_api_key: '',
+        meta_access_token: ''
       }))
 
-      // Recarregar config
       await loadConfig()
 
     } catch (error) {
@@ -171,7 +177,6 @@ export default function AgentConfig({ agencyId }) {
         </p>
       </div>
 
-      {/* Mensagem de feedback */}
       {message && (
         <div className={`mb-6 p-4 rounded-lg border flex items-start gap-3 ${
           message.type === 'success'
@@ -188,6 +193,151 @@ export default function AgentConfig({ agencyId }) {
       )}
 
       <div className="space-y-6">
+        {/* Seção: Seleção de API WhatsApp (apenas Super Admin) */}
+        {user?.role === 'super_admin' && (
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">API do WhatsApp</h2>
+                <p className="text-sm text-gray-600">Selecione qual API usar para esta agência</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <label 
+                className={`flex-1 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  config.whatsapp_api_type === 'evolution' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="whatsapp_api_type"
+                  value="evolution"
+                  checked={config.whatsapp_api_type === 'evolution'}
+                  onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_api_type: e.target.value }))}
+                  className="sr-only"
+                />
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    config.whatsapp_api_type === 'evolution' 
+                      ? 'border-green-500 bg-green-500' 
+                      : 'border-gray-300'
+                  }`}>
+                    {config.whatsapp_api_type === 'evolution' && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Evolution API</p>
+                    <p className="text-sm text-gray-500">API não-oficial, mais flexível</p>
+                  </div>
+                </div>
+              </label>
+
+              <label 
+                className={`flex-1 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  config.whatsapp_api_type === 'meta' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="whatsapp_api_type"
+                  value="meta"
+                  checked={config.whatsapp_api_type === 'meta'}
+                  onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_api_type: e.target.value }))}
+                  className="sr-only"
+                />
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    config.whatsapp_api_type === 'meta' 
+                      ? 'border-blue-500 bg-blue-500' 
+                      : 'border-gray-300'
+                  }`}>
+                    {config.whatsapp_api_type === 'meta' && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Meta Official API</p>
+                    <p className="text-sm text-gray-500">API oficial do WhatsApp Business</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Campos Meta API */}
+            {config.whatsapp_api_type === 'meta' && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number ID
+                  </label>
+                  <input
+                    type="text"
+                    value={config.meta_phone_number_id}
+                    onChange={(e) => setConfig(prev => ({ ...prev, meta_phone_number_id: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Ex: 123456789012345"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Business Account ID
+                  </label>
+                  <input
+                    type="text"
+                    value={config.meta_business_account_id}
+                    onChange={(e) => setConfig(prev => ({ ...prev, meta_business_account_id: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Ex: 123456789012345"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Access Token
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showTokens.meta ? 'text' : 'password'}
+                      value={config.meta_access_token}
+                      onChange={(e) => setConfig(prev => ({ ...prev, meta_access_token: e.target.value }))}
+                      className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder={originalConfig.has_meta_token ? '••••••••••••••••' : 'Cole seu Access Token aqui'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleTokenVisibility('meta')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showTokens.meta ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {originalConfig.has_meta_token && !config.meta_access_token && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                        <CheckCircle className="w-3 h-3" />
+                        Token configurado
+                      </span>
+                      <span className="text-xs text-gray-500">Deixe em branco para manter o atual</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Seção: Informações Básicas */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -200,93 +350,84 @@ export default function AgentConfig({ agencyId }) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome da Agência
-            </label>
-            <input
-              type="text"
-              value={config.nome}
-              onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Ex: Agência Digital XYZ"
-            />
-          </div>
-
-          <div className="mt-4"> {/* Added input for instance_name */}
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome da Instância (Evolution API)
-            </label>
-            <input
-              type="text"
-              value={config.instance_name}
-              onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Ex: agencia-teste"
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Nome da instância configurada na Evolution API. Usado para identificar automaticamente a agência.
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome da Agência
+              </label>
+              <input
+                type="text"
+                value={config.nome}
+                onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Ex: Agência Digital XYZ"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Instance Name (Evolution API)
+              </label>
+              <input
+                type="text"
+                value={config.instance_name}
+                onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Ex: agencia-xyz"
+              />
+            </div>
           </div>
         </div>
 
         {/* Seção: Personalidade do Agente */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Bot className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-orange-600" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Personalidade do Agente</h2>
-              <p className="text-sm text-gray-600">Defina como o agente deve se comportar</p>
+              <p className="text-sm text-gray-600">Configure como o agente se comporta</p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome do Agente
-            </label>
-            <input
-              type="text"
-              value={config.agent_name}
-              onChange={(e) => setConfig(prev => ({ ...prev, agent_name: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Ex: Assistente Virtual"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Agente</label>
+              <input
+                type="text"
+                value={config.agent_name}
+                onChange={(e) => setConfig(prev => ({ ...prev, agent_name: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Ex: Sofia"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Personalidade</label>
+              <input
+                type="text"
+                value={config.personality}
+                onChange={(e) => setConfig(prev => ({ ...prev, personality: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Ex: profissional e amigável"
+              />
+            </div>
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Personalidade
-            </label>
-            <input
-              type="text"
-              value={config.personality}
-              onChange={(e) => setConfig(prev => ({ ...prev, personality: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              placeholder="Ex: profissional e amigável"
-            />
-          </div>
-
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mensagem de Boas-Vindas
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Mensagem de Boas-vindas</label>
             <textarea
               value={config.welcome_message}
               onChange={(e) => setConfig(prev => ({ ...prev, welcome_message: e.target.value }))}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
-              placeholder="Ex: Olá! 👋 Sou o assistente virtual. Como posso ajudá-lo hoje?"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              placeholder="Ex: Olá! 👋 Sou o assistente virtual..."
             />
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Perguntas de Qualificação
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Perguntas de Qualificação</label>
             {config.qualification_questions.map((question, index) => (
-              <div key={index} className="flex items-center gap-2 mb-2">
+              <div key={index} className="flex gap-2 mb-2">
                 <input
                   type="text"
                   value={question}
@@ -295,8 +436,7 @@ export default function AgentConfig({ agencyId }) {
                     newQuestions[index] = e.target.value;
                     setConfig(prev => ({ ...prev, qualification_questions: newQuestions }));
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                  placeholder={`Pergunta ${index + 1}`}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 />
                 <button
                   type="button"
@@ -304,7 +444,7 @@ export default function AgentConfig({ agencyId }) {
                     const newQuestions = config.qualification_questions.filter((_, i) => i !== index);
                     setConfig(prev => ({ ...prev, qualification_questions: newQuestions }));
                   }}
-                  className="text-red-500 hover:text-red-700"
+                  className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
                 >
                   Remover
                 </button>
@@ -313,66 +453,52 @@ export default function AgentConfig({ agencyId }) {
             <button
               type="button"
               onClick={() => setConfig(prev => ({ ...prev, qualification_questions: [...prev.qualification_questions, ''] }))}
-              className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors"
+              className="mt-2 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200"
             >
-              Adicionar Pergunta
+              + Adicionar Pergunta
             </button>
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Critérios de Qualificação
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Critérios de Qualificação</label>
             <textarea
               value={config.qualification_criteria}
               onChange={(e) => setConfig(prev => ({ ...prev, qualification_criteria: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
-              placeholder="Ex: Lead qualificado quando: tem nome, email, demonstra interesse claro e menciona orçamento."
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
             />
           </div>
 
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mensagem de Encerramento
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Mensagem de Encerramento</label>
             <textarea
               value={config.closing_message}
               onChange={(e) => setConfig(prev => ({ ...prev, closing_message: e.target.value }))}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none"
-              placeholder="Ex: Obrigado pelo contato! Em breve nossa equipe entrará em contato com você. 🚀"
+              rows={2}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
             />
           </div>
         </div>
 
-        {/* Seção: Prompt de Configuração */}
+        {/* Seção: Prompt */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <Bot className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Prompt de Configuração</h2>
-              <p className="text-sm text-gray-600">Defina como o agente deve se comportar</p>
+              <h2 className="text-lg font-semibold text-gray-900">Prompt Avançado</h2>
+              <p className="text-sm text-gray-600">Configuração detalhada do comportamento</p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prompt de Configuração
-            </label>
-            <textarea
-              value={config.prompt_config}
-              onChange={(e) => setConfig(prev => ({ ...prev, prompt_config: e.target.value }))}
-              rows={12}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors resize-none font-mono text-sm"
-              placeholder="Ex: Você é um SDR profissional e amigável. Seu objetivo é qualificar leads através de conversas naturais no WhatsApp..."
-            />
-            <p className="mt-2 text-xs text-gray-500">
-              Este prompt define a personalidade e objetivos do agente nas conversas
-            </p>
-          </div>
+          <textarea
+            value={config.prompt_config}
+            onChange={(e) => setConfig(prev => ({ ...prev, prompt_config: e.target.value }))}
+            rows={10}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none font-mono text-sm"
+            placeholder="Prompt personalizado..."
+          />
         </div>
 
         {/* Seção: Chaves de Integração */}
@@ -383,72 +509,62 @@ export default function AgentConfig({ agencyId }) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Chaves de Integração</h2>
-              <p className="text-sm text-gray-600">Configure as APIs do WhatsApp e Gemini</p>
+              <p className="text-sm text-gray-600">APIs do WhatsApp e Gemini</p>
             </div>
           </div>
 
           <div className="space-y-4">
-            {/* WhatsApp Phone ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WhatsApp Phone ID
-              </label>
-              <input
-                type="text"
-                value={config.whatsapp_phone_id}
-                onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                placeholder="Ex: 5511999999999"
-              />
-            </div>
-
-            {/* WhatsApp Token */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WhatsApp Token (Evolution API)
-              </label>
-              <div className="relative">
-                <input
-                  type={showTokens.whatsapp ? 'text' : 'password'}
-                  value={config.whatsapp_token}
-                  onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_token: e.target.value }))}
-                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                  placeholder={originalConfig.has_whatsapp_token ? '••••••••••••••••' : 'Cole seu token aqui'}
-                />
-                <button
-                  type="button"
-                  onClick={() => toggleTokenVisibility('whatsapp')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showTokens.whatsapp ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {originalConfig.has_whatsapp_token && !config.whatsapp_token && (
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                    <CheckCircle className="w-3 h-3" />
-                    Token configurado
-                  </span>
-                  <span className="text-xs text-gray-500">Deixe em branco para manter o atual</span>
+            {config.whatsapp_api_type === 'evolution' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Phone ID</label>
+                  <input
+                    type="text"
+                    value={config.whatsapp_phone_id}
+                    onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    placeholder="Ex: 5511999999999"
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* Gemini API Key */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Token (Evolution API)</label>
+                  <div className="relative">
+                    <input
+                      type={showTokens.whatsapp ? 'text' : 'password'}
+                      value={config.whatsapp_token}
+                      onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_token: e.target.value }))}
+                      className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      placeholder={originalConfig.has_whatsapp_token ? '••••••••••••••••' : 'Cole seu token aqui'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleTokenVisibility('whatsapp')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showTokens.whatsapp ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {originalConfig.has_whatsapp_token && !config.whatsapp_token && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                        <CheckCircle className="w-3 h-3" />
+                        Token configurado
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gemini API Key
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Gemini API Key</label>
               <div className="relative">
                 <input
                   type={showTokens.gemini ? 'text' : 'password'}
                   value={config.gemini_api_key}
                   onChange={(e) => setConfig(prev => ({ ...prev, gemini_api_key: e.target.value }))}
-                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                   placeholder={originalConfig.has_gemini_key ? '••••••••••••••••' : 'Cole sua API key aqui'}
                 />
                 <button
@@ -456,11 +572,7 @@ export default function AgentConfig({ agencyId }) {
                   onClick={() => toggleTokenVisibility('gemini')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showTokens.gemini ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showTokens.gemini ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {originalConfig.has_gemini_key && !config.gemini_api_key && (
@@ -469,7 +581,6 @@ export default function AgentConfig({ agencyId }) {
                     <CheckCircle className="w-3 h-3" />
                     Token configurado
                   </span>
-                  <span className="text-xs text-gray-500">Deixe em branco para manter a atual</span>
                 </div>
               )}
             </div>
@@ -481,7 +592,7 @@ export default function AgentConfig({ agencyId }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (
               <>
