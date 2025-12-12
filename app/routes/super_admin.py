@@ -221,6 +221,7 @@ async def create_usuario(
             "agencia_id": usuario.agencia_id,
             "role": usuario.role,
             "ativo": True,
+            "deve_alterar_senha": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
