@@ -1,17 +1,20 @@
+
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users, Link2, Bell } from 'lucide-react'
+import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users, Link2, Bell, ChevronDown } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
-export default function Layout({ agencyId }) {
+export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyChange, isSuperAdmin }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [agencyName, setAgencyName] = useState('Carregando...')
   const [user, setUser] = useState(null)
+  const [showAgencyDropdown, setShowAgencyDropdown] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
     const loadAgencyConfig = async () => {
+      if (!agencyId) return
       try {
         const response = await api.get(`/agencias/${agencyId}/config`)
         setAgencyName(response.data.nome || 'Agência')
@@ -30,14 +33,19 @@ export default function Layout({ agencyId }) {
       }
     }
 
-    if (agencyId) {
-      loadAgencyConfig()
-    }
+    loadAgencyConfig()
     loadUser()
   }, [agencyId])
 
   const handleLogout = () => {
+    localStorage.removeItem('selectedAgencyId')
     authService.logout()
+  }
+
+  const handleSelectAgency = (agency) => {
+    onAgencyChange(agency.id)
+    setAgencyName(agency.nome)
+    setShowAgencyDropdown(false)
   }
 
   const navigation = [
@@ -61,19 +69,81 @@ export default function Layout({ agencyId }) {
         } overflow-hidden`}
       >
         <div className="flex flex-col h-full">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <div className="flex items-center gap-3">
+          {/* Header com Seletor de Agência para Super Admin */}
+          <div className="px-4 py-4 border-b border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-sm font-semibold text-gray-900 truncate">SDR Agent</h1>
-                <p className="text-xs text-gray-500 truncate">{agencyName}</p>
+                {isSuperAdmin && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                    <Shield className="w-3 h-3" />
+                    Super Admin
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Seletor de Agência para Super Admin */}
+            {isSuperAdmin && agencies.length > 0 ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-left transition-colors"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <span className="text-sm font-medium text-gray-700 truncate">{agencyName}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showAgencyDropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showAgencyDropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowAgencyDropdown(false)}
+                    />
+                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                      {agencies.map((agency) => (
+                        <button
+                          key={agency.id}
+                          onClick={() => handleSelectAgency(agency)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors ${
+                            agency.id === selectedAgencyId ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                          }`}
+                        >
+                          <Building2 className="w-4 h-4 flex-shrink-0" />
+                          <span className="text-sm font-medium truncate">{agency.nome}</span>
+                          {agency.id === selectedAgencyId && (
+                            <ChevronRight className="w-4 h-4 ml-auto flex-shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700 truncate">{agencyName}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {/* Navegação da Agência Selecionada */}
+            <div className="mb-2">
+              <span className="px-3 text-xs font-semibold text-gray-400 uppercase">
+                Agência
+              </span>
+            </div>
+            
             {navigation.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.href
@@ -92,11 +162,13 @@ export default function Layout({ agencyId }) {
               )
             })}
 
+            {/* Menu Super Admin */}
             {user?.role === 'super_admin' && (
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-400 uppercase">
-                  <Shield className="w-4 h-4" />
-                  Super Admin
+                <div className="mb-2">
+                  <span className="px-3 text-xs font-semibold text-gray-400 uppercase">
+                    Administração
+                  </span>
                 </div>
                 {superAdminNavigation.map((item) => {
                   const Icon = item.icon
@@ -119,7 +191,14 @@ export default function Layout({ agencyId }) {
             )}
           </nav>
 
+          {/* Rodapé com Usuário e Logout */}
           <div className="px-3 py-4 border-t border-gray-200">
+            {user && (
+              <div className="px-3 py-2 mb-2">
+                <p className="text-sm font-medium text-gray-900 truncate">{user.nome}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
