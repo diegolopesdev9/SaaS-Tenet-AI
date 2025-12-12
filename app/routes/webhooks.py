@@ -12,6 +12,7 @@ from app.services.ai_service import AIService
 from app.services.agency_service import AgencyService
 from app.services.conversation_service import ConversationService
 from app.services.crm_service import CRMService
+from app.services.notification_service import NotificationService
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -283,7 +284,42 @@ async def receive_whatsapp_webhook(request: Request):
                 # Não interrompe o fluxo principal
 
         # ============================================
-        # ENVIO DA RESPOSTA
+        # NOTIFICAÇÕES POR EMAIL
+        # ============================================
+
+        # Verificar se lead foi qualificado para enviar notificação
+        current_status = conversation_data.get("lead_status", "em_andamento")
+
+        if current_status == "qualificado" or (extracted_data.get("nome") and known_lead_data.get("nome") is None):
+            try:
+                # Preparar dados do lead para notificação
+                notification_lead_data = {
+                    "phone": sender_phone,
+                    "nome": extracted_data.get("nome") or known_lead_data.get("nome"),
+                    "email": extracted_data.get("email") or known_lead_data.get("email"),
+                    "empresa": extracted_data.get("empresa") or known_lead_data.get("empresa"),
+                    "cargo": extracted_data.get("cargo") or known_lead_data.get("cargo"),
+                    "interesse": extracted_data.get("desafio") or known_lead_data.get("desafio")
+                }
+
+                # Inicializar serviço de notificações
+                notification_service = NotificationService(supabase)
+
+                # Enviar notificação
+                await notification_service.send_lead_notification(
+                    agencia_id=agency_id,
+                    lead_data=notification_lead_data,
+                    notification_type="qualificado"
+                )
+
+                logger.info("Notificação de lead qualificado enviada")
+
+            except Exception as notif_error:
+                logger.error(f"Erro ao enviar notificação: {notif_error}")
+                # Não interrompe o fluxo principal
+
+        # ============================================
+        # RESPOSTA AO WHATSAPP
         # ============================================
 
 
