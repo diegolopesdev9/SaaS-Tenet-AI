@@ -33,15 +33,17 @@ export default function ChangePassword({ onPasswordChanged }) {
     try {
       await api.post('/auth/change-password', { nova_senha: novaSenha })
       
-      // Atualizar usuário no localStorage
-      const currentUser = authService.getUser()
-      if (currentUser) {
+      // Atualizar usuário no localStorage de forma garantida
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const currentUser = JSON.parse(userStr)
         currentUser.deve_alterar_senha = false
         localStorage.setItem('user', JSON.stringify(currentUser))
       }
 
-      // Forçar reload para garantir atualização
-      window.location.href = '/'
+      // Pequeno delay para garantir persistência e redirecionar
+      await new Promise(resolve => setTimeout(resolve, 200))
+      window.location.replace('/')
       
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao alterar senha')
