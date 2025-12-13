@@ -1,0 +1,378 @@
+Substitua o conteúdo do arquivo frontend/src/pages/admin/Agencias.jsx pelo seguinte:
+
+import React, { useState, useEffect } from 'react';
+import { Building2, Plus, Trash2, Loader2, AlertCircle, CheckCircle, User, Key, Eye, EyeOff, Copy } from 'lucide-react';
+import api from '../../services/api';
+
+export default function Agencias() {
+  const [agencias, setAgencias] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [createdUser, setCreatedUser] = useState(null);
+  
+  const [form, setForm] = useState({
+    nome: '',
+    email: '',
+    instance_name: '',
+    whatsapp_phone_id: '',
+    admin_nome: '',
+    admin_email: '',
+    admin_senha: ''
+  });
+
+  useEffect(() => {
+    loadAgencias();
+  }, []);
+
+  const loadAgencias = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/agencias');
+      setAgencias(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar agências:', error);
+      setMessage({ type: 'error', text: 'Erro ao carregar agências' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setForm({ ...form, admin_senha: password });
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setMessage({ type: 'success', text: 'Copiado para a área de transferência!' });
+    setTimeout(() => setMessage(null), 2000);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    setCreatedUser(null);
+
+    try {
+      const response = await api.post('/admin/agencias', {
+        nome: form.nome,
+        email: form.email,
+        instance_name: form.instance_name,
+        whatsapp_phone_id: form.whatsapp_phone_id,
+        admin_nome: form.admin_nome,
+        admin_email: form.admin_email,
+        admin_senha: form.admin_senha
+      });
+      
+      // Mostrar dados do usuário criado
+      if (response.data.usuario) {
+        setCreatedUser({
+          email: form.admin_email,
+          senha: form.admin_senha,
+          nome: form.admin_nome
+        });
+      }
+      
+      setMessage({ type: 'success', text: 'Agência e usuário admin criados com sucesso!' });
+      setForm({ nome: '', email: '', instance_name: '', whatsapp_phone_id: '', admin_nome: '', admin_email: '', admin_senha: '' });
+      setShowForm(false);
+      loadAgencias();
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.detail || 'Erro ao criar agência' 
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id, nome) => {
+    if (!confirm(`Tem certeza que deseja deletar a agência "${nome}"? Isso também removerá todos os usuários vinculados.`)) return;
+
+    try {
+      await api.delete(`/admin/agencias/${id}`);
+      setMessage({ type: 'success', text: 'Agência deletada!' });
+      loadAgencias();
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao deletar agência' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gerenciar Agências</h1>
+          <p className="text-gray-600">Crie e gerencie as agências do sistema</p>
+        </div>
+        <button
+          onClick={() => { setShowForm(!showForm); setCreatedUser(null); }}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <Plus className="w-5 h-5" />
+          Nova Agência
+        </button>
+      </div>
+
+      {message && (
+        <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          {message.text}
+        </div>
+      )}
+
+      {/* Card com credenciais do usuário criado */}
+      {createdUser && (
+        <div className="mb-6 p-6 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+              <Key className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-amber-800">Credenciais do Usuário Admin</h3>
+              <p className="text-sm text-amber-600">Guarde essas informações - a senha não será exibida novamente!</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-amber-700 mb-1">Nome</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded text-sm">{createdUser.nome}</code>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-amber-700 mb-1">Email</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded text-sm">{createdUser.email}</code>
+                <button onClick={() => copyToClipboard(createdUser.email)} className="p-2 hover:bg-amber-100 rounded">
+                  <Copy className="w-4 h-4 text-amber-600" />
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-amber-700 mb-1">Senha Temporária</label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded text-sm font-bold">{createdUser.senha}</code>
+                <button onClick={() => copyToClipboard(createdUser.senha)} className="p-2 hover:bg-amber-100 rounded">
+                  <Copy className="w-4 h-4 text-amber-600" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-amber-600">
+            ⚠️ O usuário será obrigado a alterar a senha no primeiro login.
+          </p>
+        </div>
+      )}
+
+      {showForm && (
+        <div className="bg-white rounded-lg border p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Nova Agência</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Dados da Agência */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                Dados da Agência
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Agência *</label>
+                  <input
+                    type="text"
+                    value={form.nome}
+                    onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Nome da agência"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email da Agência *</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="contato@agencia.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Instance Name *</label>
+                  <input
+                    type="text"
+                    value={form.instance_name}
+                    onChange={(e) => setForm({ ...form, instance_name: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="nome-da-instancia"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Phone ID</label>
+                  <input
+                    type="text"
+                    value={form.whatsapp_phone_id}
+                    onChange={(e) => setForm({ ...form, whatsapp_phone_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="5511999999999"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Dados do Usuário Admin */}
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Usuário Administrador
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Admin *</label>
+                  <input
+                    type="text"
+                    value={form.admin_nome}
+                    onChange={(e) => setForm({ ...form, admin_nome: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Nome completo"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email do Admin *</label>
+                  <input
+                    type="email"
+                    value={form.admin_email}
+                    onChange={(e) => setForm({ ...form, admin_email: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="admin@agencia.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Senha Temporária *</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={form.admin_senha}
+                        onChange={(e) => setForm({ ...form, admin_senha: e.target.value })}
+                        className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={generatePassword}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm whitespace-nowrap"
+                    >
+                      Gerar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setCreatedUser(null); }}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                Criar Agência e Usuário
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg border overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Instance Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">WhatsApp</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criado em</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {agencias.map((agencia) => (
+              <tr key={agencia.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="font-medium text-gray-900">{agencia.nome}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <code className="px-2 py-1 bg-gray-100 rounded text-sm">{agencia.instance_name || '-'}</code>
+                </td>
+                <td className="px-6 py-4 text-gray-600">{agencia.whatsapp_phone_id || '-'}</td>
+                <td className="px-6 py-4 text-gray-600 text-sm">
+                  {agencia.created_at ? new Date(agencia.created_at).toLocaleDateString('pt-BR') : '-'}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button
+                    onClick={() => handleDelete(agencia.id, agencia.nome)}
+                    className="text-red-600 hover:text-red-800 p-2"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {agencias.length === 0 && (
+              <tr>
+                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                  Nenhuma agência cadastrada
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
