@@ -1,0 +1,104 @@
+No arquivo app/routes/super_admin.py, atualize o schema AgenciaCreate e a função create_agencia.
+
+1. SUBSTITUA o schema AgenciaCreate por:
+
+class AgenciaCreate(BaseModel):
+    nome: str = Field(..., max_length=100)
+    email: EmailStr
+    instance_name: str = Field(..., max_length=100)
+    whatsapp_phone_id: Optional[str] = None
+    prompt_config: Optional[str] = None
+    admin_nome: str = Field(..., max_length=100)
+    admin_email: EmailStr
+    admin_senha: str = Field(..., min_length=6)
+
+
+2. SUBSTITUA toda a função create_agencia por:
+
+@router.post("/agencias")
+async def create_agencia(
+    agencia: AgenciaCreate,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Cria nova agência com usuário admin."""
+    logger.info(f"Super Admin {current_user['email']} criando agência: {agencia.nome}")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        # Verificar se instance_name já existe
+        existing = supabase.table("agencias").select("id").eq(
+            "instance_name", agencia.instance_name
+        ).execute()
+        
+        if existing.data:
+            raise HTTPException(status_code=400, detail="Instance name já existe")
+        
+        # Verificar se email do admin já existe
+        existing_user = supabase.table("usuarios").select("id").eq(
+            "email", agencia.admin_email
+        ).execute()
+        
+        if existing_user.data:
+            raise HTTPException(status_code=400, detail="Email do administrador já cadastrado")
+        
+        # Criar agência
+        agencia_data = {
+            "nome": agencia.nome,
+            "email": agencia.email,
+            "instance_name": agencia.instance_name,
+            "whatsapp_phone_id": agencia.whatsapp_phone_id,
+            "prompt_config": agencia.prompt_config,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        agencia_response = supabase.table("agencias").insert(agencia_data).execute()
+        
+        if not agencia_response.data:
+            raise HTTPException(status_code=500, detail="Erro ao criar agência")
+        
+        agencia_id = agencia_response.data[0]['id']
+        logger.info(f"Agência criada: {agencia_id}")
+        
+        # Criar usuário admin para a agência
+        senha_hash = pwd_context.hash(agencia.admin_senha)
+        
+        usuario_data = {
+            "email": agencia.admin_email,
+            "senha_hash": senha_hash,
+            "nome": agencia.admin_nome,
+            "agencia_id": agencia_id,
+            "role": "admin",
+            "ativo": True,
+            "deve_alterar_senha": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        usuario_response = supabase.table("usuarios").insert(usuario_data).execute()
+        
+        if not usuario_response.data:
+            # Se falhar ao criar usuário, deletar a agência criada
+            supabase.table("agencias").delete().eq("id", agencia_id).execute()
+            raise HTTPException(status_code=500, detail="Erro ao criar usuário admin")
+        
+        logger.info(f"Usuário admin criado: {usuario_response.data[0]['id']}")
+        
+        return {
+            "success": True, 
+            "agencia": agencia_response.data[0],
+            "usuario": {
+                "id": usuario_response.data[0]["id"],
+                "email": usuario_response.data[0]["email"],
+                "nome": usuario_response.data[0]["nome"]
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao criar agência: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+NÃO altere nenhum outro código do arquivo.
