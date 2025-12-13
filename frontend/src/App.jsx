@@ -127,6 +127,7 @@ function AuthenticatedApp() {
 
   return (
     <Layout 
+      key={agencyId}
       agencyId={agencyId} 
       agencies={agencies}
       selectedAgencyId={selectedAgencyId}
