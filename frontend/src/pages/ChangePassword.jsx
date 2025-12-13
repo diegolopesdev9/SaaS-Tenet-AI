@@ -33,17 +33,20 @@ export default function ChangePassword({ onPasswordChanged }) {
     try {
       await api.post('/auth/change-password', { nova_senha: novaSenha })
       
-      // Atualizar usuário no localStorage de forma garantida
-      const userStr = localStorage.getItem('user')
-      if (userStr) {
-        const currentUser = JSON.parse(userStr)
-        currentUser.deve_alterar_senha = false
-        localStorage.setItem('user', JSON.stringify(currentUser))
-      }
+      // Buscar dados atualizados do usuário
+      const meResponse = await api.get('/auth/me')
+      const updatedUser = meResponse.data
+      
+      // Atualizar localStorage com dados do backend
+      localStorage.setItem('user', JSON.stringify(updatedUser))
 
-      // Pequeno delay para garantir persistência e redirecionar
-      await new Promise(resolve => setTimeout(resolve, 200))
-      window.location.replace('/')
+      // Chamar callback para atualizar o App
+      if (onPasswordChanged) {
+        onPasswordChanged()
+      } else {
+        // Fallback: forçar reload
+        window.location.reload()
+      }
       
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao alterar senha')
