@@ -75,7 +75,7 @@ class UsuarioResponse(BaseModel):
 
 @router.get("/agencias")
 async def list_all_agencies(current_user: dict = Depends(get_current_user)):
-    """Lista todas as agências (apenas super_admin)."""
+    """Lista todas as agências com métricas resumidas (apenas super_admin)."""
 
     if current_user.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Acesso restrito a super administradores")
@@ -83,11 +83,34 @@ async def list_all_agencies(current_user: dict = Depends(get_current_user)):
     supabase = get_supabase_client()
 
     try:
+        # Buscar agências
         response = supabase.table("agencias").select(
-            "id, nome, created_at, instance_name"
+            "id, nome, email, created_at, instance_name, whatsapp_phone_id"
         ).order("nome").execute()
 
-        return response.data or []
+        agencias = response.data or []
+
+        # Para cada agência, buscar contagem de usuários e conversas
+        for agencia in agencias:
+            # Contar usuários
+            usuarios_response = supabase.table("usuarios").select(
+                "id", count="exact"
+            ).eq("agencia_id", agencia["id"]).execute()
+            agencia["total_usuarios"] = usuarios_response.count or 0
+
+            # Contar conversas
+            conversas_response = supabase.table("conversas").select(
+                "id", count="exact"
+            ).eq("agencia_id", agencia["id"]).execute()
+            agencia["total_conversas"] = conversas_response.count or 0
+
+            # Contar qualificados
+            qualificados_response = supabase.table("conversas").select(
+                "id", count="exact"
+            ).eq("agencia_id", agencia["id"]).eq("lead_status", "qualificado").execute()
+            agencia["total_qualificados"] = qualificados_response.count or 0
+
+        return agencias
     except Exception as e:
         logger.error(f"Erro ao listar agências: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -164,7 +187,7 @@ async def create_agencia(
         logger.info(f"Usuário admin criado: {usuario_response.data[0]['id']}")
 
         return {
-            "success": True, 
+            "success": True,
             "agencia": agencia_response.data[0],
             "usuario": {
                 "id": usuario_response.data[0]["id"],
