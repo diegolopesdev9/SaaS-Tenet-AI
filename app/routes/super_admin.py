@@ -4,7 +4,7 @@ Rotas de Super Admin para gerenciamento de agências e usuários.
 import logging
 from datetime import datetime, timezone
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr, Field
 from app.database import get_supabase_client
 from app.routes.auth import get_current_user
@@ -225,6 +225,64 @@ async def delete_agencia(
         raise
     except Exception as e:
         logger.error(f"Erro ao deletar agência: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/agencias/{agencia_id}/usuarios")
+async def list_agency_users(
+    agencia_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Lista usuários de uma agência específica."""
+    logger.info(f"Super Admin {current_user['email']} listando usuários da agência: {agencia_id}")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        response = supabase.table("usuarios").select(
+            "id, email, nome, role, ativo, deve_alterar_senha, created_at"
+        ).eq("agencia_id", agencia_id).order("created_at", desc=True).execute()
+        
+        return response.data or []
+    except Exception as e:
+        logger.error(f"Erro ao listar usuários da agência: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/agencias/{agencia_id}")
+async def update_agencia(
+    agencia_id: str,
+    request: Request,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Atualiza dados básicos de uma agência."""
+    logger.info(f"Super Admin {current_user['email']} atualizando agência: {agencia_id}")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        body = await request.json()
+        
+        # Campos permitidos para atualização
+        allowed_fields = ["nome", "email", "instance_name", "whatsapp_phone_id"]
+        update_data = {k: v for k, v in body.items() if k in allowed_fields}
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="Nenhum campo válido para atualizar")
+        
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        response = supabase.table("agencias").update(update_data).eq("id", agencia_id).execute()
+        
+        if response.data:
+            return {"success": True, "agencia": response.data[0]}
+        
+        raise HTTPException(status_code=404, detail="Agência não encontrada")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar agência: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
