@@ -40,13 +40,11 @@ export default function ChangePassword({ onPasswordChanged }) {
         localStorage.setItem('user', JSON.stringify(currentUser))
       }
 
-      // Chamar callback para atualizar o App
-      if (onPasswordChanged) {
-        onPasswordChanged()
-      }
+      // Forçar reload para garantir atualização
+      window.location.href = '/'
+      
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao alterar senha')
-    } finally {
       setLoading(false)
     }
   }
