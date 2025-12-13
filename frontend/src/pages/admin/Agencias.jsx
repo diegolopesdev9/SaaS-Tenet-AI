@@ -1,9 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Trash2, Loader2, AlertCircle, CheckCircle, User, Key, Eye, EyeOff, Copy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Plus, Trash2, Loader2, AlertCircle, CheckCircle, User, Key, Eye, EyeOff, Copy, Settings } from 'lucide-react';
 import api from '../../services/api';
 
 export default function Agencias() {
+  const navigate = useNavigate();
+
+  const handleConfigureAgency = (agencyId) => {
+    // Salvar a agência selecionada e redirecionar para configurações
+    localStorage.setItem('selectedAgencyId', agencyId);
+    navigate('/config');
+    // Forçar reload para atualizar o contexto
+    window.location.reload();
+  };
+
   const [agencias, setAgencias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -353,12 +364,22 @@ export default function Agencias() {
                   {agencia.created_at ? new Date(agencia.created_at).toLocaleDateString('pt-BR') : '-'}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleDelete(agencia.id, agencia.nome)}
-                    className="text-red-600 hover:text-red-800 p-2"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => handleConfigureAgency(agencia.id)}
+                      className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg"
+                      title="Configurar agência"
+                    >
+                      <Settings className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(agencia.id, agencia.nome)}
+                      className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg"
+                      title="Deletar agência"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
