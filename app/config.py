@@ -13,6 +13,16 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(..., description="Fernet encryption master key")
     ENVIRONMENT: str = Field(default="development", description="Environment: dev/prod")
 
+    # CORS Configuration
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:3000,http://localhost:5173",
+        description="Comma-separated list of allowed origins"
+    )
+    
+    @property
+    def cors_origins_list(self) -> list:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
     # AI Configuration
     GEMINI_API_KEY: str = Field(..., description="Gemini API Key")
     GEMINI_MODEL: str = "gemini-2.0-flash"

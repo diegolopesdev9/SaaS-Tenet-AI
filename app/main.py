@@ -11,6 +11,7 @@ from app.routes.super_admin import router as super_admin_router
 from app.routes.integrations import router as integrations_router
 from app.routes.notifications import router as notifications_router
 from app.database import health_check
+from app.config import settings
 
 app = FastAPI(
     title="SDR Agent SaaS API",
@@ -20,10 +21,10 @@ app = FastAPI(
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
 
 # Include routers
