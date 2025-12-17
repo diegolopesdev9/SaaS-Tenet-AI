@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
+from app.utils.rate_limit import limiter
 from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.database import get_supabase_client
 
@@ -60,17 +61,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
+@limiter.limit("10/minute")
+async def login(request: Request, credentials: LoginRequest):
     """
     Realiza login e retorna token JWT.
     """
-    logger.info(f"Tentativa de login: {request.email}")
+    logger.info(f"Tentativa de login: {credentials.email}")
     
     auth_service = AuthService()
-    user = await auth_service.authenticate_user(request.email, request.password)
+    user = await auth_service.authenticate_user(credentials.email, credentials.password)
     
     if not user:
-        logger.warning(f"Login falhou: {request.email}")
+        logger.warning(f"Login falhou: {credentials.email}")
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
     
     # Criar token
@@ -84,7 +86,7 @@ async def login(request: LoginRequest):
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     
-    logger.info(f"Login bem-sucedido: {request.email}")
+    logger.info(f"Login bem-sucedido: {credentials.email}")
     
     return LoginResponse(
         access_token=access_token,

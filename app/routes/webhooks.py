@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request, HTTPException
 from typing import Optional
 import os
 
+from app.utils.rate_limit import limiter
 from app.services.whatsapp_service import WhatsAppService
 from app.services.ai_service import AIService
 from app.services.agency_service import AgencyService
@@ -61,6 +62,7 @@ def extract_message_text(data: dict) -> Optional[str]:
 
 
 @router.post("/whatsapp")
+@limiter.limit("100/minute")
 async def receive_whatsapp_webhook(request: Request):
     """
     Endpoint para receber webhooks do WhatsApp via Evolution API.
@@ -341,6 +343,7 @@ async def receive_whatsapp_webhook(request: Request):
 
 
 @router.post("/rdstation")
+@limiter.limit("60/minute")
 async def rdstation_webhook(request: Request):
     """
     RD Station webhook endpoint.
