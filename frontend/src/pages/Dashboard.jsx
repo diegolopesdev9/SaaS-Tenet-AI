@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle, BarChart3, Filter } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
+import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle, BarChart3, Filter, Building2 } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../services/api'
 
 export default function Dashboard({ agencyId }) {
@@ -12,6 +12,8 @@ export default function Dashboard({ agencyId }) {
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('7d')
 
+  const isGeneralView = agencyId === 'geral'
+
   useEffect(() => {
     loadData()
   }, [agencyId, period])
@@ -20,15 +22,24 @@ export default function Dashboard({ agencyId }) {
     try {
       setLoading(true)
 
-      const [metricsRes, advancedRes, leadsRes] = await Promise.all([
-        api.get(`/agencias/${agencyId}/metrics`),
-        api.get(`/agencias/${agencyId}/metrics/advanced?period=${period}`),
-        api.get(`/agencias/${agencyId}/conversas`, { params: { limit: 5 } })
-      ])
+      if (isGeneralView) {
+        // Carregar métricas gerais (todas as agências)
+        const response = await api.get(`/admin/metrics/geral?period=${period}`)
+        setAdvancedMetrics(response.data)
+        setMetrics(null)
+        setRecentLeads([])
+      } else {
+        // Carregar métricas de uma agência específica
+        const [metricsRes, advancedRes, leadsRes] = await Promise.all([
+          api.get(`/agencias/${agencyId}/metrics`),
+          api.get(`/agencias/${agencyId}/metrics/advanced?period=${period}`),
+          api.get(`/agencias/${agencyId}/conversas`, { params: { limit: 5 } })
+        ])
 
-      setMetrics(metricsRes.data)
-      setAdvancedMetrics(advancedRes.data)
-      setRecentLeads(leadsRes.data || [])
+        setMetrics(metricsRes.data)
+        setAdvancedMetrics(advancedRes.data)
+        setRecentLeads(leadsRes.data || [])
+      }
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
@@ -74,8 +85,22 @@ export default function Dashboard({ agencyId }) {
       {/* Header com Filtro */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">Visão geral das suas conversas e métricas</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isGeneralView ? 'Dashboard Geral' : 'Dashboard'}
+            </h1>
+            {isGeneralView && (
+              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                Todas as Agências
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            {isGeneralView 
+              ? `Visão consolidada de ${advancedMetrics?.total_agencias || 0} agências`
+              : 'Visão geral das suas conversas e métricas'
+            }
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
@@ -211,6 +236,70 @@ export default function Dashboard({ agencyId }) {
         </div>
       </div>
 
+      {/* Ranking de Agências (apenas na Visão Geral) */}
+      {isGeneralView && advancedMetrics?.agency_breakdown?.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Building2 className="w-5 h-5 text-gray-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Desempenho por Agência</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Agência</th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Total Leads</th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Qualificados</th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Taxa</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Performance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {advancedMetrics.agency_breakdown.map((agency, index) => (
+                  <tr key={agency.id} className="hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold ${
+                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-gray-300'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <span className="font-medium text-gray-900">{agency.nome}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                        <Users className="w-3.5 h-3.5" />
+                        {agency.total}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        {agency.qualificado}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`font-bold ${agency.taxa >= 30 ? 'text-green-600' : agency.taxa >= 15 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        {agency.taxa}%
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className={`h-full rounded-full ${agency.taxa >= 30 ? 'bg-green-500' : agency.taxa >= 15 ? 'bg-yellow-500' : 'bg-gray-400'}`}
+                          style={{ width: `${Math.min(agency.taxa, 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Status Breakdown */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Leads por Status</h2>
@@ -232,53 +321,55 @@ export default function Dashboard({ agencyId }) {
         </div>
       </div>
 
-      {/* Leads Recentes */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Leads Recentes</h2>
-            <Link to="/conversas" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-              Ver todos
-            </Link>
+      {/* Leads Recentes (apenas para agência específica) */}
+      {!isGeneralView && (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Leads Recentes</h2>
+              <Link to="/conversas" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                Ver todos
+              </Link>
+            </div>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {recentLeads.length === 0 ? (
+              <div className="px-6 py-12 text-center">
+                <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500">Nenhuma conversa encontrada</p>
+              </div>
+            ) : (
+              recentLeads.map((lead) => (
+                <Link
+                  key={lead.id}
+                  to={`/conversas/${lead.id}`}
+                  className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {lead.lead_data?.nome || lead.lead_phone}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {lead.lead_phone} • {lead.total_mensagens} mensagens
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {getStatusBadge(lead.lead_status)}
+                    <div className="text-xs text-gray-500">
+                      {lead.last_message_at && new Date(lead.last_message_at).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
-        <div className="divide-y divide-gray-200">
-          {recentLeads.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-500">Nenhuma conversa encontrada</p>
-            </div>
-          ) : (
-            recentLeads.map((lead) => (
-              <Link
-                key={lead.id}
-                to={`/conversas/${lead.id}`}
-                className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {lead.lead_data?.nome || lead.lead_phone}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {lead.lead_phone} • {lead.total_mensagens} mensagens
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {getStatusBadge(lead.lead_status)}
-                  <div className="text-xs text-gray-500">
-                    {lead.last_message_at && new Date(lead.last_message_at).toLocaleDateString('pt-BR')}
-                  </div>
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
