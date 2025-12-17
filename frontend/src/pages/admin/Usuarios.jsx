@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Loader2, AlertCircle, CheckCircle, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, Plus, Trash2, Loader2, AlertCircle, CheckCircle, ToggleLeft, ToggleRight, Settings } from 'lucide-react';
 import api from '../../services/api';
 
 export default function Usuarios() {
@@ -18,6 +19,15 @@ export default function Usuarios() {
     agencia_id: '',
     role: 'admin'
   });
+
+  const navigate = useNavigate();
+
+  const handleConfigureAgency = (agenciaId) => {
+    if (!agenciaId) return;
+    localStorage.setItem('selectedAgencyId', agenciaId);
+    navigate('/config');
+    window.location.reload();
+  };
 
   useEffect(() => {
     loadData();
@@ -257,13 +267,25 @@ export default function Usuarios() {
                   </button>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => handleDelete(usuario.id, usuario.nome)}
-                    disabled={usuario.role === 'super_admin'}
-                    className="text-red-600 hover:text-red-800 p-2 disabled:opacity-50"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    {usuario.agencia_id && (
+                      <button
+                        onClick={() => handleConfigureAgency(usuario.agencia_id)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        title="Configurar agência do usuário"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(usuario.id, usuario.nome)}
+                      disabled={usuario.role === 'super_admin'}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                      title="Deletar usuário"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
