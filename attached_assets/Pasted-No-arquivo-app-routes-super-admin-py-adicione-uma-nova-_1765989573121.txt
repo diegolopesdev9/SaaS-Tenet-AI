@@ -1,0 +1,142 @@
+No arquivo app/routes/super_admin.py, adicione uma nova rota para métricas gerais de todas as agências.
+
+Adicione APÓS os imports existentes, mas antes das rotas, estas constantes (se não existirem):
+
+from datetime import datetime, timezone, timedelta
+
+Adicione esta nova rota APÓS a rota list_all_agencies:
+
+@router.get("/metrics/geral")
+async def get_general_metrics(
+    period: str = "7d",
+    current_user: dict = Depends(require_super_admin)
+):
+    """Retorna métricas consolidadas de todas as agências (apenas super_admin)."""
+    logger.info(f"Super Admin {current_user['email']} consultando métricas gerais")
+    
+    supabase = get_supabase_client()
+    
+    # Calcular data inicial baseado no período
+    days_map = {"7d": 7, "15d": 15, "30d": 30, "90d": 90}
+    days = days_map.get(period, 7)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    try:
+        # Buscar todas as agências
+        agencias_response = supabase.table("agencias").select("id, nome").execute()
+        agencias = agencias_response.data or []
+        
+        # Buscar todas as conversas do período
+        conversas_response = supabase.table("conversas").select(
+            "id, agencia_id, lead_status, total_mensagens, created_at, last_message_at"
+        ).gte("created_at", start_date.isoformat()).execute()
+        
+        conversas = conversas_response.data or []
+        
+        # Calcular métricas gerais
+        total_leads = len(conversas)
+        status_counts = {"iniciada": 0, "em_andamento": 0, "qualificado": 0, "perdido": 0, "agendado": 0}
+        leads_by_day = {}
+        leads_by_agency = {}
+        total_response_time = 0
+        response_count = 0
+        
+        for conv in conversas:
+            # Contagem por status
+            status = conv.get("lead_status", "em_andamento")
+            if status in status_counts:
+                status_counts[status] += 1
+            
+            # Agrupar por dia
+            created = conv.get("created_at", "")[:10]
+            if created:
+                if created not in leads_by_day:
+                    leads_by_day[created] = {"total": 0, "qualificado": 0}
+                leads_by_day[created]["total"] += 1
+                if status == "qualificado":
+                    leads_by_day[created]["qualificado"] += 1
+            
+            # Agrupar por agência
+            agencia_id = conv.get("agencia_id")
+            if agencia_id:
+                if agencia_id not in leads_by_agency:
+                    leads_by_agency[agencia_id] = {"total": 0, "qualificado": 0}
+                leads_by_agency[agencia_id]["total"] += 1
+                if status == "qualificado":
+                    leads_by_agency[agencia_id]["qualificado"] += 1
+            
+            # Calcular tempo médio
+            if conv.get("created_at") and conv.get("last_message_at"):
+                try:
+                    created_dt = datetime.fromisoformat(conv["created_at"].replace("Z", "+00:00"))
+                    last_dt = datetime.fromisoformat(conv["last_message_at"].replace("Z", "+00:00"))
+                    diff_hours = (last_dt - created_dt).total_seconds() / 3600
+                    if diff_hours > 0:
+                        total_response_time += diff_hours
+                        response_count += 1
+                except:
+                    pass
+        
+        # Formatar dados para gráfico de linha (por dia)
+        chart_data = []
+        for date in sorted(leads_by_day.keys()):
+            chart_data.append({
+                "date": date,
+                "label": datetime.strptime(date, "%Y-%m-%d").strftime("%d/%m"),
+                "total": leads_by_day[date]["total"],
+                "qualificado": leads_by_day[date]["qualificado"]
+            })
+        
+        # Formatar dados por agência
+        agency_data = []
+        for agencia in agencias:
+            ag_id = agencia["id"]
+            ag_stats = leads_by_agency.get(ag_id, {"total": 0, "qualificado": 0})
+            agency_data.append({
+                "id": ag_id,
+                "nome": agencia["nome"],
+                "total": ag_stats["total"],
+                "qualificado": ag_stats["qualificado"],
+                "taxa": round(ag_stats["qualificado"] / max(ag_stats["total"], 1) * 100, 1)
+            })
+        
+        # Ordenar por total de leads
+        agency_data.sort(key=lambda x: x["total"], reverse=True)
+        
+        # Calcular funil
+        if total_leads > 0:
+            funnel_data = [
+                {"stage": "Leads Recebidos", "count": total_leads, "percentage": 100},
+                {"stage": "Em Andamento", "count": status_counts["em_andamento"], "percentage": round(status_counts["em_andamento"] / total_leads * 100)},
+                {"stage": "Qualificados", "count": status_counts["qualificado"], "percentage": round(status_counts["qualificado"] / total_leads * 100)},
+                {"stage": "Agendados", "count": status_counts["agendado"], "percentage": round(status_counts["agendado"] / total_leads * 100)},
+            ]
+        else:
+            funnel_data = [
+                {"stage": "Leads Recebidos", "count": 0, "percentage": 0},
+                {"stage": "Em Andamento", "count": 0, "percentage": 0},
+                {"stage": "Qualificados", "count": 0, "percentage": 0},
+                {"stage": "Agendados", "count": 0, "percentage": 0},
+            ]
+        
+        # Tempo médio
+        avg_response_time = round(total_response_time / max(response_count, 1), 1)
+        
+        return {
+            "period": period,
+            "total_leads": total_leads,
+            "total_agencias": len(agencias),
+            "chart_data": chart_data,
+            "funnel_data": funnel_data,
+            "status_breakdown": status_counts,
+            "avg_conversation_hours": avg_response_time,
+            "conversion_rate": round(status_counts["qualificado"] / max(total_leads, 1) * 100, 1),
+            "agency_breakdown": agency_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao calcular métricas gerais: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+NÃO altere nenhum outro código do arquivo.
