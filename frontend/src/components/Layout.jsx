@@ -107,6 +107,22 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       onClick={() => setShowAgencyDropdown(false)}
                     />
                     <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                      {/* Opção Geral - Todas as Agências */}
+                      <button
+                        onClick={() => handleSelectAgency({ id: 'geral', nome: 'Visão Geral' })}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                          selectedAgencyId === 'geral' ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
+                        }`}
+                      >
+                        <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm font-medium truncate">Visão Geral</span>
+                        <span className="ml-auto text-xs text-gray-400">Todas</span>
+                        {selectedAgencyId === 'geral' && (
+                          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                        )}
+                      </button>
+                      
+                      {/* Lista de Agências */}
                       {agencies.map((agency) => (
                         <button
                           key={agency.id}
