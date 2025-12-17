@@ -123,26 +123,26 @@ async def get_general_metrics(
 ):
     """Retorna métricas consolidadas de todas as agências (apenas super_admin)."""
     logger.info(f"Super Admin {current_user['email']} consultando métricas gerais")
-    
+
     supabase = get_supabase_client()
-    
+
     # Calcular data inicial baseado no período
     days_map = {"7d": 7, "15d": 15, "30d": 30, "90d": 90}
     days = days_map.get(period, 7)
     start_date = datetime.now(timezone.utc) - timedelta(days=days)
-    
+
     try:
         # Buscar todas as agências
         agencias_response = supabase.table("agencias").select("id, nome").execute()
         agencias = agencias_response.data or []
-        
+
         # Buscar todas as conversas do período
         conversas_response = supabase.table("conversas").select(
             "id, agencia_id, lead_status, total_mensagens, created_at, last_message_at"
         ).gte("created_at", start_date.isoformat()).execute()
-        
+
         conversas = conversas_response.data or []
-        
+
         # Calcular métricas gerais
         total_leads = len(conversas)
         status_counts = {"iniciada": 0, "em_andamento": 0, "qualificado": 0, "perdido": 0, "agendado": 0}
@@ -150,13 +150,13 @@ async def get_general_metrics(
         leads_by_agency = {}
         total_response_time = 0
         response_count = 0
-        
+
         for conv in conversas:
             # Contagem por status
             status = conv.get("lead_status", "em_andamento")
             if status in status_counts:
                 status_counts[status] += 1
-            
+
             # Agrupar por dia
             created = conv.get("created_at", "")[:10]
             if created:
@@ -165,7 +165,7 @@ async def get_general_metrics(
                 leads_by_day[created]["total"] += 1
                 if status == "qualificado":
                     leads_by_day[created]["qualificado"] += 1
-            
+
             # Agrupar por agência
             agencia_id = conv.get("agencia_id")
             if agencia_id:
@@ -174,7 +174,7 @@ async def get_general_metrics(
                 leads_by_agency[agencia_id]["total"] += 1
                 if status == "qualificado":
                     leads_by_agency[agencia_id]["qualificado"] += 1
-            
+
             # Calcular tempo médio
             if conv.get("created_at") and conv.get("last_message_at"):
                 try:
@@ -186,7 +186,7 @@ async def get_general_metrics(
                         response_count += 1
                 except:
                     pass
-        
+
         # Formatar dados para gráfico de linha (por dia)
         chart_data = []
         for date in sorted(leads_by_day.keys()):
@@ -196,7 +196,7 @@ async def get_general_metrics(
                 "total": leads_by_day[date]["total"],
                 "qualificado": leads_by_day[date]["qualificado"]
             })
-        
+
         # Formatar dados por agência
         agency_data = []
         for agencia in agencias:
@@ -209,10 +209,10 @@ async def get_general_metrics(
                 "qualificado": ag_stats["qualificado"],
                 "taxa": round(ag_stats["qualificado"] / max(ag_stats["total"], 1) * 100, 1)
             })
-        
+
         # Ordenar por total de leads
         agency_data.sort(key=lambda x: x["total"], reverse=True)
-        
+
         # Calcular funil
         if total_leads > 0:
             funnel_data = [
@@ -228,10 +228,10 @@ async def get_general_metrics(
                 {"stage": "Qualificados", "count": 0, "percentage": 0},
                 {"stage": "Agendados", "count": 0, "percentage": 0},
             ]
-        
+
         # Tempo médio
         avg_response_time = round(total_response_time / max(response_count, 1), 1)
-        
+
         return {
             "period": period,
             "total_leads": total_leads,
@@ -243,7 +243,7 @@ async def get_general_metrics(
             "conversion_rate": round(status_counts["qualificado"] / max(total_leads, 1) * 100, 1),
             "agency_breakdown": agency_data
         }
-        
+
     except Exception as e:
         logger.error(f"Erro ao calcular métricas gerais: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -368,14 +368,14 @@ async def list_agency_users(
 ):
     """Lista usuários de uma agência específica."""
     logger.info(f"Super Admin {current_user['email']} listando usuários da agência: {agencia_id}")
-    
+
     supabase = get_supabase_client()
-    
+
     try:
         response = supabase.table("usuarios").select(
             "id, email, nome, role, ativo, deve_alterar_senha, created_at"
         ).eq("agencia_id", agencia_id).order("created_at", desc=True).execute()
-        
+
         return response.data or []
     except Exception as e:
         logger.error(f"Erro ao listar usuários da agência: {e}")
@@ -390,28 +390,28 @@ async def update_agencia(
 ):
     """Atualiza dados básicos de uma agência."""
     logger.info(f"Super Admin {current_user['email']} atualizando agência: {agencia_id}")
-    
+
     supabase = get_supabase_client()
-    
+
     try:
         body = await request.json()
-        
+
         # Campos permitidos para atualização
         allowed_fields = ["nome", "email", "instance_name", "whatsapp_phone_id"]
         update_data = {k: v for k, v in body.items() if k in allowed_fields}
-        
+
         if not update_data:
             raise HTTPException(status_code=400, detail="Nenhum campo válido para atualizar")
-        
+
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
-        
+
         response = supabase.table("agencias").update(update_data).eq("id", agencia_id).execute()
-        
+
         if response.data:
             return {"success": True, "agencia": response.data[0]}
-        
+
         raise HTTPException(status_code=404, detail="Agência não encontrada")
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -509,32 +509,113 @@ async def toggle_usuario(
     usuario_id: str,
     current_user: dict = Depends(require_super_admin)
 ):
-    """Ativa/desativa usuário."""
-    logger.info(f"Super Admin {current_user['email']} alternando status do usuário: {usuario_id}")
+    """Ativa ou desativa um usuário."""
+    logger.info(f"Super Admin {current_user['email']} alterando status do usuário: {usuario_id}")
 
     supabase = get_supabase_client()
 
     try:
         # Buscar usuário atual
-        user = supabase.table("usuarios").select("ativo").eq("id", usuario_id).execute()
+        usuario = supabase.table("usuarios").select("ativo, role").eq("id", usuario_id).execute()
 
-        if not user.data:
+        if not usuario.data:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-        # Alternar status
-        new_status = not user.data[0]["ativo"]
+        # Não permitir desativar super_admin
+        if usuario.data[0].get("role") == "super_admin":
+            raise HTTPException(status_code=403, detail="Não é permitido desativar um super admin")
+
+        novo_status = not usuario.data[0]["ativo"]
 
         response = supabase.table("usuarios").update({
-            "ativo": new_status,
+            "ativo": novo_status,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", usuario_id).execute()
 
-        return {"success": True, "ativo": new_status}
+        return {"success": True, "ativo": novo_status}
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Erro ao alternar usuário: {e}")
+        logger.error(f"Erro ao alterar status do usuário: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/usuarios/{usuario_id}")
+async def update_usuario(
+    usuario_id: str,
+    request: Request,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Atualiza dados de um usuário específico."""
+    logger.info(f"Super Admin {current_user['email']} atualizando usuário: {usuario_id}")
+
+    supabase = get_supabase_client()
+
+    try:
+        body = await request.json()
+
+        # Campos permitidos para atualização
+        allowed_fields = ["nome", "email", "role", "agencia_id"]
+        update_data = {k: v for k, v in body.items() if k in allowed_fields and v is not None}
+
+        # Se nova senha foi fornecida, fazer hash
+        if body.get("nova_senha"):
+            if len(body["nova_senha"]) < 6:
+                raise HTTPException(status_code=400, detail="Senha deve ter no mínimo 6 caracteres")
+            update_data["senha_hash"] = pwd_context.hash(body["nova_senha"])
+            update_data["deve_alterar_senha"] = body.get("forcar_troca_senha", True)
+
+        if not update_data:
+            raise HTTPException(status_code=400, detail="Nenhum campo válido para atualizar")
+
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        # Verificar se usuário existe
+        existing = supabase.table("usuarios").select("id, role").eq("id", usuario_id).execute()
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+        # Não permitir alterar super_admin
+        if existing.data[0].get("role") == "super_admin" and current_user["id"] != usuario_id:
+            raise HTTPException(status_code=403, detail="Não é permitido alterar outro super admin")
+
+        response = supabase.table("usuarios").update(update_data).eq("id", usuario_id).execute()
+
+        if response.data:
+            return {"success": True, "usuario": response.data[0]}
+
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar usuário: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/usuarios/{usuario_id}")
+async def get_usuario(
+    usuario_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Busca dados de um usuário específico."""
+    supabase = get_supabase_client()
+
+    try:
+        response = supabase.table("usuarios").select(
+            "id, email, nome, role, ativo, agencia_id, deve_alterar_senha, created_at"
+        ).eq("id", usuario_id).execute()
+
+        if response.data:
+            return response.data[0]
+
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar usuário: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
