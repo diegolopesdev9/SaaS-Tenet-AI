@@ -1,0 +1,74 @@
+Crie um script para verificar se o ambiente está configurado corretamente.
+
+Crie o arquivo scripts/check_env.py:
+
+#!/usr/bin/env python3
+"""Script para verificar configuração do ambiente"""
+
+import sys
+import os
+
+def check_env():
+    print("🔍 Verificando variáveis de ambiente...\n")
+    
+    required_vars = [
+        ("SUPABASE_URL", "URL do Supabase"),
+        ("SUPABASE_KEY", "Chave do Supabase"),
+        ("GEMINI_API_KEY", "API Key do Gemini"),
+        ("JWT_SECRET", "Segredo JWT"),
+        ("FERNET_KEY", "Chave Fernet"),
+    ]
+    
+    optional_vars = [
+        ("CORS_ORIGINS", "Origens CORS"),
+        ("ENVIRONMENT", "Ambiente"),
+        ("WHATSAPP_API_URL", "URL WhatsApp API"),
+    ]
+    
+    errors = []
+    warnings = []
+    
+    for var, desc in required_vars:
+        value = os.getenv(var)
+        if not value:
+            errors.append(f"❌ {var} ({desc}) - NÃO DEFINIDA")
+        elif "seu" in value.lower() or "your" in value.lower():
+            warnings.append(f"⚠️  {var} ({desc}) - Parece ser valor de exemplo")
+        else:
+            print(f"✅ {var} ({desc})")
+    
+    print("\n--- Variáveis Opcionais ---")
+    for var, desc in optional_vars:
+        value = os.getenv(var)
+        if value:
+            print(f"✅ {var} = {value[:30]}...")
+        else:
+            print(f"⚪ {var} ({desc}) - não definida")
+    
+    if warnings:
+        print("\n⚠️  AVISOS:")
+        for w in warnings:
+            print(f"   {w}")
+    
+    if errors:
+        print("\n❌ ERROS:")
+        for e in errors:
+            print(f"   {e}")
+        print("\n💡 Configure as variáveis no arquivo .env ou nas Secrets do Replit")
+        return False
+    
+    print("\n✅ Ambiente configurado corretamente!")
+    return True
+
+if __name__ == "__main__":
+    # Carrega .env se existir
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
+    
+    success = check_env()
+    sys.exit(0 if success else 1)
+
+NÃO altere nenhum outro arquivo.
