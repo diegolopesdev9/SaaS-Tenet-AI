@@ -7,6 +7,7 @@ import os
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.utils.rate_limit import limiter
+from app.middleware.request_id import RequestIDMiddleware
 from app.routes import health, webhooks
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
@@ -32,6 +33,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+
+app.add_middleware(RequestIDMiddleware)
 
 # Include routers
 app.include_router(health.router)
