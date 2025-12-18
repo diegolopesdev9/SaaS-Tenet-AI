@@ -13,6 +13,26 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str = Field(..., description="Fernet encryption master key")
     ENVIRONMENT: str = Field(default="development", description="Environment: dev/prod")
 
+    # JWT Configuration
+    JWT_SECRET: str = Field(
+        default="change-me-in-production",
+        description="Secret key for JWT tokens"
+    )
+    JWT_ALGORITHM: str = Field(
+        default="HS256",
+        description="Algorithm for JWT"
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30,
+        description="Token expiration time in minutes"
+    )
+    
+    # Encryption
+    FERNET_KEY: str = Field(
+        default="",
+        description="Fernet key for encryption"
+    )
+
     # CORS Configuration
     CORS_ORIGINS: str = Field(
         default="http://localhost:3000,http://localhost:5173",
@@ -37,6 +57,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 settings = Settings()
