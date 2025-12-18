@@ -1,35 +1,58 @@
 
-"""
-Configuração centralizada de logging para a aplicação.
-"""
 import logging
+import json
 import sys
+from datetime import datetime
+from typing import Optional
 
-
-def setup_logger(name: str = __name__) -> logging.Logger:
-    """
-    Configura e retorna um logger com formato detalhado.
+class JSONFormatter(logging.Formatter):
+    """Formatter que gera logs em formato JSON estruturado"""
     
-    Args:
-        name: Nome do módulo que está criando o logger
+    def format(self, record: logging.LogRecord) -> str:
+        log_obj = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno
+        }
         
-    Returns:
-        logging.Logger: Logger configurado
-    """
-    # Configurar formato detalhado de logging
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        # Adiciona campos extras se existirem
+        if hasattr(record, "agencia_id"):
+            log_obj["agencia_id"] = record.agencia_id
+        if hasattr(record, "user_id"):
+            log_obj["user_id"] = record.user_id
+        if hasattr(record, "request_id"):
+            log_obj["request_id"] = record.request_id
+        if hasattr(record, "phone"):
+            log_obj["phone"] = self._sanitize_phone(record.phone)
+            
+        # Adiciona exception info se houver
+        if record.exc_info:
+            log_obj["exception"] = self.formatException(record.exc_info)
+            
+        return json.dumps(log_obj, ensure_ascii=False)
     
-    # Configurar logging básico
-    logging.basicConfig(
-        level=logging.INFO,
-        format=log_format,
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    
-    # Criar e retornar logger
+    def _sanitize_phone(self, phone: str) -> str:
+        """Mascara número de telefone para privacidade"""
+        if phone and len(phone) > 6:
+            return phone[:4] + "****" + phone[-2:]
+        return "****"
+
+def get_logger(name: str, level: int = logging.INFO) -> logging.Logger:
+    """Retorna logger configurado com formato JSON"""
     logger = logging.getLogger(name)
-    logger.setLevel(logging.INFO)
+    
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(JSONFormatter())
+        logger.addHandler(handler)
+        logger.setLevel(level)
+        logger.propagate = False
     
     return logger
+
+# Logger padrão da aplicação
+app_logger = get_logger("sdr_agent")
