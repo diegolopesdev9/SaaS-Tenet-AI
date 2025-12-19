@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     EVOLUTION_API_URL: str = Field(..., description="Evolution API URL")
     EVOLUTION_API_KEY: str = Field(..., description="Evolution API Key")
 
+    # Meta WhatsApp
+    META_WEBHOOK_VERIFY_TOKEN: str = Field(
+        default="tenet_ai_verify_token",
+        description="Token para verificação do webhook Meta"
+    )
+
     # Default Agency
     DEFAULT_AGENCY_ID: Optional[str] = Field(None, description="Optional default agency ID")
 
