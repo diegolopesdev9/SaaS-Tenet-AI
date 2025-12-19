@@ -21,7 +21,7 @@ from app.database import health_check
 from app.config import settings
 
 # Inicializa Sentry se configurado
-if settings.SENTRY_DSN:
+if settings.SENTRY_DSN and "sentry.io" in settings.SENTRY_DSN and "seu-dsn" not in settings.SENTRY_DSN:
     sentry_sdk.init(
         dsn=settings.SENTRY_DSN,
         environment=settings.ENVIRONMENT,
