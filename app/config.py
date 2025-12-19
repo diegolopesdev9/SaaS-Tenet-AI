@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = Field(..., description="Supabase anon/service key")
     ENCRYPTION_KEY: str = Field(..., description="Fernet encryption master key")
     ENVIRONMENT: str = Field(default="development", description="Environment: dev/prod")
+    
+    # Sentry
+    SENTRY_DSN: str = Field(
+        default="",
+        description="DSN do Sentry para error tracking"
+    )
 
     # JWT Configuration
     JWT_SECRET: str = Field(
