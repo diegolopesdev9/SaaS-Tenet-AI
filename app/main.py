@@ -11,7 +11,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.utils.rate_limit import limiter
 from app.middleware.request_id import RequestIDMiddleware
-from app.routes import health, webhooks, knowledge, templates
+from app.routes import health, webhooks, knowledge, templates, ab_tests
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
 from app.routes.super_admin import router as super_admin_router
@@ -65,7 +65,7 @@ app.include_router(integrations_router)
 app.include_router(notifications_router)
 app.include_router(knowledge.router)
 app.include_router(templates.router)
-app.include_router(ab_tests_router)
+app.include_router(ab_tests.router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
