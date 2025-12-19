@@ -1,0 +1,78 @@
+
+#!/usr/bin/env python3
+"""
+Script para migrar mensagens do formato JSON para tabela normalizada.
+Execute com: python scripts/migrate_messages.py
+"""
+
+import os
+import sys
+import json
+from datetime import datetime
+
+# Adiciona path do projeto
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dotenv import load_dotenv
+load_dotenv()
+
+from app.database import get_supabase
+
+def migrate_messages():
+    print("🚀 Iniciando migração de mensagens...")
+    
+    supabase = get_supabase()
+    
+    # Busca todas as conversas com histórico JSON
+    result = supabase.table("conversas").select("id, historico_json").execute()
+    
+    total_conversas = len(result.data)
+    total_mensagens = 0
+    erros = 0
+    
+    print(f"📊 Encontradas {total_conversas} conversas para migrar")
+    
+    for conversa in result.data:
+        conversa_id = conversa["id"]
+        historico = conversa.get("historico_json") or []
+        
+        if not historico:
+            continue
+            
+        # Se historico é string, parse JSON
+        if isinstance(historico, str):
+            try:
+                historico = json.loads(historico)
+            except:
+                continue
+        
+        for msg in historico:
+            try:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                
+                if not content:
+                    continue
+                
+                # Insere na tabela normalizada
+                supabase.table("mensagens").insert({
+                    "conversa_id": conversa_id,
+                    "role": role,
+                    "content": content,
+                    "tokens_used": 0,
+                    "metadata": {}
+                }).execute()
+                
+                total_mensagens += 1
+                
+            except Exception as e:
+                erros += 1
+                print(f"  ⚠️ Erro na conversa {conversa_id}: {e}")
+    
+    print(f"\n✅ Migração concluída!")
+    print(f"   Conversas processadas: {total_conversas}")
+    print(f"   Mensagens migradas: {total_mensagens}")
+    print(f"   Erros: {erros}")
+
+if __name__ == "__main__":
+    migrate_messages()
