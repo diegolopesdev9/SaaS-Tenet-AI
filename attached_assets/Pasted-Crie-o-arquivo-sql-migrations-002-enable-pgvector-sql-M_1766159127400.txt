@@ -1,0 +1,62 @@
+Crie o arquivo sql/migrations/002_enable_pgvector.sql:
+
+-- Migration: Habilitar pgvector para busca semântica
+-- Data: 2024-12-19
+-- Descrição: Adiciona suporte a embeddings para RAG
+
+-- Habilita extensão pgvector (executar no Supabase SQL Editor)
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- Tabela de documentos da base de conhecimento
+CREATE TABLE IF NOT EXISTS knowledge_base (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agencia_id UUID NOT NULL REFERENCES agencias(id) ON DELETE CASCADE,
+    titulo VARCHAR(255) NOT NULL,
+    conteudo TEXT NOT NULL,
+    categoria VARCHAR(100) DEFAULT 'geral',
+    embedding vector(768),  -- Dimensão do embedding do Gemini
+    metadata JSONB DEFAULT '{}',
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_kb_agencia ON knowledge_base(agencia_id);
+CREATE INDEX IF NOT EXISTS idx_kb_categoria ON knowledge_base(agencia_id, categoria);
+CREATE INDEX IF NOT EXISTS idx_kb_embedding ON knowledge_base USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- Função para busca semântica
+CREATE OR REPLACE FUNCTION search_knowledge_base(
+    p_agencia_id UUID,
+    p_query_embedding vector(768),
+    p_limit INT DEFAULT 5,
+    p_categoria VARCHAR DEFAULT NULL
+)
+RETURNS TABLE (
+    id UUID,
+    titulo VARCHAR,
+    conteudo TEXT,
+    categoria VARCHAR,
+    similarity FLOAT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        kb.id,
+        kb.titulo,
+        kb.conteudo,
+        kb.categoria,
+        1 - (kb.embedding <=> p_query_embedding) as similarity
+    FROM knowledge_base kb
+    WHERE kb.agencia_id = p_agencia_id
+      AND kb.ativo = true
+      AND (p_categoria IS NULL OR kb.categoria = p_categoria)
+    ORDER BY kb.embedding <=> p_query_embedding
+    LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON TABLE knowledge_base IS 'Base de conhecimento com embeddings para RAG';
+
+NÃO altere nenhum outro arquivo.
