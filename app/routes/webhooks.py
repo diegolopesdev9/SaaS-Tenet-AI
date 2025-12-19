@@ -82,6 +82,44 @@ async def verify_meta_webhook(
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
+@router.post("/meta")
+@limiter.limit("100/minute")
+async def receive_meta_webhook(request: Request):
+    """
+    Recebe mensagens do WhatsApp via Meta Cloud API.
+    """
+    try:
+        payload = await request.json()
+        
+        # Verifica se é uma notificação de mensagem
+        if payload.get("object") != "whatsapp_business_account":
+            return {"status": "ignored", "reason": "not whatsapp"}
+        
+        # Importa o parser
+        from app.services.meta_whatsapp_service import MetaWhatsAppService
+        
+        # Extrai dados da mensagem
+        message_data = MetaWhatsAppService.parse_webhook_message(payload)
+        
+        if not message_data:
+            return {"status": "ok", "message": "no message to process"}
+        
+        # Log da mensagem recebida
+        logger.info(f"Mensagem Meta recebida de {message_data.get('from', 'unknown')[:6]}***")
+        
+        # TODO: Processar mensagem similar ao webhook Evolution
+        # Por enquanto, apenas confirma recebimento
+        
+        return {
+            "status": "received",
+            "message_id": message_data.get("message_id")
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook Meta: {e}")
+        return {"status": "error", "detail": str(e)}
+
+
 @router.post("/whatsapp")
 @limiter.limit("100/minute")
 async def receive_whatsapp_webhook(request: Request):
