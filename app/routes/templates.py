@@ -1,0 +1,76 @@
+
+"""Rotas para gerenciamento de templates de prompts"""
+
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional, List
+from uuid import UUID
+
+from app.services.template_service import template_service
+from app.models.prompt_template import PromptTemplateCreate, NichoType
+from app.routes.auth import get_current_user
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+router = APIRouter(prefix="/templates", tags=["Prompt Templates"])
+
+@router.get("/nichos")
+async def list_nichos():
+    """Lista nichos disponíveis"""
+    nichos = await template_service.list_nichos()
+    
+    # Adiciona descrições
+    descricoes = {
+        "sdr": "Qualificação de Leads",
+        "suporte": "Suporte ao Cliente",
+        "rh": "Recursos Humanos",
+        "vendas": "Atendimento Comercial",
+        "custom": "Personalizado"
+    }
+    
+    for n in nichos:
+        n["descricao"] = descricoes.get(n["nicho"], n["nicho"].title())
+    
+    return {"nichos": nichos}
+
+@router.get("")
+async def list_templates(nicho: Optional[str] = None):
+    """Lista templates disponíveis"""
+    templates = await template_service.list_templates(nicho=nicho)
+    return {"templates": templates, "total": len(templates)}
+
+@router.get("/{template_id}")
+async def get_template(template_id: UUID):
+    """Busca template por ID"""
+    template = await template_service.get_template(template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template não encontrado")
+    return template
+
+@router.get("/nicho/{nicho}/default")
+async def get_default_template(nicho: str):
+    """Busca template padrão de um nicho"""
+    template = await template_service.get_default_template(nicho)
+    if not template:
+        raise HTTPException(status_code=404, detail=f"Nenhum template padrão para nicho '{nicho}'")
+    return template
+
+@router.post("")
+async def create_template(template: PromptTemplateCreate, 
+                          current_user: dict = Depends(get_current_user)):
+    """Cria novo template (admin only)"""
+    if current_user.get("role") not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Apenas admins podem criar templates")
+    
+    result = await template_service.create_template(template)
+    if not result:
+        raise HTTPException(status_code=500, detail="Erro ao criar template")
+    
+    return {"status": "success", "template": result}
+
+@router.post("/{template_id}/compile")
+async def compile_template(template_id: UUID, variaveis: dict):
+    """Compila template com variáveis"""
+    compiled = await template_service.compile_template(template_id, variaveis)
+    if not compiled:
+        raise HTTPException(status_code=404, detail="Template não encontrado")
+    return compiled

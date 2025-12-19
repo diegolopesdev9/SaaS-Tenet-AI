@@ -17,6 +17,7 @@ from app.routes.admin import router as admin_router
 from app.routes.super_admin import router as super_admin_router
 from app.routes.integrations import router as integrations_router
 from app.routes.notifications import router as notifications_router
+from app.routes.templates import router as templates_router
 from app.database import health_check
 from app.config import settings
 
@@ -62,6 +63,7 @@ app.include_router(super_admin_router)
 app.include_router(integrations_router)
 app.include_router(notifications_router)
 app.include_router(knowledge.router)
+app.include_router(templates_router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
