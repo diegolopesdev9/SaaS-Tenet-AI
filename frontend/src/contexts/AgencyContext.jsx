@@ -1,0 +1,81 @@
+
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+
+const AgencyContext = createContext(null);
+
+export function AgencyProvider({ children }) {
+  const { token, user } = useAuth();
+  const [agency, setAgency] = useState(null);
+  const [agencies, setAgencies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (token && user?.agencia_id) {
+      fetchAgency(user.agencia_id);
+    }
+    if (token && user?.role === 'super_admin') {
+      fetchAllAgencies();
+    }
+  }, [token, user]);
+
+  const fetchAgency = async (agenciaId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/admin/agencia/${agenciaId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAgency(data);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllAgencies = async () => {
+    try {
+      const response = await fetch('/api/super-admin/agencias', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAgencies(data.agencias || data);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar agências:', err);
+    }
+  };
+
+  const selectAgency = (agencia) => {
+    setAgency(agencia);
+  };
+
+  const value = {
+    agency,
+    agencies,
+    loading,
+    error,
+    selectAgency,
+    refreshAgency: () => fetchAgency(agency?.id),
+    refreshAgencies: fetchAllAgencies
+  };
+
+  return (
+    <AgencyContext.Provider value={value}>
+      {children}
+    </AgencyContext.Provider>
+  );
+}
+
+export const useAgency = () => {
+  const context = useContext(AgencyContext);
+  if (!context) {
+    throw new Error('useAgency deve ser usado dentro de AgencyProvider');
+  }
+  return context;
+};
