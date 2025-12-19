@@ -1,0 +1,77 @@
+Crie o arquivo app/services/message_service.py:
+
+from typing import List, Optional
+from uuid import UUID
+from datetime import datetime
+from app.database import get_supabase
+from app.models.mensagem import MensagemCreate, MensagemResponse, MessageRole
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+class MessageService:
+    """Serviço para gerenciar mensagens normalizadas"""
+    
+    def __init__(self):
+        self.supabase = get_supabase()
+        self.table = "mensagens"
+    
+    async def add_message(self, conversa_id: UUID, role: MessageRole, content: str, 
+                          tokens_used: int = 0, metadata: dict = None) -> Optional[MensagemResponse]:
+        """Adiciona uma mensagem à conversa"""
+        try:
+            data = {
+                "conversa_id": str(conversa_id),
+                "role": role.value,
+                "content": content,
+                "tokens_used": tokens_used,
+                "metadata": metadata or {}
+            }
+            
+            result = self.supabase.table(self.table).insert(data).execute()
+            
+            if result.data:
+                logger.info(f"Mensagem adicionada à conversa {conversa_id}")
+                return MensagemResponse(**result.data[0])
+            return None
+            
+        except Exception as e:
+            logger.error(f"Erro ao adicionar mensagem: {e}")
+            return None
+    
+    async def get_messages(self, conversa_id: UUID, limit: int = 50) -> List[MensagemResponse]:
+        """Retorna mensagens de uma conversa ordenadas por data"""
+        try:
+            result = self.supabase.table(self.table)\
+                .select("*")\
+                .eq("conversa_id", str(conversa_id))\
+                .order("created_at", desc=False)\
+                .limit(limit)\
+                .execute()
+            
+            return [MensagemResponse(**msg) for msg in result.data]
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar mensagens: {e}")
+            return []
+    
+    async def get_context_for_ai(self, conversa_id: UUID, max_messages: int = 10) -> List[dict]:
+        """Retorna mensagens formatadas para contexto da IA"""
+        messages = await self.get_messages(conversa_id, limit=max_messages)
+        return [{"role": msg.role, "content": msg.content} for msg in messages]
+    
+    async def count_messages(self, conversa_id: UUID) -> int:
+        """Conta total de mensagens em uma conversa"""
+        try:
+            result = self.supabase.table(self.table)\
+                .select("id", count="exact")\
+                .eq("conversa_id", str(conversa_id))\
+                .execute()
+            return result.count or 0
+        except:
+            return 0
+
+# Singleton
+message_service = MessageService()
+
+NÃO altere nenhum outro arquivo.
