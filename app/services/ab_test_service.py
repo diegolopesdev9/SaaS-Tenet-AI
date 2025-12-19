@@ -1,0 +1,182 @@
+
+"""Serviço para gerenciamento de A/B Tests de prompts"""
+
+import random
+from typing import List, Optional, Dict
+from uuid import UUID
+from datetime import datetime
+from app.database import get_supabase_client
+from app.models.ab_test import ABTestCreate, ABTestMetrics, ABTestStatus
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+class ABTestService:
+    """Gerencia testes A/B de prompts"""
+    
+    def __init__(self):
+        self.supabase = get_supabase_client()
+    
+    async def create_test(self, agencia_id: UUID, test: ABTestCreate) -> Optional[Dict]:
+        """Cria novo A/B test"""
+        try:
+            data = test.model_dump()
+            data["agencia_id"] = str(agencia_id)
+            
+            result = self.supabase.table("ab_tests").insert(data).execute()
+            
+            if result.data:
+                logger.info(f"A/B Test '{test.nome}' criado para agência {agencia_id}")
+                return result.data[0]
+            return None
+        except Exception as e:
+            logger.error(f"Erro ao criar A/B test: {e}")
+            return None
+    
+    async def get_active_test(self, agencia_id: UUID) -> Optional[Dict]:
+        """Busca teste ativo da agência"""
+        try:
+            result = self.supabase.table("ab_tests")\
+                .select("*")\
+                .eq("agencia_id", str(agencia_id))\
+                .eq("status", "running")\
+                .limit(1)\
+                .execute()
+            
+            return result.data[0] if result.data else None
+        except:
+            return None
+    
+    async def select_variant(self, agencia_id: UUID) -> tuple[Optional[str], Optional[UUID]]:
+        """Seleciona variante para nova conversa baseado no percentual"""
+        test = await self.get_active_test(agencia_id)
+        
+        if not test:
+            return None, None
+        
+        # Seleciona variante baseado no percentual
+        if random.randint(1, 100) <= test["percentual_b"]:
+            return "B", UUID(test["id"])
+        return "A", UUID(test["id"])
+    
+    async def get_prompt_for_variant(self, agencia_id: UUID) -> tuple[Optional[str], Optional[str], Optional[UUID]]:
+        """Retorna o prompt da variante selecionada"""
+        test = await self.get_active_test(agencia_id)
+        
+        if not test:
+            return None, None, None
+        
+        variant, test_id = await self.select_variant(agencia_id)
+        
+        if variant == "B":
+            return test["variante_b_prompt"], variant, test_id
+        return test["variante_a_prompt"], variant, test_id
+    
+    async def record_result(self, ab_test_id: UUID, conversa_id: UUID, 
+                           variante: str, convertido: bool = False,
+                           mensagens: int = 0, tempo_segundos: int = 0,
+                           dados: dict = None) -> bool:
+        """Registra resultado de uma conversa no A/B test"""
+        try:
+            data = {
+                "ab_test_id": str(ab_test_id),
+                "conversa_id": str(conversa_id),
+                "variante": variante,
+                "convertido": convertido,
+                "mensagens_trocadas": mensagens,
+                "tempo_conversa_segundos": tempo_segundos,
+                "dados_extraidos": dados or {}
+            }
+            
+            self.supabase.table("ab_test_results").insert(data).execute()
+            return True
+        except Exception as e:
+            logger.error(f"Erro ao registrar resultado A/B: {e}")
+            return False
+    
+    async def get_metrics(self, test_id: UUID) -> Optional[ABTestMetrics]:
+        """Calcula métricas do A/B test"""
+        try:
+            result = self.supabase.table("ab_test_metrics")\
+                .select("*")\
+                .eq("test_id", str(test_id))\
+                .single()\
+                .execute()
+            
+            if not result.data:
+                return None
+            
+            data = result.data
+            
+            # Calcula taxas de conversão
+            taxa_a = (data["conversoes_a"] / data["conversas_a"] * 100) if data["conversas_a"] > 0 else 0
+            taxa_b = (data["conversoes_b"] / data["conversas_b"] * 100) if data["conversas_b"] > 0 else 0
+            
+            # Sugere vencedor (mínimo 30 conversas por variante)
+            vencedor = None
+            if data["conversas_a"] >= 30 and data["conversas_b"] >= 30:
+                if taxa_a > taxa_b * 1.1:  # A é 10% melhor
+                    vencedor = "A"
+                elif taxa_b > taxa_a * 1.1:  # B é 10% melhor
+                    vencedor = "B"
+            
+            return ABTestMetrics(
+                test_id=UUID(data["test_id"]),
+                nome=data["nome"],
+                conversas_a=data["conversas_a"] or 0,
+                conversas_b=data["conversas_b"] or 0,
+                conversoes_a=data["conversoes_a"] or 0,
+                conversoes_b=data["conversoes_b"] or 0,
+                taxa_conversao_a=round(taxa_a, 2),
+                taxa_conversao_b=round(taxa_b, 2),
+                media_msgs_a=float(data["media_msgs_a"] or 0),
+                media_msgs_b=float(data["media_msgs_b"] or 0),
+                vencedor_sugerido=vencedor
+            )
+        except Exception as e:
+            logger.error(f"Erro ao calcular métricas: {e}")
+            return None
+    
+    async def start_test(self, test_id: UUID) -> bool:
+        """Inicia um A/B test"""
+        try:
+            self.supabase.table("ab_tests")\
+                .update({"status": "running", "started_at": datetime.utcnow().isoformat()})\
+                .eq("id", str(test_id))\
+                .execute()
+            return True
+        except:
+            return False
+    
+    async def stop_test(self, test_id: UUID, vencedor: str = None) -> bool:
+        """Para um A/B test"""
+        try:
+            update_data = {
+                "status": "completed",
+                "ended_at": datetime.utcnow().isoformat()
+            }
+            if vencedor:
+                update_data["vencedor"] = vencedor
+            
+            self.supabase.table("ab_tests")\
+                .update(update_data)\
+                .eq("id", str(test_id))\
+                .execute()
+            return True
+        except:
+            return False
+    
+    async def list_tests(self, agencia_id: UUID) -> List[Dict]:
+        """Lista todos os A/B tests da agência"""
+        try:
+            result = self.supabase.table("ab_tests")\
+                .select("*")\
+                .eq("agencia_id", str(agencia_id))\
+                .order("created_at", desc=True)\
+                .execute()
+            return result.data or []
+        except:
+            return []
+
+# Singleton
+ab_test_service = ABTestService()
