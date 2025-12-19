@@ -1,0 +1,123 @@
+Crie o arquivo app/services/rag_service.py:
+
+"""Serviço RAG (Retrieval-Augmented Generation) para Tenet AI"""
+
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+from app.database import get_supabase_client
+from app.services.embedding_service import embedding_service
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+class RAGService:
+    """Serviço de busca e recuperação de conhecimento"""
+    
+    def __init__(self):
+        self.supabase = get_supabase_client()
+    
+    async def add_document(self, agencia_id: UUID, titulo: str, conteudo: str,
+                           categoria: str = "geral", metadata: dict = None) -> Optional[Dict]:
+        """Adiciona documento à base de conhecimento com embedding"""
+        try:
+            # Gera embedding do conteúdo
+            embedding = await embedding_service.generate_embedding(f"{titulo}\n\n{conteudo}")
+            
+            if not embedding:
+                logger.error("Falha ao gerar embedding")
+                return None
+            
+            data = {
+                "agencia_id": str(agencia_id),
+                "titulo": titulo,
+                "conteudo": conteudo,
+                "categoria": categoria,
+                "embedding": embedding,
+                "metadata": metadata or {}
+            }
+            
+            result = self.supabase.table("knowledge_base").insert(data).execute()
+            
+            if result.data:
+                logger.info(f"Documento '{titulo}' adicionado à base de conhecimento")
+                return result.data[0]
+            return None
+            
+        except Exception as e:
+            logger.error(f"Erro ao adicionar documento: {e}")
+            return None
+    
+    async def search(self, agencia_id: UUID, query: str, 
+                     limit: int = 5, categoria: str = None) -> List[Dict]:
+        """Busca documentos relevantes por similaridade semântica"""
+        try:
+            # Gera embedding da query
+            query_embedding = await embedding_service.generate_query_embedding(query)
+            
+            if not query_embedding:
+                return []
+            
+            # Busca usando a função do PostgreSQL
+            result = self.supabase.rpc(
+                "search_knowledge_base",
+                {
+                    "p_agencia_id": str(agencia_id),
+                    "p_query_embedding": query_embedding,
+                    "p_limit": limit,
+                    "p_categoria": categoria
+                }
+            ).execute()
+            
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Erro na busca RAG: {e}")
+            return []
+    
+    async def get_context_for_ai(self, agencia_id: UUID, query: str, 
+                                  max_docs: int = 3) -> str:
+        """Retorna contexto formatado para injetar no prompt da IA"""
+        docs = await self.search(agencia_id, query, limit=max_docs)
+        
+        if not docs:
+            return ""
+        
+        context_parts = ["[Base de Conhecimento]"]
+        for doc in docs:
+            context_parts.append(f"\n### {doc['titulo']}\n{doc['conteudo']}")
+        
+        return "\n".join(context_parts)
+    
+    async def list_documents(self, agencia_id: UUID, categoria: str = None) -> List[Dict]:
+        """Lista documentos da base de conhecimento"""
+        try:
+            query = self.supabase.table("knowledge_base")\
+                .select("id, titulo, categoria, created_at")\
+                .eq("agencia_id", str(agencia_id))\
+                .eq("ativo", True)
+            
+            if categoria:
+                query = query.eq("categoria", categoria)
+            
+            result = query.order("created_at", desc=True).execute()
+            return result.data or []
+            
+        except Exception as e:
+            logger.error(f"Erro ao listar documentos: {e}")
+            return []
+    
+    async def delete_document(self, doc_id: UUID) -> bool:
+        """Remove documento (soft delete)"""
+        try:
+            self.supabase.table("knowledge_base")\
+                .update({"ativo": False})\
+                .eq("id", str(doc_id))\
+                .execute()
+            return True
+        except:
+            return False
+
+# Singleton
+rag_service = RAGService()
+
+NÃO altere nenhum outro arquivo.
