@@ -7,7 +7,7 @@ from typing import Optional, List
 from uuid import UUID
 
 from app.services.rag_service import rag_service
-from app.services.auth_service import get_current_user
+from app.routes.auth import get_current_user
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
