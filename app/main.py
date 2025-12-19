@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import os
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.utils.rate_limit import limiter
@@ -16,6 +19,20 @@ from app.routes.integrations import router as integrations_router
 from app.routes.notifications import router as notifications_router
 from app.database import health_check
 from app.config import settings
+
+# Inicializa Sentry se configurado
+if settings.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            StarletteIntegration(transaction_style="endpoint"),
+        ],
+        traces_sample_rate=0.1,  # 10% das transações
+        profiles_sample_rate=0.1,
+        send_default_pii=False,  # Não enviar dados sensíveis
+    )
 
 app = FastAPI(
     title="SDR Agent SaaS API",
