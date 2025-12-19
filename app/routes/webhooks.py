@@ -3,7 +3,7 @@ Rotas de Webhook para integração com WhatsApp via Evolution API.
 Inclui suporte a memória de conversas e qualificação de leads.
 """
 import logging
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query
 from typing import Optional
 import os
 
@@ -59,6 +59,27 @@ def extract_message_text(data: dict) -> Optional[str]:
 
     # Outros tipos de mensagem (ignorar por enquanto)
     return None
+
+
+@router.get("/meta")
+async def verify_meta_webhook(
+    hub_mode: str = Query(None, alias="hub.mode"),
+    hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    hub_challenge: str = Query(None, alias="hub.challenge")
+):
+    """
+    Endpoint de verificação do webhook da Meta.
+    A Meta envia uma requisição GET para verificar o webhook.
+    """
+    # Token de verificação (configure no .env ou use um padrão para teste)
+    VERIFY_TOKEN = os.getenv("META_WEBHOOK_VERIFY_TOKEN", "tenet_ai_verify_token")
+    
+    if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
+        logger.info("Webhook Meta verificado com sucesso")
+        return int(hub_challenge)
+    
+    logger.warning(f"Falha na verificação do webhook Meta: mode={hub_mode}")
+    raise HTTPException(status_code=403, detail="Verification failed")
 
 
 @router.post("/whatsapp")
