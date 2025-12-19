@@ -1,0 +1,123 @@
+Crie o arquivo app/routes/export.py:
+
+"""Rotas para exportação de dados"""
+
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
+from typing import Optional
+from uuid import UUID
+from datetime import datetime
+import csv
+import io
+
+from app.database import get_supabase_client
+from app.routes.auth import get_current_user
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+router = APIRouter(prefix="/export", tags=["Export"])
+
+@router.get("/leads/csv")
+async def export_leads_csv(
+    status: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Exporta leads em formato CSV"""
+    agencia_id = current_user.get("agencia_id")
+    if not agencia_id:
+        raise HTTPException(status_code=400, detail="Agência não encontrada")
+    
+    try:
+        supabase = get_supabase_client()
+        
+        # Query base
+        query = supabase.table("conversas")\
+            .select("id, telefone, nome_lead, email_lead, empresa_lead, cargo_lead, status, dados_coletados, created_at")\
+            .eq("agencia_id", agencia_id)
+        
+        # Filtros opcionais
+        if status:
+            query = query.eq("status", status)
+        if data_inicio:
+            query = query.gte("created_at", data_inicio)
+        if data_fim:
+            query = query.lte("created_at", data_fim)
+        
+        result = query.order("created_at", desc=True).execute()
+        leads = result.data or []
+        
+        # Gera CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow([
+            'ID', 'Telefone', 'Nome', 'Email', 'Empresa', 
+            'Cargo', 'Status', 'Data Criação'
+        ])
+        
+        # Dados
+        for lead in leads:
+            writer.writerow([
+                lead.get('id', ''),
+                lead.get('telefone', ''),
+                lead.get('nome_lead', ''),
+                lead.get('email_lead', ''),
+                lead.get('empresa_lead', ''),
+                lead.get('cargo_lead', ''),
+                lead.get('status', ''),
+                lead.get('created_at', '')[:10] if lead.get('created_at') else ''
+            ])
+        
+        output.seek(0)
+        
+        # Nome do arquivo
+        filename = f"leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        logger.info(f"Exportação CSV: {len(leads)} leads para agência {agencia_id}")
+        
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro na exportação: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao exportar leads")
+
+@router.get("/leads/json")
+async def export_leads_json(
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Exporta leads em formato JSON"""
+    agencia_id = current_user.get("agencia_id")
+    if not agencia_id:
+        raise HTTPException(status_code=400, detail="Agência não encontrada")
+    
+    try:
+        supabase = get_supabase_client()
+        
+        query = supabase.table("conversas")\
+            .select("*")\
+            .eq("agencia_id", agencia_id)
+        
+        if status:
+            query = query.eq("status", status)
+        
+        result = query.order("created_at", desc=True).execute()
+        
+        return {
+            "total": len(result.data or []),
+            "exported_at": datetime.now().isoformat(),
+            "leads": result.data or []
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro na exportação JSON: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao exportar leads")
+
+NÃO altere nenhum outro arquivo.
