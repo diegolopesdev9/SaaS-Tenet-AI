@@ -5,6 +5,7 @@ from datetime import datetime
 from supabase import Client
 import logging
 
+from app.database import get_supabase_client
 from app.models.mensagem import (
     MensagemCreate,
     MensagemResponse,
