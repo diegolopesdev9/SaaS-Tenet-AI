@@ -1,0 +1,60 @@
+
+import pytest
+
+@pytest.mark.asyncio
+async def test_meta_webhook_verification(client):
+    """Testa verificação do webhook Meta"""
+    response = await client.get(
+        "/webhooks/meta",
+        params={
+            "hub.mode": "subscribe",
+            "hub.verify_token": "tenet_ai_verify_token",
+            "hub.challenge": "123456"
+        }
+    )
+    assert response.status_code == 200
+    assert response.text == "123456"
+
+@pytest.mark.asyncio
+async def test_meta_webhook_verification_fail(client):
+    """Testa falha na verificação com token errado"""
+    response = await client.get(
+        "/webhooks/meta",
+        params={
+            "hub.mode": "subscribe",
+            "hub.verify_token": "wrong_token",
+            "hub.challenge": "123456"
+        }
+    )
+    assert response.status_code == 403
+
+@pytest.mark.asyncio
+async def test_meta_webhook_post_empty(client):
+    """Testa POST do webhook Meta com payload vazio"""
+    response = await client.post("/webhooks/meta", json={})
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_meta_webhook_post_message(client):
+    """Testa POST do webhook Meta com mensagem"""
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{
+            "changes": [{
+                "value": {
+                    "messages": [{
+                        "id": "msg123",
+                        "from": "5511999999999",
+                        "timestamp": "1234567890",
+                        "type": "text",
+                        "text": {"body": "Olá"}
+                    }],
+                    "contacts": [{"profile": {"name": "Teste"}}],
+                    "metadata": {"phone_number_id": "123"}
+                }
+            }]
+        }]
+    }
+    response = await client.post("/webhooks/meta", json=payload)
+    assert response.status_code == 200
+    assert response.json()["status"] == "received"
