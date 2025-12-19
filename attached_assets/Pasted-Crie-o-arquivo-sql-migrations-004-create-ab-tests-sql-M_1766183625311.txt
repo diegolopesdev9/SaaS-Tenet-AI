@@ -1,0 +1,63 @@
+Crie o arquivo sql/migrations/004_create_ab_tests.sql:
+
+-- Migration: Criar sistema de A/B Testing para prompts
+-- Data: 2024-12-19
+-- Descrição: Permite testar diferentes versões de prompts
+
+CREATE TABLE IF NOT EXISTS ab_tests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agencia_id UUID NOT NULL REFERENCES agencias(id) ON DELETE CASCADE,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    variante_a_prompt TEXT NOT NULL,
+    variante_b_prompt TEXT NOT NULL,
+    variante_a_nome VARCHAR(50) DEFAULT 'Variante A',
+    variante_b_nome VARCHAR(50) DEFAULT 'Variante B',
+    percentual_b INTEGER DEFAULT 50 CHECK (percentual_b BETWEEN 0 AND 100),
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'running', 'paused', 'completed')),
+    vencedor VARCHAR(1) CHECK (vencedor IN ('A', 'B', NULL)),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    started_at TIMESTAMP WITH TIME ZONE,
+    ended_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE IF NOT EXISTS ab_test_results (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ab_test_id UUID NOT NULL REFERENCES ab_tests(id) ON DELETE CASCADE,
+    conversa_id UUID NOT NULL,
+    variante VARCHAR(1) NOT NULL CHECK (variante IN ('A', 'B')),
+    convertido BOOLEAN DEFAULT false,
+    mensagens_trocadas INTEGER DEFAULT 0,
+    tempo_conversa_segundos INTEGER DEFAULT 0,
+    dados_extraidos JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices
+CREATE INDEX IF NOT EXISTS idx_ab_tests_agencia ON ab_tests(agencia_id);
+CREATE INDEX IF NOT EXISTS idx_ab_tests_status ON ab_tests(agencia_id, status);
+CREATE INDEX IF NOT EXISTS idx_ab_results_test ON ab_test_results(ab_test_id);
+CREATE INDEX IF NOT EXISTS idx_ab_results_variante ON ab_test_results(ab_test_id, variante);
+
+-- View para métricas do A/B Test
+CREATE OR REPLACE VIEW ab_test_metrics AS
+SELECT 
+    t.id as test_id,
+    t.nome,
+    t.status,
+    t.variante_a_nome,
+    t.variante_b_nome,
+    COUNT(CASE WHEN r.variante = 'A' THEN 1 END) as conversas_a,
+    COUNT(CASE WHEN r.variante = 'B' THEN 1 END) as conversas_b,
+    COUNT(CASE WHEN r.variante = 'A' AND r.convertido THEN 1 END) as conversoes_a,
+    COUNT(CASE WHEN r.variante = 'B' AND r.convertido THEN 1 END) as conversoes_b,
+    ROUND(AVG(CASE WHEN r.variante = 'A' THEN r.mensagens_trocadas END)::numeric, 1) as media_msgs_a,
+    ROUND(AVG(CASE WHEN r.variante = 'B' THEN r.mensagens_trocadas END)::numeric, 1) as media_msgs_b
+FROM ab_tests t
+LEFT JOIN ab_test_results r ON t.id = r.ab_test_id
+GROUP BY t.id, t.nome, t.status, t.variante_a_nome, t.variante_b_nome;
+
+COMMENT ON TABLE ab_tests IS 'Configuração de testes A/B de prompts';
+COMMENT ON TABLE ab_test_results IS 'Resultados individuais de cada conversa no A/B test';
+
+NÃO altere nenhum outro arquivo.
