@@ -7,6 +7,8 @@ import logging
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from supabase import Client
+from uuid import UUID
+from app.models.mensagem import MessageRole
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -143,9 +145,12 @@ class ConversationService:
             # Buscar conversa existente
             existing = await self.get_conversation_history(agencia_id, lead_phone)
             
+            conversa_id = None
+            
             if existing.get("exists"):
                 # Atualizar conversa existente
                 historico_atual = existing.get("history", [])
+                conversa_id = existing.get("conversation_id")
                 
                 # Buscar histórico completo (sem limite)
                 full_response = self.supabase.table("conversas").select(
@@ -209,6 +214,45 @@ class ConversationService:
                 
                 response = self.supabase.table("conversas").insert(insert_data).execute()
                 logger.info(f"Nova conversa criada para {lead_phone}")
+                
+                # Obter o ID da conversa recém-criada
+                if response.data and len(response.data) > 0:
+                    conversa_id = response.data[0].get("id")
+            
+            # ============================================
+            # SALVAR TAMBÉM NA TABELA NORMALIZADA (migração gradual)
+            # ============================================
+            if conversa_id:
+                from app.services.message_service import MessageService
+                message_service = MessageService(self.supabase)
+                
+                try:
+                    # Salvar mensagem do usuário
+                    await message_service.create_message(
+                        message_data=type('MensagemCreate', (), {
+                            'conversa_id': UUID(conversa_id),
+                            'role': MessageRole.USER,
+                            'content': user_message,
+                            'tokens_used': 0,
+                            'metadata': {"phone": lead_phone}
+                        })()
+                    )
+                    
+                    # Salvar resposta do assistente
+                    tokens_usados = 0  # Pode ser passado como parâmetro futuro
+                    await message_service.create_message(
+                        message_data=type('MensagemCreate', (), {
+                            'conversa_id': UUID(conversa_id),
+                            'role': MessageRole.ASSISTANT,
+                            'content': assistant_message,
+                            'tokens_used': tokens_usados,
+                            'metadata': {}
+                        })()
+                    )
+                    
+                    logger.info(f"Mensagens salvas na tabela normalizada para conversa {conversa_id}")
+                except Exception as e:
+                    logger.warning(f"Erro ao salvar mensagens normalizadas (sistema JSON continua funcionando): {e}")
             
             return True
             
