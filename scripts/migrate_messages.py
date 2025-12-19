@@ -16,12 +16,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
-from app.database import get_supabase
+from app.database import get_supabase_client
 
 def migrate_messages():
     print("🚀 Iniciando migração de mensagens...")
     
-    supabase = get_supabase()
+    supabase = get_supabase_client()
     
     # Busca todas as conversas com histórico JSON
     result = supabase.table("conversas").select("id, historico_json").execute()
