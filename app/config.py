@@ -63,6 +63,12 @@ class Settings(BaseSettings):
         description="Token para verificação do webhook Meta"
     )
 
+    # Alertas
+    SLACK_WEBHOOK_URL: str = Field(
+        default="",
+        description="URL do webhook Slack para alertas"
+    )
+
     # Default Agency
     DEFAULT_AGENCY_ID: Optional[str] = Field(None, description="Optional default agency ID")
 
