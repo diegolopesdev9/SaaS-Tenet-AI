@@ -11,7 +11,7 @@ from app.routes.auth import get_current_user
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/templates", tags=["Prompt Templates"])
+router = APIRouter(prefix="/api/templates", tags=["Prompt Templates"])
 
 @router.get("/nichos")
 async def list_nichos():
