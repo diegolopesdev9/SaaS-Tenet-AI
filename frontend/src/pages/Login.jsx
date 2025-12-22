@@ -39,7 +39,7 @@ export default function Login() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-xl mb-4">
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">SDR Agent</h1>
+          <h1 className="text-2xl font-bold text-gray-900">TENET AI</h1>
           <p className="text-gray-600 mt-1">Faça login para continuar</p>
         </div>
 
@@ -119,7 +119,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="text-center text-gray-500 text-sm mt-6">
-          Powered by SDR Agent
+          Powered by TENET AI
         </p>
       </div>
     </div>
