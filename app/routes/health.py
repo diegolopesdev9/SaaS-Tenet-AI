@@ -18,7 +18,7 @@ async def health():
     
     return {
         "status": "ok",
-        "service": "SDR Agent SaaS",
+        "service": "TENET AI",
         "database": "connected" if db_status else "disconnected"
     }
 
