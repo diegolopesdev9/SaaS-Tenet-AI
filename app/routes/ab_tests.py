@@ -11,7 +11,7 @@ from app.routes.auth import get_current_user
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/ab-tests", tags=["A/B Testing"])
+router = APIRouter(prefix="/api/ab-tests", tags=["A/B Testing"])
 
 @router.get("")
 async def list_tests(current_user: dict = Depends(get_current_user)):
