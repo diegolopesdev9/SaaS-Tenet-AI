@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle, BarChart3, Filter, Building2 } from 'lucide-react'
@@ -117,60 +116,136 @@ export default function Dashboard({ agencyId }) {
         </div>
       </div>
 
-      {/* Cards de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total de Leads</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_leads || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">no período</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">{advancedMetrics?.conversion_rate || 0}%</p>
-              <p className="text-xs text-gray-500 mt-1">leads qualificados</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Tempo Médio</p>
-              <p className="mt-2 text-3xl font-bold text-purple-600">{advancedMetrics?.avg_conversation_hours || 0}h</p>
-              <p className="text-xs text-gray-500 mt-1">por conversa</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Qualificados</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.status_breakdown?.qualificado || 0}</p>
-              <p className="text-xs text-gray-500 mt-1">prontos para vendas</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
+      {/* Filtro de Período */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700">Período:</label>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="7d">Últimos 7 dias</option>
+            <option value="15d">Últimos 15 dias</option>
+            <option value="30d">Últimos 30 dias</option>
+            <option value="90d">Últimos 90 dias</option>
+          </select>
         </div>
       </div>
+
+      {/* Cards de Métricas - Visão Geral */}
+      {isGeneralView && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total de Agências</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_agencias || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">cadastradas</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Building2 className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total de Usuários</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_usuarios || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">ativos</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total de Leads</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_leads || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">no período</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <MessageSquare className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
+                <p className="mt-2 text-3xl font-bold text-green-600">{advancedMetrics?.taxa_conversao || 0}%</p>
+                <p className="text-xs text-gray-500 mt-1">média geral</p>
+              </div>
+              <div className="p-3 bg-emerald-100 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cards de Métricas - Agência Específica */}
+      {!isGeneralView && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total de Leads</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_leads || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">no período</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Taxa de Conversão</p>
+                <p className="mt-2 text-3xl font-bold text-green-600">{advancedMetrics?.conversion_rate || 0}%</p>
+                <p className="text-xs text-gray-500 mt-1">leads qualificados</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Tempo Médio</p>
+                <p className="mt-2 text-3xl font-bold text-purple-600">{advancedMetrics?.avg_conversation_hours || 0}h</p>
+                <p className="text-xs text-gray-500 mt-1">por conversa</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Qualificados</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.status_breakdown?.qualificado || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">prontos para vendas</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
