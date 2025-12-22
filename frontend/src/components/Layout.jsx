@@ -224,6 +224,11 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
               <LogOut className="w-5 h-5" />
               <span>Sair</span>
             </button>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-500 text-center">
+                TENET AI © 2024
+              </p>
+            </div>
           </div>
         </div>
       </div>
