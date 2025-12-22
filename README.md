@@ -1,7 +1,13 @@
 
-# SDR Agent SaaS - Multi-Tenant AI Platform
+# TENET AI - Multi-Tenant AI Agent Platform
 
-Sistema SaaS Multi-Tenant de Agentes SDR com IA para automação de prospecção e vendas.
+Plataforma SaaS Multi-Tenant de Agentes IA para automação de vendas, suporte, RH e atendimento.
+
+Nichos disponíveis:
+- **Tenet SDR**: Qualificação de leads e prospecção
+- **Tenet Suporte**: Atendimento técnico nível 1
+- **Tenet RH**: Assistente de recursos humanos
+- **Tenet Vendas**: Atendimento comercial
 
 ## Descrição do Projeto
 
