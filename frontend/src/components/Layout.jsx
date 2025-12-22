@@ -76,7 +76,9 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-semibold text-gray-900 truncate">SDR Agent</h1>
+                <h1 className="text-sm font-semibold text-gray-900 truncate">
+                  {isSuperAdmin ? 'TENET AI' : (agencyName ? `Tenet ${agencyName}` : 'TENET AI')}
+                </h1>
                 {isSuperAdmin && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
                     <Shield className="w-3 h-3" />
