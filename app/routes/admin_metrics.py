@@ -10,7 +10,7 @@ from app.routes.auth import get_current_user
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/admin/metrics", tags=["Admin Metrics"])
+router = APIRouter(prefix="/api/admin/metrics", tags=["Admin Metrics"])
 
 @router.get("/geral")
 async def get_general_metrics(
