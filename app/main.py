@@ -37,8 +37,8 @@ if settings.SENTRY_DSN and "sentry.io" in settings.SENTRY_DSN and "seu-dsn" not 
     )
 
 app = FastAPI(
-    title="SDR Agent SaaS API",
-    version="1.0.0"
+    title="TENET AI API",
+    version="3.0.0"
 )
 
 app.state.limiter = limiter
