@@ -11,7 +11,7 @@ from app.routes.auth import get_current_user
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/knowledge", tags=["Knowledge Base"])
+router = APIRouter(prefix="/api/knowledge", tags=["Knowledge Base"])
 
 class DocumentCreate(BaseModel):
     titulo: str
