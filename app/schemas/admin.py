@@ -26,6 +26,7 @@ class AgencyConfigResponse(BaseModel):
     meta_phone_number_id: Optional[str] = None
     meta_business_account_id: Optional[str] = None
     has_meta_token: bool = False
+    nicho: Optional[str] = "sdr"
 
 
 class AgencyConfigUpdate(BaseModel):
@@ -47,6 +48,7 @@ class AgencyConfigUpdate(BaseModel):
     meta_phone_number_id: Optional[str] = None
     meta_business_account_id: Optional[str] = None
     meta_access_token: Optional[str] = None
+    nicho: Optional[str] = None
 
 
 class ConversationSummary(BaseModel):
