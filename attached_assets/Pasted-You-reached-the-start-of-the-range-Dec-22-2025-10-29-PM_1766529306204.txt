@@ -1,0 +1,200 @@
+You reached the start of the range
+Dec 22, 2025, 10:29 PM
+ 
+[Region: us-west1]
+=========================
+Using Detected Dockerfile
+=========================
+
+context: 5m0w-kpvU
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for docker.io/library/python:3.11-slim
+389ms
+
+internal
+load metadata for docker.io/library/node:18-alpine
+276ms
+
+auth
+library/python:pull token for registry-1.docker.io
+0ms
+
+internal
+load .dockerignore
+0ms
+
+frontend-builder
+FROM docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e cached
+8ms
+
+internal
+load build context
+0ms
+
+stage-1
+FROM docker.io/library/python:3.11-slim@sha256:158caf0e080e2cd74ef2879ed3c4e697792ee65251c8208b7afb56683c32ea6c cached
+8ms
+
+frontend-builder
+WORKDIR /app/frontend
+19ms
+
+stage-1
+WORKDIR /app
+16ms
+
+stage-1
+COPY requirements.txt .
+18ms
+
+frontend-builder
+COPY frontend/package*.json ./
+18ms
+
+stage-1
+RUN pip install --no-cache-dir -r requirements.txt
+5s
+Collecting fastapi==0.109.2 (from -r requirements.txt (line 2))
+  Downloading fastapi-0.109.2-py3-none-any.whl.metadata (25 kB)
+Collecting uvicorn==0.27.1 (from uvicorn[standard]==0.27.1->-r requirements.txt (line 3))
+  Downloading uvicorn-0.27.1-py3-none-any.whl.metadata (6.3 kB)
+Collecting supabase==2.9.1 (from -r requirements.txt (line 4))
+  Downloading supabase-2.9.1-py3-none-any.whl.metadata (10 kB)
+Collecting python-dotenv==1.0.1 (from -r requirements.txt (line 5))
+  Downloading python_dotenv-1.0.1-py3-none-any.whl.metadata (23 kB)
+Collecting pydantic==2.6.1 (from -r requirements.txt (line 6))
+  Downloading pydantic-2.6.1-py3-none-any.whl.metadata (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.5/83.5 kB 15.2 MB/s eta 0:00:00
+Collecting pydantic-settings==2.2.1 (from -r requirements.txt (line 7))
+  Downloading pydantic_settings-2.2.1-py3-none-any.whl.metadata (3.1 kB)
+Collecting cryptography==42.0.5 (from -r requirements.txt (line 8))
+  Downloading cryptography-42.0.5-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+Collecting httpx==0.27.0 (from -r requirements.txt (line 9))
+  Downloading httpx-0.27.0-py3-none-any.whl.metadata (7.2 kB)
+Collecting google-generativeai==0.4.1 (from -r requirements.txt (line 10))
+  Downloading google_generativeai-0.4.1-py3-none-any.whl.metadata (6.2 kB)
+Collecting python-jose==3.3.0 (from python-jose[cryptography]==3.3.0->-r requirements.txt (line 11))
+  Downloading python_jose-3.3.0-py2.py3-none-any.whl.metadata (5.4 kB)
+Collecting passlib==1.7.4 (from passlib[bcrypt]==1.7.4->-r requirements.txt (line 12))
+  Downloading passlib-1.7.4-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting bcrypt==4.1.2 (from -r requirements.txt (line 13))
+  Downloading bcrypt-4.1.2-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+Collecting email-validator==2.1.1 (from -r requirements.txt (line 14))
+  Downloading email_validator-2.1.1-py3-none-any.whl.metadata (26 kB)
+Collecting slowapi==0.1.9 (from -r requirements.txt (line 15))
+  Downloading slowapi-0.1.9-py3-none-any.whl.metadata (3.0 kB)
+Collecting pytest==8.0.2 (from -r requirements.txt (line 16))
+  Downloading pytest-8.0.2-py3-none-any.whl.metadata (7.7 kB)
+Collecting pytest-asyncio==0.23.5 (from -r requirements.txt (line 17))
+  Downloading pytest_asyncio-0.23.5-py3-none-any.whl.metadata (3.9 kB)
+Collecting sentry-sdk==1.40.0 (from sentry-sdk[fastapi]==1.40.0->-r requirements.txt (line 19))
+  Downloading sentry_sdk-1.40.0-py2.py3-none-any.whl.metadata (9.7 kB)
+Collecting starlette<0.37.0,>=0.36.3 (from fastapi==0.109.2->-r requirements.txt (line 2))
+  Downloading starlette-0.36.3-py3-none-any.whl.metadata (5.9 kB)
+Collecting typing-extensions>=4.8.0 (from fastapi==0.109.2->-r requirements.txt (line 2))
+  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting click>=7.0 (from uvicorn==0.27.1->uvicorn[standard]==0.27.1->-r requirements.txt (line 3))
+  Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting h11>=0.8 (from uvicorn==0.27.1->uvicorn[standard]==0.27.1->-r requirements.txt (line 3))
+  Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting gotrue<3.0.0,>=2.9.0 (from supabase==2.9.1->-r requirements.txt (line 4))
+  Downloading gotrue-2.12.4-py3-none-any.whl.metadata (2.0 kB)
+Collecting postgrest<0.18.0,>=0.17.0 (from supabase==2.9.1->-r requirements.txt (line 4))
+  Downloading postgrest-0.17.2-py3-none-any.whl.metadata (3.4 kB)
+Collecting realtime<3.0.0,>=2.0.0 (from supabase==2.9.1->-r requirements.txt (line 4))
+  Downloading realtime-2.27.0-py3-none-any.whl.metadata (7.0 kB)
+Collecting storage3<0.9.0,>=0.8.0 (from supabase==2.9.1->-r requirements.txt (line 4))
+  Downloading storage3-0.8.2-py3-none-any.whl.metadata (1.8 kB)
+Collecting supafunc<0.7.0,>=0.6.0 (from supabase==2.9.1->-r requirements.txt (line 4))
+  Downloading supafunc-0.6.2-py3-none-any.whl.metadata (1.1 kB)
+Collecting annotated-types>=0.4.0 (from pydantic==2.6.1->-r requirements.txt (line 6))
+  Downloading annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.16.2 (from pydantic==2.6.1->-r requirements.txt (line 6))
+  Downloading pydantic_core-2.16.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.5 kB)
+Collecting cffi>=1.12 (from cryptography==42.0.5->-r requirements.txt (line 8))
+  Downloading cffi-2.0.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+Collecting anyio (from httpx==0.27.0->-r requirements.txt (line 9))
+  Downloading anyio-4.12.0-py3-none-any.whl.metadata (4.3 kB)
+Collecting certifi (from httpx==0.27.0->-r requirements.txt (line 9))
+  Downloading certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx==0.27.0->-r requirements.txt (line 9))
+  Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting idna (from httpx==0.27.0->-r requirements.txt (line 9))
+  Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting sniffio (from httpx==0.27.0->-r requirements.txt (line 9))
+  Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting google-ai-generativelanguage==0.4.0 (from google-generativeai==0.4.1->-r requirements.txt (line 10))
+  Downloading google_ai_generativelanguage-0.4.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting google-auth>=2.15.0 (from google-generativeai==0.4.1->-r requirements.txt (line 10))
+  Downloading google_auth-2.45.0-py2.py3-none-any.whl.metadata (6.8 kB)
+Collecting google-api-core (from google-generativeai==0.4.1->-r requirements.txt (line 10))
+  Downloading google_api_core-2.28.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting protobuf (from google-generativeai==0.4.1->-r requirements.txt (line 10))
+  Downloading protobuf-6.33.2-cp39-abi3-manylinux2014_x86_64.whl.metadata (593 bytes)
+Collecting tqdm (from google-generativeai==0.4.1->-r requirements.txt (line 10))
+  Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 57.7/57.7 kB 356.6 MB/s eta 0:00:00
+Collecting ecdsa!=0.15 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 11))
+  Downloading ecdsa-0.19.1-py2.py3-none-any.whl.metadata (29 kB)
+Collecting rsa (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 11))
+  Downloading rsa-4.9.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting pyasn1 (from python-jose==3.3.0->python-jose[cryptography]==3.3.0->-r requirements.txt (line 11))
+  Downloading pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Collecting dnspython>=2.0.0 (from email-validator==2.1.1->-r requirements.txt (line 14))
+  Downloading dnspython-2.8.0-py3-none-any.whl.metadata (5.7 kB)
+Collecting limits>=2.3 (from slowapi==0.1.9->-r requirements.txt (line 15))
+  Downloading limits-5.6.0-py3-none-any.whl.metadata (10 kB)
+Collecting iniconfig (from pytest==8.0.2->-r requirements.txt (line 16))
+  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting packaging (from pytest==8.0.2->-r requirements.txt (line 16))
+  Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting pluggy<2.0,>=1.3.0 (from pytest==8.0.2->-r requirements.txt (line 16))
+  Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting urllib3>=1.26.11 (from sentry-sdk==1.40.0->sentry-sdk[fastapi]==1.40.0->-r requirements.txt (line 19))
+  Downloading urllib3-2.6.2-py3-none-any.whl.metadata (6.6 kB)
+
+frontend-builder
+RUN npm ci
+3s
+npm notice
+
+frontend-builder
+COPY frontend/ ./
+74ms
+
+frontend-builder
+RUN npm run build
+1s
+> tenet-ai-admin@1.0.0 build
+> vite build
+vite v5.4.21 building for production...
+transforming...
+✓ 32 modules transformed.
+x Build failed in 878ms
+error during build:
+[vite]: Rollup failed to resolve import "react-notify-toast" from "/app/frontend/src/pages/admin/Agencias.jsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteWarn (file:///app/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65855:17)
+    at onwarn (file:///app/frontend/node_modules/@vitejs/plugin-react/dist/index.js:90:7)
+    at onRollupWarning (file:///app/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65885:5)
+    at onwarn (file:///app/frontend/node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:65550:7)
+    at file:///app/frontend/node_modules/rollup/dist/es/shared/node-entry.js:20975:13
+    at Object.logger [as onLog] (file:///app/frontend/node_modules/rollup/dist/es/shared/node-entry.js:22848:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///app/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21592:26)
+    at file:///app/frontend/node_modules/rollup/dist/es/shared/node-entry.js:21550:26
+Dockerfile:7
+-------------------
+5 |     RUN npm ci
+6 |     COPY frontend/ ./
+7 | >>> RUN npm run build
+8 |
+9 |     FROM python:3.11-slim
+-------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
