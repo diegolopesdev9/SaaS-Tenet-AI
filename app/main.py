@@ -19,6 +19,7 @@ from app.routes.integrations import router as integrations_router
 from app.routes.notifications import router as notifications_router
 from app.routes.templates import router as templates_router
 from app.routes.ab_tests import router as ab_tests_router
+from app.routes.whatsapp_connection import router as whatsapp_connection_router
 from app.database import health_check
 from app.config import settings
 
@@ -68,6 +69,7 @@ app.include_router(templates.router)
 app.include_router(ab_tests.router)
 app.include_router(export.router)
 app.include_router(admin_metrics.router)
+app.include_router(whatsapp_connection_router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
