@@ -41,6 +41,7 @@ class AgenciaCreate(BaseModel):
     admin_nome: str = Field(..., max_length=100)
     admin_email: EmailStr
     admin_senha: str = Field(..., min_length=6)
+    nicho: str = Field(default="sdr", pattern="^(sdr|suporte|rh|vendas|custom)$")
 
 
 class AgenciaResponse(BaseModel):
@@ -85,7 +86,7 @@ async def list_all_agencies(current_user: dict = Depends(get_current_user)):
     try:
         # Buscar agências
         response = supabase.table("agencias").select(
-            "id, nome, email, created_at, instance_name, whatsapp_phone_id"
+            "id, nome, email, created_at, instance_name, whatsapp_phone_id, nicho"
         ).order("nome").execute()
 
         agencias = response.data or []
@@ -283,6 +284,7 @@ async def create_agencia(
             "instance_name": agencia.instance_name,
             "whatsapp_phone_id": agencia.whatsapp_phone_id,
             "prompt_config": agencia.prompt_config,
+            "nicho": agencia.nicho,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()
         }
@@ -397,7 +399,7 @@ async def update_agencia(
         body = await request.json()
 
         # Campos permitidos para atualização
-        allowed_fields = ["nome", "email", "instance_name", "whatsapp_phone_id"]
+        allowed_fields = ["nome", "email", "instance_name", "whatsapp_phone_id", "nicho"]
         update_data = {k: v for k, v in body.items() if k in allowed_fields}
 
         if not update_data:
