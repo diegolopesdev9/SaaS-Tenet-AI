@@ -1,23 +1,51 @@
 
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Settings, MessageSquare, Menu, X, Bot, ChevronRight, LogOut, Shield, Building2, Users, Link2, Bell, ChevronDown } from 'lucide-react'
+import { 
+  LayoutDashboard, 
+  Settings, 
+  MessageSquare, 
+  Menu, 
+  X, 
+  Bot, 
+  ChevronRight, 
+  LogOut, 
+  Shield, 
+  Building2, 
+  Users, 
+  Link2, 
+  Bell, 
+  ChevronDown,
+  BookOpen,
+  FlaskConical,
+  FileText,
+  Globe,
+  Cog
+} from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
 export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyChange, isSuperAdmin }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [agencyName, setAgencyName] = useState('Carregando...')
+  const [agencyNicho, setAgencyNicho] = useState('')
   const [user, setUser] = useState(null)
   const [showAgencyDropdown, setShowAgencyDropdown] = useState(false)
   const location = useLocation()
 
+  const isGeneralView = selectedAgencyId === 'geral'
+
   useEffect(() => {
     const loadAgencyConfig = async () => {
-      if (!agencyId) return
+      if (!agencyId || agencyId === 'geral') {
+        setAgencyName('Visão Geral')
+        setAgencyNicho('')
+        return
+      }
       try {
         const response = await api.get(`/agencias/${agencyId}/config`)
         setAgencyName(response.data.nome || 'Agência')
+        setAgencyNicho(response.data.nicho || 'SDR')
       } catch (error) {
         console.error('Erro ao carregar configurações da agência:', error)
         setAgencyName('Agência')
@@ -48,37 +76,49 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
     setShowAgencyDropdown(false)
   }
 
-  const navigation = [
+  // Menu para usuários de agência
+  const agencyNavigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Conversas', href: '/conversas', icon: MessageSquare },
+    { name: 'Base de Conhecimento', href: '/conhecimento', icon: BookOpen },
     { name: 'Integrações', href: '/integracoes', icon: Link2 },
     { name: 'Notificações', href: '/notificacoes', icon: Bell },
     { name: 'Configurações', href: '/config', icon: Settings },
   ]
 
+  // Menu de administração para Super Admin
   const superAdminNavigation = [
     { name: 'Agências', href: '/admin/agencias', icon: Building2 },
     { name: 'Usuários', href: '/admin/usuarios', icon: Users },
+    { name: 'Templates', href: '/admin/templates', icon: FileText },
+    { name: 'A/B Tests', href: '/admin/ab-tests', icon: FlaskConical },
   ]
+
+  // Determina o título baseado no contexto
+  const getHeaderTitle = () => {
+    if (isSuperAdmin) {
+      return 'TENET AI'
+    }
+    return `Tenet ${agencyNicho || 'AI'}`
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-0'
         } overflow-hidden`}
       >
         <div className="flex flex-col h-full">
-          {/* Header com Seletor de Agência para Super Admin */}
+          {/* Header */}
           <div className="px-4 py-4 border-b border-gray-200">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-semibold text-gray-900 truncate">
-                  {isSuperAdmin ? 'TENET AI' : `Tenet ${agencyName}`}
-                </h1>
+                <h1 className="text-sm font-bold text-gray-900 truncate">{getHeaderTitle()}</h1>
                 {isSuperAdmin && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
                     <Shield className="w-3 h-3" />
@@ -89,15 +129,21 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
             </div>
 
             {/* Seletor de Agência para Super Admin */}
-            {isSuperAdmin && agencies.length > 0 ? (
+            {isSuperAdmin && agencies.length > 0 && (
               <div className="relative">
                 <button
                   onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
                   className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-left transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 truncate">{agencyName}</span>
+                    {isGeneralView ? (
+                      <Globe className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                    ) : (
+                      <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    )}
+                    <span className="text-sm font-medium text-gray-700 truncate">
+                      {isGeneralView ? 'Visão Geral' : agencyName}
+                    </span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showAgencyDropdown ? 'rotate-180' : ''}`} />
                 </button>
@@ -109,19 +155,16 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       onClick={() => setShowAgencyDropdown(false)}
                     />
                     <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
-                      {/* Opção Geral - Todas as Agências */}
+                      {/* Opção Visão Geral */}
                       <button
                         onClick={() => handleSelectAgency({ id: 'geral', nome: 'Visão Geral' })}
                         className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                          selectedAgencyId === 'geral' ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
+                          isGeneralView ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
                         }`}
                       >
-                        <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+                        <Globe className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">Visão Geral</span>
                         <span className="ml-auto text-xs text-gray-400">Todas</span>
-                        {selectedAgencyId === 'geral' && (
-                          <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                        )}
                       </button>
                       
                       {/* Lista de Agências */}
@@ -144,114 +187,180 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                   </>
                 )}
               </div>
-            ) : (
-              <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700 truncate">{agencyName}</span>
-                </div>
-              </div>
             )}
           </div>
 
+          {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {/* Navegação da Agência Selecionada */}
-            <div className="mb-2">
-              <span className="px-3 text-xs font-semibold text-gray-400 uppercase">
-                Agência
-              </span>
-            </div>
             
-            {navigation.map((item) => {
-              const Icon = item.icon
-              const isActive = location.pathname === item.href
-              return (
+            {/* Menu do Super Admin - Visão Geral */}
+            {isSuperAdmin && isGeneralView && (
+              <>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Visão Geral</p>
+                </div>
                 <NavLink
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  to="/"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-purple-50 text-purple-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`
+                  }
                 >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="flex-1">{item.name}</span>
-                  {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                  <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1">Dashboard Geral</span>
                 </NavLink>
-              )
-            })}
 
-            {/* Menu Super Admin */}
-            {user?.role === 'super_admin' && (
-              <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="mb-2">
-                  <span className="px-3 text-xs font-semibold text-gray-400 uppercase">
-                    Administração
-                  </span>
+                <div className="px-3 py-2 mt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
                 </div>
                 {superAdminNavigation.map((item) => {
                   const Icon = item.icon
-                  const isActive = location.pathname === item.href
                   return (
                     <NavLink
                       key={item.name}
                       to={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                        isActive ? 'bg-purple-50 text-purple-600' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                      }
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       <span className="flex-1">{item.name}</span>
-                      {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
                     </NavLink>
                   )
                 })}
-              </div>
+              </>
+            )}
+
+            {/* Menu do Super Admin - Agência Selecionada */}
+            {isSuperAdmin && !isGeneralView && (
+              <>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Agência: {agencyName}</p>
+                </div>
+                {agencyNavigation.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                      }
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                    </NavLink>
+                  )
+                })}
+
+                <div className="px-3 py-2 mt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
+                </div>
+                {superAdminNavigation.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                      }
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                    </NavLink>
+                  )
+                })}
+              </>
+            )}
+
+            {/* Menu do Usuário Normal */}
+            {!isSuperAdmin && (
+              <>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu</p>
+                </div>
+                {agencyNavigation.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <NavLink
+                      key={item.name}
+                      to={item.href}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                      }
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                    </NavLink>
+                  )
+                })}
+              </>
             )}
           </nav>
 
-          {/* Rodapé com Usuário e Logout */}
-          <div className="px-3 py-4 border-t border-gray-200">
-            {user && (
-              <div className="px-3 py-2 mb-2">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.nome}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+          {/* User Info */}
+          <div className="border-t border-gray-200 p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-600">
+                  {user?.nome?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
               </div>
-            )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{user?.nome || 'Usuário'}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
+            </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors w-full"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
               <span>Sair</span>
             </button>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 text-center">
-                TENET AI © 2024
-              </p>
-            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400 text-center">TENET AI © 2024</p>
           </div>
         </div>
       </div>
 
+      {/* Toggle Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center shadow-sm hover:bg-gray-50"
+        className="fixed top-4 left-4 z-50 p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors lg:hidden"
       >
         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
-        <main className="p-6 lg:p-8">
+      {/* Main Content */}
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <main className="p-6">
           <Outlet />
         </main>
       </div>
-
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   )
 }
