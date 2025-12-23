@@ -66,7 +66,8 @@ async def get_agency_config(agency_id: str):
         whatsapp_api_type=agency.get("whatsapp_api_type", "evolution"),
         meta_phone_number_id=agency.get("meta_phone_number_id"),
         meta_business_account_id=agency.get("meta_business_account_id"),
-        has_meta_token=bool(agency.get("meta_access_token_encrypted"))
+        has_meta_token=bool(agency.get("meta_access_token_encrypted")),
+        nicho=agency.get("nicho", "sdr")
     )
 
     logger.info(f"Configurações retornadas para agência: {agency.get('nome')}")
