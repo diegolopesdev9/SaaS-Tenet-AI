@@ -1,37 +1,55 @@
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Plus, Edit, Copy, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { FileText, Plus, Edit, Copy, ChevronDown, ChevronUp, Search, Lock } from 'lucide-react'
 import api from '../../services/api'
+import authService from '../../services/auth'
 
-export default function Templates() {
+export default function Templates({ agencyId }) {
   const [templates, setTemplates] = useState([])
-  const [nichos, setNichos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedNicho, setSelectedNicho] = useState('')
   const [expandedTemplate, setExpandedTemplate] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [agencyNicho, setAgencyNicho] = useState(null)
+  
+  const user = authService.getUser()
+  const isSuperAdmin = user?.role === 'super_admin'
 
   useEffect(() => {
-    loadData()
-  }, [selectedNicho])
+    loadAgencyConfig()
+  }, [agencyId])
 
-  const loadData = async () => {
+  useEffect(() => {
+    loadTemplates()
+  }, [selectedNicho, agencyNicho])
+
+  const loadAgencyConfig = async () => {
+    if (isSuperAdmin) {
+      setAgencyNicho(null) // Super admin vê todos
+      return
+    }
+    
+    try {
+      const response = await api.get(`/agencias/${agencyId}/config`)
+      setAgencyNicho(response.data.nicho || 'sdr')
+      setSelectedNicho(response.data.nicho || 'sdr')
+    } catch (error) {
+      console.error('Erro ao carregar config da agência:', error)
+    }
+  }
+
+  const loadTemplates = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Carregar nichos
-      const nichosRes = await api.get('/templates/nichos')
-      const nichosData = nichosRes.data?.nichos || nichosRes.data || []
-      setNichos(Array.isArray(nichosData) ? nichosData : [])
+      // Se não é super admin, força filtro pelo nicho da agência
+      const nichoFilter = isSuperAdmin ? selectedNicho : agencyNicho
+      const url = nichoFilter ? `/templates?nicho=${nichoFilter}` : '/templates'
       
-      // Carregar templates
-      const url = selectedNicho 
-        ? `/templates?nicho=${selectedNicho}` 
-        : '/templates'
-      const templatesRes = await api.get(url)
-      const templatesData = templatesRes.data?.templates || templatesRes.data || []
+      const response = await api.get(url)
+      const templatesData = response.data?.templates || response.data || []
       setTemplates(Array.isArray(templatesData) ? templatesData : [])
       
     } catch (err) {
@@ -69,6 +87,25 @@ export default function Templates() {
     return icons[nicho?.toLowerCase()] || '📄'
   }
 
+  const getNichoName = (nicho) => {
+    const names = {
+      sdr: 'Tenet SDR',
+      suporte: 'Tenet Suporte',
+      rh: 'Tenet RH',
+      vendas: 'Tenet Vendas',
+      custom: 'Tenet Custom'
+    }
+    return names[nicho?.toLowerCase()] || 'Tenet'
+  }
+
+  const nichosList = [
+    { id: 'sdr', nome: 'SDR', desc: 'Qualificação de leads' },
+    { id: 'suporte', nome: 'Suporte', desc: 'Atendimento técnico' },
+    { id: 'rh', nome: 'RH', desc: 'Recursos humanos' },
+    { id: 'vendas', nome: 'Vendas', desc: 'Atendimento comercial' },
+    { id: 'custom', nome: 'Custom', desc: 'Personalizado' }
+  ]
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -82,16 +119,39 @@ export default function Templates() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Templates de Prompts</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isSuperAdmin ? 'Templates de Prompts' : `Templates - ${getNichoName(agencyNicho)}`}
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Gerencie os templates de prompts por nicho
+            {isSuperAdmin 
+              ? 'Gerencie os templates de prompts de todos os nichos'
+              : 'Templates disponíveis para o seu agente'
+            }
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-4 h-4" />
-          Novo Template
-        </button>
+        {isSuperAdmin && (
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <Plus className="w-4 h-4" />
+            Novo Template
+          </button>
+        )}
       </div>
+
+      {/* Aviso para usuário comum */}
+      {!isSuperAdmin && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex gap-3">
+            <Lock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-blue-900">Templates do {getNichoName(agencyNicho)}</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Você tem acesso aos templates do nicho da sua agência. 
+                Para acessar outros nichos, entre em contato com o administrador.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Erro */}
       {error && (
@@ -112,44 +172,42 @@ export default function Templates() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        <select
-          value={selectedNicho}
-          onChange={(e) => setSelectedNicho(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        >
-          <option value="">Todos os nichos</option>
-          <option value="sdr">SDR - Qualificação</option>
-          <option value="suporte">Suporte Técnico</option>
-          <option value="rh">Recursos Humanos</option>
-          <option value="vendas">Vendas</option>
-          <option value="custom">Personalizado</option>
-        </select>
+        {isSuperAdmin && (
+          <select
+            value={selectedNicho}
+            onChange={(e) => setSelectedNicho(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Todos os nichos</option>
+            <option value="sdr">SDR - Qualificação</option>
+            <option value="suporte">Suporte Técnico</option>
+            <option value="rh">Recursos Humanos</option>
+            <option value="vendas">Vendas</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        )}
       </div>
 
-      {/* Cards de Nichos */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          { id: 'sdr', nome: 'SDR', desc: 'Qualificação de leads' },
-          { id: 'suporte', nome: 'Suporte', desc: 'Atendimento técnico' },
-          { id: 'rh', nome: 'RH', desc: 'Recursos humanos' },
-          { id: 'vendas', nome: 'Vendas', desc: 'Atendimento comercial' },
-          { id: 'custom', nome: 'Custom', desc: 'Personalizado' }
-        ].map((nicho) => (
-          <div
-            key={nicho.id}
-            onClick={() => setSelectedNicho(nicho.id === selectedNicho ? '' : nicho.id)}
-            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-              selectedNicho === nicho.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="text-2xl mb-2">{getNichoIcon(nicho.id)}</div>
-            <p className="font-semibold text-gray-900">{nicho.nome}</p>
-            <p className="text-xs text-gray-500">{nicho.desc}</p>
-          </div>
-        ))}
-      </div>
+      {/* Cards de Nichos - Somente Super Admin */}
+      {isSuperAdmin && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {nichosList.map((nicho) => (
+            <div
+              key={nicho.id}
+              onClick={() => setSelectedNicho(nicho.id === selectedNicho ? '' : nicho.id)}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                selectedNicho === nicho.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="text-2xl mb-2">{getNichoIcon(nicho.id)}</div>
+              <p className="font-semibold text-gray-900">{nicho.nome}</p>
+              <p className="text-xs text-gray-500">{nicho.desc}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Lista de Templates */}
       <div className="space-y-4">
@@ -158,7 +216,10 @@ export default function Templates() {
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">Nenhum template encontrado</p>
             <p className="text-sm text-gray-400 mt-1">
-              {selectedNicho ? 'Tente outro nicho ou crie um novo template' : 'Crie seu primeiro template'}
+              {isSuperAdmin 
+                ? 'Tente outro nicho ou crie um novo template'
+                : 'Entre em contato com o administrador para adicionar templates'
+              }
             </p>
           </div>
         ) : (
@@ -193,20 +254,24 @@ export default function Templates() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); }}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Duplicar"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); }}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Editar"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
+                  {isSuperAdmin && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); }}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Duplicar"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); }}
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                   {expandedTemplate === template.id ? (
                     <ChevronUp className="w-5 h-5 text-gray-400" />
                   ) : (
