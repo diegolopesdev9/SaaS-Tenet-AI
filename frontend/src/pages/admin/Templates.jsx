@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Plus, Edit, Trash2, Copy, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { FileText, Plus, Edit, Copy, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import api from '../../services/api'
 
 export default function Templates() {
   const [templates, setTemplates] = useState([])
   const [nichos, setNichos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedNicho, setSelectedNicho] = useState('')
   const [expandedTemplate, setExpandedTemplate] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -18,20 +19,24 @@ export default function Templates() {
   const loadData = async () => {
     try {
       setLoading(true)
+      setError(null)
       
       // Carregar nichos
       const nichosRes = await api.get('/templates/nichos')
-      setNichos(nichosRes.data.nichos || [])
+      const nichosData = nichosRes.data?.nichos || nichosRes.data || []
+      setNichos(Array.isArray(nichosData) ? nichosData : [])
       
       // Carregar templates
       const url = selectedNicho 
         ? `/templates?nicho=${selectedNicho}` 
         : '/templates'
       const templatesRes = await api.get(url)
-      setTemplates(templatesRes.data.templates || [])
+      const templatesData = templatesRes.data?.templates || templatesRes.data || []
+      setTemplates(Array.isArray(templatesData) ? templatesData : [])
       
-    } catch (error) {
-      console.error('Erro ao carregar templates:', error)
+    } catch (err) {
+      console.error('Erro ao carregar templates:', err)
+      setError('Erro ao carregar dados')
     } finally {
       setLoading(false)
     }
@@ -51,6 +56,17 @@ export default function Templates() {
       custom: 'bg-gray-100 text-gray-800'
     }
     return colors[nicho?.toLowerCase()] || colors.custom
+  }
+
+  const getNichoIcon = (nicho) => {
+    const icons = {
+      sdr: '🎯',
+      suporte: '🛠️',
+      rh: '👥',
+      vendas: '💰',
+      custom: '⚙️'
+    }
+    return icons[nicho?.toLowerCase()] || '📄'
   }
 
   if (loading) {
@@ -77,6 +93,13 @@ export default function Templates() {
         </button>
       </div>
 
+      {/* Erro */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -95,17 +118,23 @@ export default function Templates() {
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="">Todos os nichos</option>
-          {nichos.map((nicho) => (
-            <option key={nicho.id} value={nicho.id}>
-              {nicho.nome} ({nicho.total_templates})
-            </option>
-          ))}
+          <option value="sdr">SDR - Qualificação</option>
+          <option value="suporte">Suporte Técnico</option>
+          <option value="rh">Recursos Humanos</option>
+          <option value="vendas">Vendas</option>
+          <option value="custom">Personalizado</option>
         </select>
       </div>
 
       {/* Cards de Nichos */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {nichos.map((nicho) => (
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[
+          { id: 'sdr', nome: 'SDR', desc: 'Qualificação de leads' },
+          { id: 'suporte', nome: 'Suporte', desc: 'Atendimento técnico' },
+          { id: 'rh', nome: 'RH', desc: 'Recursos humanos' },
+          { id: 'vendas', nome: 'Vendas', desc: 'Atendimento comercial' },
+          { id: 'custom', nome: 'Custom', desc: 'Personalizado' }
+        ].map((nicho) => (
           <div
             key={nicho.id}
             onClick={() => setSelectedNicho(nicho.id === selectedNicho ? '' : nicho.id)}
@@ -115,8 +144,9 @@ export default function Templates() {
                 : 'border-gray-200 bg-white hover:border-gray-300'
             }`}
           >
+            <div className="text-2xl mb-2">{getNichoIcon(nicho.id)}</div>
             <p className="font-semibold text-gray-900">{nicho.nome}</p>
-            <p className="text-sm text-gray-500">{nicho.total_templates} templates</p>
+            <p className="text-xs text-gray-500">{nicho.desc}</p>
           </div>
         ))}
       </div>
@@ -127,6 +157,9 @@ export default function Templates() {
           <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">Nenhum template encontrado</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {selectedNicho ? 'Tente outro nicho ou crie um novo template' : 'Crie seu primeiro template'}
+            </p>
           </div>
         ) : (
           filteredTemplates.map((template) => (
@@ -141,8 +174,8 @@ export default function Templates() {
                 )}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-gray-600" />
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                    {getNichoIcon(template.nicho)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -160,10 +193,18 @@ export default function Templates() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); }}
+                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Duplicar"
+                  >
                     <Copy className="w-4 h-4" />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); }}
+                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Editar"
+                  >
                     <Edit className="w-4 h-4" />
                   </button>
                   {expandedTemplate === template.id ? (
@@ -182,13 +223,13 @@ export default function Templates() {
                         Prompt do Sistema
                       </label>
                       <pre className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto max-h-48">
-                        {template.prompt_sistema}
+                        {template.prompt_sistema || 'Sem prompt definido'}
                       </pre>
                     </div>
                     {template.variaveis && template.variaveis.length > 0 && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Variáveis
+                          Variáveis disponíveis
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {template.variaveis.map((v, i) => (
