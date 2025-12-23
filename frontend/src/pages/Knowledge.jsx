@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react'
-import { BookOpen, Plus, Upload, Search, Trash2, FileText, Tag, Calendar } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { BookOpen, Plus, Upload, Search, Trash2, FileText, Tag, Calendar, File, X } from 'lucide-react'
 import api from '../services/api'
 
 export default function Knowledge({ agencyId }) {
@@ -12,6 +12,9 @@ export default function Knowledge({ agencyId }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newDoc, setNewDoc] = useState({ titulo: '', conteudo: '', categoria: '' })
   const [adding, setAdding] = useState(false)
+  const [uploadMode, setUploadMode] = useState('text') // 'text' ou 'file'
+  const [selectedFile, setSelectedFile] = useState(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     loadDocuments()
@@ -21,9 +24,11 @@ export default function Knowledge({ agencyId }) {
     try {
       setLoading(true)
       const response = await api.get('/knowledge/documents')
-      setDocuments(response.data.documents || [])
+      const data = response.data?.documents || response.data || []
+      setDocuments(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Erro ao carregar documentos:', error)
+      setDocuments([])
     } finally {
       setLoading(false)
     }
@@ -38,11 +43,28 @@ export default function Knowledge({ agencyId }) {
         query: searchTerm,
         limit: 5
       })
-      setSearchResults(response.data.results || [])
+      setSearchResults(response.data?.results || [])
     } catch (error) {
       console.error('Erro na busca:', error)
     } finally {
       setSearching(false)
+    }
+  }
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setSelectedFile(file)
+      setNewDoc({ ...newDoc, titulo: file.name.replace(/\.[^/.]+$/, '') })
+      
+      // Ler conteúdo se for arquivo de texto
+      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          setNewDoc(prev => ({ ...prev, conteudo: e.target.result }))
+        }
+        reader.readAsText(file)
+      }
     }
   }
 
@@ -57,10 +79,13 @@ export default function Knowledge({ agencyId }) {
         categoria: newDoc.categoria || 'geral'
       })
       setNewDoc({ titulo: '', conteudo: '', categoria: '' })
+      setSelectedFile(null)
+      setUploadMode('text')
       setShowAddModal(false)
       loadDocuments()
     } catch (error) {
       console.error('Erro ao adicionar documento:', error)
+      alert('Erro ao adicionar documento. Tente novamente.')
     } finally {
       setAdding(false)
     }
@@ -75,6 +100,13 @@ export default function Knowledge({ agencyId }) {
     } catch (error) {
       console.error('Erro ao excluir documento:', error)
     }
+  }
+
+  const resetModal = () => {
+    setShowAddModal(false)
+    setNewDoc({ titulo: '', conteudo: '', categoria: '' })
+    setSelectedFile(null)
+    setUploadMode('text')
   }
 
   if (loading) {
@@ -106,13 +138,16 @@ export default function Knowledge({ agencyId }) {
 
       {/* Busca Semântica */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Busca Semântica</h2>
+        <h2 className="font-semibold text-gray-900 mb-4">🔍 Busca Semântica</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Teste a busca por similaridade. Digite uma pergunta e veja quais documentos serão usados como contexto.
+        </p>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Digite uma pergunta para testar a busca..."
+              placeholder="Ex: Qual é a política de preços?"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -130,13 +165,13 @@ export default function Knowledge({ agencyId }) {
 
         {searchResults.length > 0 && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-gray-500">Resultados encontrados:</p>
+            <p className="text-sm font-medium text-gray-700">Resultados encontrados:</p>
             {searchResults.map((result, index) => (
               <div key={index} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-medium text-blue-900">{result.titulo}</span>
-                  <span className="text-xs text-blue-600">
-                    Similaridade: {(result.similarity * 100).toFixed(0)}%
+                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                    {(result.similarity * 100).toFixed(0)}% similar
                   </span>
                 </div>
                 <p className="text-sm text-blue-700 line-clamp-2">{result.conteudo}</p>
@@ -148,9 +183,9 @@ export default function Knowledge({ agencyId }) {
 
       {/* Lista de Documentos */}
       <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">
-            Documentos ({documents.length})
+            📚 Documentos ({documents.length})
           </h2>
         </div>
         
@@ -159,7 +194,7 @@ export default function Knowledge({ agencyId }) {
             <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">Nenhum documento adicionado</p>
             <p className="text-sm text-gray-400 mt-1">
-              Adicione documentos para a IA usar como contexto
+              Adicione documentos para a IA usar como contexto nas conversas
             </p>
           </div>
         ) : (
@@ -193,6 +228,7 @@ export default function Knowledge({ agencyId }) {
                   <button
                     onClick={() => handleDeleteDocument(doc.id)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Excluir documento"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -207,10 +243,80 @@ export default function Knowledge({ agencyId }) {
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Adicionar Documento</h2>
+              <button onClick={resetModal} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
+            
+            {/* Tabs */}
+            <div className="px-6 pt-4">
+              <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                <button
+                  onClick={() => setUploadMode('text')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    uploadMode === 'text'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Digitar texto
+                </button>
+                <button
+                  onClick={() => setUploadMode('file')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    uploadMode === 'file'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload de arquivo
+                </button>
+              </div>
+            </div>
+
             <div className="p-6 space-y-4">
+              {/* Upload de Arquivo */}
+              {uploadMode === 'file' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arquivo (.txt, .md)
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt,.md,.text"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                  >
+                    {selectedFile ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <File className="w-8 h-8 text-blue-600" />
+                        <div className="text-left">
+                          <p className="font-medium text-gray-900">{selectedFile.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {(selectedFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-600">Clique para selecionar um arquivo</p>
+                        <p className="text-sm text-gray-400 mt-1">Suporta .txt e .md</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Título *
@@ -227,13 +333,20 @@ export default function Knowledge({ agencyId }) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Categoria
                 </label>
-                <input
-                  type="text"
+                <select
                   value={newDoc.categoria}
                   onChange={(e) => setNewDoc({ ...newDoc, categoria: e.target.value })}
-                  placeholder="Ex: produtos, faq, políticas"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                >
+                  <option value="">Selecione uma categoria</option>
+                  <option value="produtos">Produtos</option>
+                  <option value="servicos">Serviços</option>
+                  <option value="precos">Preços</option>
+                  <option value="faq">FAQ</option>
+                  <option value="politicas">Políticas</option>
+                  <option value="processos">Processos</option>
+                  <option value="geral">Geral</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -243,14 +356,17 @@ export default function Knowledge({ agencyId }) {
                   value={newDoc.conteudo}
                   onChange={(e) => setNewDoc({ ...newDoc, conteudo: e.target.value })}
                   placeholder="Cole aqui o conteúdo do documento..."
-                  rows={8}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={10}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {newDoc.conteudo.length} caracteres
+                </p>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={resetModal}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 Cancelar
@@ -260,7 +376,7 @@ export default function Knowledge({ agencyId }) {
                 disabled={adding || !newDoc.titulo || !newDoc.conteudo}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {adding ? 'Adicionando...' : 'Adicionar'}
+                {adding ? 'Adicionando...' : 'Adicionar Documento'}
               </button>
             </div>
           </div>
