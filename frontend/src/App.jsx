@@ -170,7 +170,7 @@ function App() {
         <Route path="notificacoes" element={<NotificationsWrapper />} />
         <Route path="admin/agencias" element={<Agencias />} />
         <Route path="admin/usuarios" element={<Usuarios />} />
-        <Route path="admin/templates" element={<Templates />} />
+        <Route path="admin/templates" element={<TemplatesWrapper />} />
         <Route path="admin/ab-tests" element={<ABTests />} />
         <Route path="conhecimento" element={<KnowledgeWrapper />} />
       </Route>
@@ -215,6 +215,11 @@ function NotificationsWrapper() {
 function KnowledgeWrapper() {
   const agencyId = useAgencyId();
   return <Knowledge agencyId={agencyId} />;
+}
+
+function TemplatesWrapper() {
+  const agencyId = useAgencyId();
+  return <Templates agencyId={agencyId} />;
 }
 
 // Hook para pegar agencyId do localStorage ou do usuário
