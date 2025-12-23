@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { notify } from 'react-notify-toast';
 import Select from 'react-select';
 
 function Agencias() {
@@ -21,7 +20,7 @@ function Agencias() {
       setAgencias(response.data);
       setLoading(false);
     } catch (error) {
-      notify.show('Erro ao carregar agências.', 'error', 3000);
+      console.error('Erro ao carregar agências:', error);
       setLoading(false);
     }
   };
@@ -35,7 +34,7 @@ function Agencias() {
       }));
       setGerenteOptions(options);
     } catch (error) {
-      notify.show('Erro ao carregar gerentes.', 'error', 3000);
+      console.error('Erro ao carregar gerentes:', error);
     }
   };
 
@@ -62,9 +61,10 @@ function Agencias() {
       setTelefone('');
       setSelectedGerente(null);
       loadAgencias();
-      notify.show('Agência cadastrada com sucesso!', 'success', 3000);
+      alert('Agência cadastrada com sucesso!');
     } catch (error) {
-      notify.show('Erro ao cadastrar agência.', 'error', 3000);
+      console.error('Erro ao cadastrar agência:', error);
+      alert('Erro ao cadastrar agência.');
     }
   };
 
@@ -73,9 +73,10 @@ function Agencias() {
       try {
         await api.delete(`/agencias/${id}`);
         loadAgencias();
-        notify.show('Agência excluída com sucesso!', 'success', 3000);
+        alert('Agência excluída com sucesso!');
       } catch (error) {
-        notify.show('Erro ao excluir agência.', 'error', 3000);
+        console.error('Erro ao excluir agência:', error);
+        alert('Erro ao excluir agência.');
       }
     }
   };
