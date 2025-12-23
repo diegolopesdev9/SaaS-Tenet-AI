@@ -1,216 +1,373 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
-import Select from 'react-select';
 
-function Agencias() {
+import React, { useState, useEffect } from 'react';
+import { Building2, Plus, Edit, Trash2, Users, MessageSquare, X, Search, CheckCircle } from 'lucide-react';
+import api from '../../services/api';
+
+export default function Agencias() {
   const [agencias, setAgencias] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [nome, setNome] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [estado, setEstado] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [gerente, setGerente] = useState('');
-  const [gerenteOptions, setGerenteOptions] = useState([]);
-  const [selectedGerente, setSelectedGerente] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingAgencia, setEditingAgencia] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const loadAgencias = async () => {
-    try {
-      const response = await api.get('/agencias');
-      setAgencias(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Erro ao carregar agências:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadGerentes = async () => {
-    try {
-      const response = await api.get('/gerentes');
-      const options = response.data.map(gerente => ({
-        value: gerente.id,
-        label: gerente.nome
-      }));
-      setGerenteOptions(options);
-    } catch (error) {
-      console.error('Erro ao carregar gerentes:', error);
-    }
-  };
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    instance_name: '',
+    whatsapp_phone_id: '',
+    nicho: 'sdr',
+    admin_nome: '',
+    admin_email: '',
+    admin_senha: ''
+  });
 
   useEffect(() => {
     loadAgencias();
-    loadGerentes();
   }, []);
+
+  const loadAgencias = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/agencias');
+      setAgencias(response.data || []);
+    } catch (err) {
+      console.error('Erro ao carregar agências:', err);
+      setError('Erro ao carregar agências');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+
     try {
-      await api.post('/agencias', {
-        nome,
-        endereco,
-        cidade,
-        estado,
-        telefone,
-        gerenteId: selectedGerente ? selectedGerente.value : null
-      });
-      setNome('');
-      setEndereco('');
-      setCidade('');
-      setEstado('');
-      setTelefone('');
-      setSelectedGerente(null);
+      if (editingAgencia) {
+        await api.patch(`/admin/agencias/${editingAgencia.id}`, {
+          nome: formData.nome,
+          email: formData.email,
+          instance_name: formData.instance_name,
+          whatsapp_phone_id: formData.whatsapp_phone_id,
+          nicho: formData.nicho
+        });
+        setSuccess('Agência atualizada com sucesso!');
+      } else {
+        await api.post('/admin/agencias', formData);
+        setSuccess('Agência criada com sucesso!');
+      }
+      
+      resetForm();
       loadAgencias();
-      alert('Agência cadastrada com sucesso!');
-    } catch (error) {
-      console.error('Erro ao cadastrar agência:', error);
-      alert('Erro ao cadastrar agência.');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error('Erro ao salvar agência:', err);
+      setError(err.response?.data?.detail || 'Erro ao salvar agência');
     }
+  };
+
+  const handleEdit = (agencia) => {
+    setEditingAgencia(agencia);
+    setFormData({
+      nome: agencia.nome || '',
+      email: agencia.email || '',
+      instance_name: agencia.instance_name || '',
+      whatsapp_phone_id: agencia.whatsapp_phone_id || '',
+      nicho: agencia.nicho || 'sdr',
+      admin_nome: '',
+      admin_email: '',
+      admin_senha: ''
+    });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta agência?')) {
-      try {
-        await api.delete(`/agencias/${id}`);
-        loadAgencias();
-        alert('Agência excluída com sucesso!');
-      } catch (error) {
-        console.error('Erro ao excluir agência:', error);
-        alert('Erro ao excluir agência.');
-      }
+    if (!confirm('Tem certeza que deseja excluir esta agência?')) return;
+
+    try {
+      await api.delete(`/admin/agencias/${id}`);
+      setSuccess('Agência excluída com sucesso!');
+      loadAgencias();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Erro ao excluir agência');
     }
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Gerenciamento de Agências</h1>
+  const resetForm = () => {
+    setFormData({
+      nome: '',
+      email: '',
+      instance_name: '',
+      whatsapp_phone_id: '',
+      nicho: 'sdr',
+      admin_nome: '',
+      admin_email: '',
+      admin_senha: ''
+    });
+    setEditingAgencia(null);
+    setShowModal(false);
+    setError(null);
+  };
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-xl font-semibold mb-4">Cadastrar Nova Agência</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nome">Nome</label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="nome"
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="endereco">Endereço</label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="endereco"
-              type="text"
-              value={endereco}
-              onChange={(e) => setEndereco(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="cidade">Cidade</label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="cidade"
-              type="text"
-              value={cidade}
-              onChange={(e) => setCidade(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estado">Estado</label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="estado"
-              type="text"
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="telefone">Telefone</label>
-            <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="telefone"
-              type="text"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gerente">Gerente</label>
-            <Select
-              id="gerente"
-              options={gerenteOptions}
-              value={selectedGerente}
-              onChange={setSelectedGerente}
-              placeholder="Selecione um gerente"
-              className="basic-multi-select"
-              classNamePrefix="select"
-              required
-            />
-          </div>
+  const getNichoColor = (nicho) => {
+    const colors = {
+      sdr: 'bg-blue-100 text-blue-800',
+      suporte: 'bg-green-100 text-green-800',
+      rh: 'bg-purple-100 text-purple-800',
+      vendas: 'bg-orange-100 text-orange-800',
+      custom: 'bg-gray-100 text-gray-800'
+    };
+    return colors[nicho?.toLowerCase()] || colors.custom;
+  };
+
+  const filteredAgencias = agencias.filter(a =>
+    a.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Agências</h1>
+          <p className="mt-1 text-sm text-gray-500">Crie e gerencie as agências do TENET AI</p>
         </div>
         <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-6"
-          type="submit"
+          onClick={() => { resetForm(); setShowModal(true); }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
-          Adicionar Agência
+          <Plus className="w-4 h-4" />
+          Nova Agência
         </button>
-      </form>
-
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Agências Cadastradas</h2>
-        {loading ? (
-          <p>Carregando agências...</p>
-        ) : agencias.length === 0 ? (
-          <p>Nenhuma agência cadastrada.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white shadow-md rounded-lg">
-              <thead>
-                <tr className="bg-gray-800 text-white">
-                  <th className="py-3 px-4 text-left">Nome</th>
-                  <th className="py-3 px-4 text-left">Endereço</th>
-                  <th className="py-3 px-4 text-left">Cidade</th>
-                  <th className="py-3 px-4 text-left">Estado</th>
-                  <th className="py-3 px-4 text-left">Telefone</th>
-                  <th className="py-3 px-4 text-left">Gerente</th>
-                  <th className="py-3 px-4 text-left">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agencias.map((agencia) => (
-                  <tr key={agencia.id} className="border-b border-gray-200 hover:bg-gray-100">
-                    <td className="py-3 px-4">{agencia.nome}</td>
-                    <td className="py-3 px-4">{agencia.endereco}</td>
-                    <td className="py-3 px-4">{agencia.cidade}</td>
-                    <td className="py-3 px-4">{agencia.estado}</td>
-                    <td className="py-3 px-4">{agencia.telefone}</td>
-                    <td className="py-3 px-4">{agencia.gerente ? agencia.gerente.nome : 'N/A'}</td>
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => handleDelete(agencia.id)}
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline"
-                      >
-                        Excluir
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
-    </div>
-  )
-}
 
-export default Agencias;
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 flex items-center gap-2">
+          <CheckCircle className="w-5 h-5" />
+          {success}
+        </div>
+      )}
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar agências..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agência</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nicho</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuários</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Leads</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criado</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredAgencias.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>Nenhuma agência encontrada</p>
+                </td>
+              </tr>
+            ) : (
+              filteredAgencias.map((agencia) => (
+                <tr key={agencia.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{agencia.nome}</div>
+                        <div className="text-sm text-gray-500">{agencia.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getNichoColor(agencia.nicho)}`}>
+                      {agencia.nicho?.toUpperCase() || 'SDR'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span>{agencia.total_usuarios || 0}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <MessageSquare className="w-4 h-4" />
+                      <span>{agencia.total_conversas || 0}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(agencia.created_at).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => handleEdit(agencia)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(agencia.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {editingAgencia ? 'Editar Agência' : 'Nova Agência'}
+              </h2>
+              <button onClick={resetForm} className="p-1 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Dados da Agência</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                    <input
+                      type="text"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instance Name *</label>
+                    <input
+                      type="text"
+                      value={formData.instance_name}
+                      onChange={(e) => setFormData({...formData, instance_name: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Phone ID</label>
+                    <input
+                      type="text"
+                      value={formData.whatsapp_phone_id}
+                      onChange={(e) => setFormData({...formData, whatsapp_phone_id: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nicho do Agente *</label>
+                    <select
+                      value={formData.nicho}
+                      onChange={(e) => setFormData({...formData, nicho: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      required
+                    >
+                      <option value="sdr">🎯 Tenet SDR - Qualificação de Leads</option>
+                      <option value="suporte">🛠️ Tenet Suporte - Atendimento Técnico</option>
+                      <option value="rh">👥 Tenet RH - Recursos Humanos</option>
+                      <option value="vendas">💰 Tenet Vendas - Atendimento Comercial</option>
+                      <option value="custom">⚙️ Tenet Custom - Personalizado</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {!editingAgencia && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Administrador</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                      <input
+                        type="text"
+                        value={formData.admin_nome}
+                        onChange={(e) => setFormData({...formData, admin_nome: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                      <input
+                        type="email"
+                        value={formData.admin_email}
+                        onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        required
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
+                      <input
+                        type="password"
+                        value={formData.admin_senha}
+                        onChange={(e) => setFormData({...formData, admin_senha: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                        minLength={6}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" onClick={resetForm} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  {editingAgencia ? 'Salvar' : 'Criar Agência'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
