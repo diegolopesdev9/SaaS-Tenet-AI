@@ -6,6 +6,7 @@ import api from '../../services/api'
 export default function ABTests() {
   const [tests, setTests] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedTest, setSelectedTest] = useState(null)
   const [metrics, setMetrics] = useState(null)
 
@@ -16,10 +17,21 @@ export default function ABTests() {
   const loadTests = async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await api.get('/ab-tests')
-      setTests(response.data || [])
-    } catch (error) {
-      console.error('Erro ao carregar testes:', error)
+      // Garantir que é array
+      const data = response.data
+      if (Array.isArray(data)) {
+        setTests(data)
+      } else if (data && Array.isArray(data.tests)) {
+        setTests(data.tests)
+      } else {
+        setTests([])
+      }
+    } catch (err) {
+      console.error('Erro ao carregar testes:', err)
+      setError('Erro ao carregar testes A/B')
+      setTests([])
     } finally {
       setLoading(false)
     }
@@ -92,6 +104,13 @@ export default function ABTests() {
         </button>
       </div>
 
+      {/* Erro */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          {error}
+        </div>
+      )}
+
       {/* Info Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex gap-3">
@@ -109,7 +128,7 @@ export default function ABTests() {
 
       {/* Lista de Testes */}
       <div className="grid gap-4">
-        {tests.length === 0 ? (
+        {!tests || tests.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
             <FlaskConical className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500">Nenhum teste A/B criado</p>
