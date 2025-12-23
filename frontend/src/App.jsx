@@ -19,6 +19,7 @@ import Usuarios from './pages/admin/Usuarios';
 import Knowledge from './pages/Knowledge';
 import Templates from './pages/admin/Templates';
 import ABTests from './pages/admin/ABTests';
+import WhatsAppConnection from './pages/WhatsAppConnection';
 
 // Configurar token imediatamente ao carregar o módulo
 authService.setupAxiosInterceptors();
@@ -173,6 +174,7 @@ function App() {
         <Route path="admin/templates" element={<TemplatesWrapper />} />
         <Route path="admin/ab-tests" element={<ABTests />} />
         <Route path="conhecimento" element={<KnowledgeWrapper />} />
+        <Route path="whatsapp" element={<WhatsAppConnectionWrapper />} />
       </Route>
 
       {/* Redirecionar rotas não encontradas */}
@@ -220,6 +222,11 @@ function KnowledgeWrapper() {
 function TemplatesWrapper() {
   const agencyId = useAgencyId();
   return <Templates agencyId={agencyId} />;
+}
+
+function WhatsAppConnectionWrapper() {
+  const agencyId = useAgencyId();
+  return <WhatsAppConnection agencyId={agencyId} />;
 }
 
 // Hook para pegar agencyId do localStorage ou do usuário
