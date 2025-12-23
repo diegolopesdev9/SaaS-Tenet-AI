@@ -16,6 +16,9 @@ import Integrations from './pages/Integrations';
 import Notifications from './pages/Notifications';
 import Agencias from './pages/admin/Agencias';
 import Usuarios from './pages/admin/Usuarios';
+import Knowledge from './pages/Knowledge';
+import Templates from './pages/admin/Templates';
+import ABTests from './pages/admin/ABTests';
 
 // Configurar token imediatamente ao carregar o módulo
 authService.setupAxiosInterceptors();
@@ -167,6 +170,9 @@ function App() {
         <Route path="notificacoes" element={<NotificationsWrapper />} />
         <Route path="admin/agencias" element={<Agencias />} />
         <Route path="admin/usuarios" element={<Usuarios />} />
+        <Route path="admin/templates" element={<Templates />} />
+        <Route path="admin/ab-tests" element={<ABTests />} />
+        <Route path="conhecimento" element={<KnowledgeWrapper />} />
       </Route>
 
       {/* Redirecionar rotas não encontradas */}
@@ -204,6 +210,11 @@ function IntegrationsWrapper() {
 function NotificationsWrapper() {
   const agencyId = useAgencyId();
   return <Notifications agencyId={agencyId} />;
+}
+
+function KnowledgeWrapper() {
+  const agencyId = useAgencyId();
+  return <Knowledge agencyId={agencyId} />;
 }
 
 // Hook para pegar agencyId do localStorage ou do usuário
