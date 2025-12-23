@@ -19,7 +19,7 @@ import Usuarios from './pages/admin/Usuarios';
 import Knowledge from './pages/Knowledge';
 import Templates from './pages/admin/Templates';
 import ABTests from './pages/admin/ABTests';
-import WhatsAppConnection from './pages/WhatsAppConnection';
+import WhatsAppConnection from './pages/WhatsAppConnection.jsx';
 
 // Configurar token imediatamente ao carregar o módulo
 authService.setupAxiosInterceptors();
