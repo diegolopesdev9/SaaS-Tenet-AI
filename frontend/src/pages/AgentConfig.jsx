@@ -617,25 +617,19 @@ export default function AgentConfig({ agencyId }) {
                   <input type="text" value={config.instance_name} onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: agencia-xyz" />
                 </div>
 
-                {/* WhatsApp Phone ID */}
+                {/* WhatsApp Phone ID - SEMPRE READONLY */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                     WhatsApp Phone ID
-                    {whatsappStatus?.phone_number && (
-                      <Lock className="w-3.5 h-3.5 text-gray-400" />
-                    )}
+                    <Lock className="w-3.5 h-3.5 text-gray-400" />
                   </label>
                   <input 
                     type="text" 
-                    value={whatsappStatus?.phone_number || config.whatsapp_phone_id} 
-                    onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))} 
-                    disabled={!!whatsappStatus?.phone_number}
-                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${whatsappStatus?.phone_number ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    placeholder="Ex: 5511999999999" 
+                    value={whatsappStatus?.phone_number || config.whatsapp_phone_id || 'Será preenchido ao conectar'} 
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none"
                   />
-                  {whatsappStatus?.phone_number && (
-                    <p className="text-xs text-gray-500 mt-1">Campo bloqueado após conexão</p>
-                  )}
+                  <p className="text-xs text-gray-500 mt-1">Preenchido automaticamente ao conectar WhatsApp</p>
                 </div>
 
                 {/* WhatsApp Token */}
