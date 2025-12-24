@@ -136,10 +136,16 @@ class EvolutionInstanceService:
                 if response.status_code == 200:
                     data = response.json()
                     state = data.get("instance", {}).get("state", "unknown")
+                    
+                    # Só considera conectado se state for "open" E tiver owner (número)
+                    owner = data.get("instance", {}).get("owner", "")
+                    is_truly_connected = state == "open" and bool(owner)
+                    
                     return {
                         "success": True,
                         "status": state,
-                        "connected": state == "open"
+                        "connected": is_truly_connected,
+                        "owner": owner
                     }
                 elif response.status_code == 404:
                     return {
