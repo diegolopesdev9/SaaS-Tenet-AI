@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react'
 import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff, Shield, MessageSquare, Smartphone, QrCode, Wifi, WifiOff, RefreshCw, XCircle } from 'lucide-react'
 import api from '../services/api'
@@ -467,7 +466,7 @@ export default function AgentConfig({ agencyId }) {
                       <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code com seu WhatsApp</p>
                       <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
-                        <img src={`data:image/png;base64,${qrCode}`} alt="QR Code" className="w-56 h-56" />
+                        <img src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-56 h-56" />
                       </div>
                       {polling && (
                         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
