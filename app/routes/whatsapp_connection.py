@@ -90,7 +90,7 @@ async def create_whatsapp_instance(
                     "whatsapp_api_type": "evolution"
                 }).eq("id", agencia_id).execute()
             except Exception as db_error:
-                logger.warning(f"Erro ao atualizar DB (instância pode já existir): {db_error}")
+                logger.warning(f"Aviso ao atualizar DB: {db_error}")
             
             return {
                 "success": True,
