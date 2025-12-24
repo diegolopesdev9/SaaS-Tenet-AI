@@ -1,0 +1,66 @@
+Corrigir rota de QR Code para criar instância automaticamente
+```
+No arquivo app/routes/whatsapp_connection.py, SUBSTITUA a função get_qrcode inteira por:
+
+@router.get("/instance/qrcode")
+async def get_qrcode(current_user: dict = Depends(get_current_user)):
+    """
+    Obtém o QR Code para conexão do WhatsApp.
+    Se a instância não existir, cria automaticamente.
+    """
+    try:
+        agencia_id = current_user.get("agencia_id")
+        if not agencia_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        
+        supabase = get_supabase_client()
+        response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
+        
+        instance_name = response.data.get("instance_name") if response.data else None
+        
+        if not instance_name:
+            raise HTTPException(status_code=400, detail="Defina um nome de instância primeiro")
+        
+        # Verificar se instância existe na Evolution API
+        status = await evolution_service.get_connection_status(instance_name)
+        
+        # Se não existe, criar automaticamente
+        if status.get("status") == "not_found" or status.get("status") is None:
+            logger.info(f"Instância {instance_name} não existe. Criando...")
+            create_result = await evolution_service.create_instance(instance_name, None)
+            
+            if not create_result.get("success"):
+                raise HTTPException(status_code=400, detail=f"Erro ao criar instância: {create_result.get('error')}")
+            
+            # Atualizar banco
+            try:
+                supabase.table("agencias").update({
+                    "whatsapp_api_type": "evolution"
+                }).eq("id", agencia_id).execute()
+            except Exception as db_error:
+                logger.warning(f"Aviso ao atualizar DB: {db_error}")
+            
+            # Retornar QR Code da criação
+            qrcode = create_result.get("qrcode", {})
+            if isinstance(qrcode, dict):
+                qrcode = qrcode.get("base64")
+            
+            return {
+                "success": True,
+                "qrcode": qrcode,
+                "message": "Instância criada. Escaneie o QR Code."
+            }
+        
+        # Se existe, obter QR Code
+        result = await evolution_service.get_qrcode(instance_name)
+        
+        if result.get("success"):
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result.get("error", "Erro ao obter QR Code"))
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao obter QR Code: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
