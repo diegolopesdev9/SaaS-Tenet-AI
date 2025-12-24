@@ -48,19 +48,49 @@ async def create_whatsapp_instance(
         # Usar instance_name da agência ou gerar um novo
         instance_name = request.instance_name or agencia.get("instance_name") or f"tenet-{agencia_id[:8]}"
         
+        # 1. Verificar se já existe instância com esse nome no Supabase
+        existing = supabase.table("agencias").select("id, instance_name").eq("instance_name", instance_name).execute()
+        
+        if existing.data:
+            existing_agency_id = existing.data[0].get("id")
+            
+            # 2. Se já existe na mesma agência, só buscar QR code
+            if existing_agency_id == agencia_id:
+                logger.info(f"Instância {instance_name} já existe nesta agência, buscando QR Code")
+                qr_result = await evolution_service.get_qrcode(instance_name)
+                if qr_result.get("success"):
+                    return {
+                        "success": True,
+                        "instance_name": instance_name,
+                        "qrcode": qr_result.get("qrcode"),
+                        "message": "Instância já existe. Escaneie o QR Code para conectar."
+                    }
+                else:
+                    raise HTTPException(status_code=400, detail="Erro ao obter QR Code da instância existente")
+            
+            # 3. Se existe em OUTRA agência, retornar erro
+            else:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Nome de instância '{instance_name}' já está em uso por outra agência"
+                )
+        
         # URL do webhook
         base_url = settings.CORS_ORIGINS.split(",")[0] if settings.CORS_ORIGINS else "https://seu-dominio.com"
         webhook_url = f"{base_url}/webhooks/whatsapp"
         
-        # Criar instância
+        # Criar instância na Evolution API
         result = await evolution_service.create_instance(instance_name, webhook_url)
         
         if result.get("success"):
-            # Atualizar instance_name na agência
-            supabase.table("agencias").update({
-                "instance_name": instance_name,
-                "whatsapp_api_type": "evolution"
-            }).eq("id", agencia_id).execute()
+            # Atualizar instance_name na agência com tratamento de erro
+            try:
+                supabase.table("agencias").update({
+                    "instance_name": instance_name,
+                    "whatsapp_api_type": "evolution"
+                }).eq("id", agencia_id).execute()
+            except Exception as db_error:
+                logger.warning(f"Erro ao atualizar DB (instância pode já existir): {db_error}")
             
             return {
                 "success": True,
