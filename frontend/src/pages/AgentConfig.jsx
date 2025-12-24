@@ -472,11 +472,16 @@ export default function AgentConfig({ agencyId }) {
                         <img src={whatsappStatus.profile_picture} alt="Profile" className="w-12 h-12 rounded-full" />
                       )}
                       <div className="flex-1">
-                        <p className="font-semibold text-green-900">{whatsappStatus.profile_name || 'WhatsApp Conectado'}</p>
+                        <p className="font-semibold text-green-900">
+                          {whatsappStatus.profile_name || (whatsappStatus.phone_number ? 'WhatsApp Conectado' : 'Verificando conexão...')}
+                        </p>
                         <p className="text-green-700">+{whatsappStatus.phone_number}</p>
                         {/* MOSTRAR instance_name configurada após criar */}
                         {whatsappStatus?.instance_name && (
                           <p className="text-xs text-gray-500">Instância: {whatsappStatus.instance_name}</p>
+                        )}
+                        {!whatsappStatus.profile_name && whatsappStatus.connected && (
+                          <p className="text-xs text-yellow-600">⚠️ Conexão pode estar instável. Verifique no celular.</p>
                         )}
                       </div>
                       <CheckCircle className="w-8 h-8 text-green-500" />
