@@ -44,18 +44,9 @@ class EvolutionInstanceService:
                 "integration": "WHATSAPP-BAILEYS"
             }
             
-            # Adicionar webhook se fornecido
-            if webhook_url:
-                payload["webhook"] = {
-                    "url": webhook_url,
-                    "webhook_by_events": False,
-                    "webhook_base64": False,
-                    "events": [
-                        "MESSAGES_UPSERT",
-                        "CONNECTION_UPDATE",
-                        "QRCODE_UPDATED"
-                    ]
-                }
+            # Webhook será configurado depois
+            # if webhook_url:
+            #     payload["webhook"] = webhook_url
             
             async with httpx.AsyncClient() as client:
                 response = await client.post(
