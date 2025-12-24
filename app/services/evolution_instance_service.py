@@ -171,7 +171,7 @@ class EvolutionInstanceService:
             url = f"{self.base_url}/instance/logout/{instance_name}"
             
             async with httpx.AsyncClient() as client:
-                response = await client.delete(
+                response = await client.post(
                     url,
                     headers=self.headers,
                     timeout=15.0
