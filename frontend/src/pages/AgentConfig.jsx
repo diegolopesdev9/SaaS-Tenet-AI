@@ -46,6 +46,8 @@ export default function AgentConfig({ agencyId }) {
   const [creatingInstance, setCreatingInstance] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [polling, setPolling] = useState(false)
+  // ADICIONAR estado para timer
+  const [qrTimer, setQrTimer] = useState(45)
 
   useEffect(() => {
     loadConfig()
@@ -74,6 +76,13 @@ export default function AgentConfig({ agencyId }) {
     }
     return () => clearInterval(interval)
   }, [polling, qrCode])
+
+  // ADICIONAR useEffect para countdown quando qrCode existir
+  useEffect(() => {
+    if (!qrCode || qrTimer <= 0) return
+    const timer = setTimeout(() => setQrTimer(prev => prev - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [qrCode, qrTimer])
 
   const loadUser = async () => {
     try {
@@ -141,6 +150,8 @@ export default function AgentConfig({ agencyId }) {
   const handleCreateInstance = async () => {
     try {
       setCreatingInstance(true)
+      // Resetar timer quando gerar novo QR
+      setQrTimer(45)
       const response = await api.post('/whatsapp/instance/create', {
         instance_name: config.instance_name || undefined
       })
@@ -161,6 +172,8 @@ export default function AgentConfig({ agencyId }) {
 
   const handleGetQrCode = async () => {
     try {
+      // Resetar timer quando gerar novo QR
+      setQrTimer(45)
       const response = await api.get('/whatsapp/instance/qrcode')
       if (response.data.success && response.data.qrcode) {
         setQrCode(response.data.qrcode)
@@ -241,6 +254,13 @@ export default function AgentConfig({ agencyId }) {
 
   const isConnected = whatsappStatus?.connected
   const isConfigured = whatsappStatus?.status !== 'not_configured' && whatsappStatus?.status !== 'not_found'
+
+  // Criar função para determinar cor do LED
+  const getStatusColor = () => {
+    if (whatsappStatus?.connected) return 'bg-green-500' // Conectado
+    if (whatsappStatus?.status === 'close' || isConfigured) return 'bg-yellow-500' // Desconectado
+    return 'bg-red-500' // Não existe
+  }
 
   return (
     <div className="max-w-4xl">
@@ -426,8 +446,8 @@ export default function AgentConfig({ agencyId }) {
                 <div className="pb-6 border-b border-gray-200">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        <Smartphone className={`w-4 h-4 ${isConnected ? 'text-green-600' : 'text-gray-400'}`} />
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getStatusColor()}`}>
+                        <Smartphone className={`w-4 h-4 ${isConnected ? 'text-white' : 'text-gray-400'}`} />
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900">Conexão WhatsApp</h3>
@@ -454,7 +474,10 @@ export default function AgentConfig({ agencyId }) {
                       <div className="flex-1">
                         <p className="font-semibold text-green-900">{whatsappStatus.profile_name || 'WhatsApp Conectado'}</p>
                         <p className="text-green-700">+{whatsappStatus.phone_number}</p>
-                        <p className="text-sm text-green-600">Instância: {whatsappStatus.instance_name}</p>
+                        {/* MOSTRAR instance_name configurada após criar */}
+                        {whatsappStatus?.instance_name && (
+                          <p className="text-xs text-gray-500">Instância: {whatsappStatus.instance_name}</p>
+                        )}
                       </div>
                       <CheckCircle className="w-8 h-8 text-green-500" />
                     </div>
@@ -466,12 +489,17 @@ export default function AgentConfig({ agencyId }) {
                       <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code com seu WhatsApp</p>
                       <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
-                        <img 
-                          src={qrCode.replace(/^(data:image\/png;base64,)+/, 'data:image/png;base64,')} 
-                          alt="QR Code" 
-                          className="w-56 h-56" 
+                        <img
+                          src={qrCode.replace(/^(data:image\/png;base64,)+/, 'data:image/png;base64,')}
+                          alt="QR Code"
+                          className="w-56 h-56"
                         />
                       </div>
+                      {qrTimer > 0 ? (
+                        <p className="text-sm text-gray-500 mt-3">Expira em {qrTimer}s</p>
+                      ) : (
+                        <p className="text-sm text-red-500 mt-3">QR Code expirado. Gere um novo.</p>
+                      )}
                       {polling && (
                         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
                           <Loader2 className="w-4 h-4 animate-spin" /><span>Aguardando conexão...</span>
