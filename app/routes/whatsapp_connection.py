@@ -1,4 +1,3 @@
-
 """
 Rotas para gerenciamento de conexão WhatsApp via Evolution API.
 """
@@ -36,19 +35,19 @@ async def create_whatsapp_instance(
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
+
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("*").eq("id", agencia_id).single().execute()
         agencia = response.data
-        
+
         if not agencia:
             raise HTTPException(status_code=404, detail="Agência não encontrada")
-        
+
         instance_name = request.instance_name or agencia.get("instance_name") or f"tenet-{agencia_id[:8]}"
-        
+
         # 1. Verificar se instância já existe na Evolution API
         status_check = await evolution_service.get_connection_status(instance_name)
-        
+
         if status_check.get("status") not in ["not_found", None]:
             # Instância existe - obter QR Code para reconectar
             if status_check.get("connected"):
@@ -61,10 +60,10 @@ async def create_whatsapp_instance(
                     "phone_number": info.get("phone_number"),
                     "message": "Instância já está conectada."
                 }
-            
+
             # Não conectado - gerar QR Code
             qr_result = await evolution_service.get_qrcode(instance_name)
-            
+
             # Atualizar no banco
             try:
                 supabase.table("agencias").update({
@@ -73,17 +72,17 @@ async def create_whatsapp_instance(
                 }).eq("id", agencia_id).execute()
             except Exception as db_error:
                 logger.warning(f"Aviso ao atualizar DB: {db_error}")
-            
+
             return {
                 "success": True,
                 "instance_name": instance_name,
                 "qrcode": qr_result.get("qrcode"),
                 "message": "Escaneie o QR Code para conectar."
             }
-        
+
         # 2. Criar nova instância
         result = await evolution_service.create_instance(instance_name, None)
-        
+
         if result.get("success"):
             try:
                 supabase.table("agencias").update({
@@ -92,7 +91,7 @@ async def create_whatsapp_instance(
                 }).eq("id", agencia_id).execute()
             except Exception as db_error:
                 logger.warning(f"Aviso ao atualizar DB: {db_error}")
-            
+
             return {
                 "success": True,
                 "instance_name": instance_name,
@@ -102,7 +101,7 @@ async def create_whatsapp_instance(
             }
         else:
             raise HTTPException(status_code=400, detail=result.get("error", "Erro ao criar instância"))
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -114,28 +113,59 @@ async def create_whatsapp_instance(
 async def get_qrcode(current_user: dict = Depends(get_current_user)):
     """
     Obtém o QR Code para conexão do WhatsApp.
+    Se a instância não existir, cria automaticamente.
     """
     try:
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
-        # Buscar instance_name da agência
+
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
-        
+
         instance_name = response.data.get("instance_name") if response.data else None
-        
+
         if not instance_name:
-            raise HTTPException(status_code=400, detail="Instância não configurada. Crie uma instância primeiro.")
-        
+            raise HTTPException(status_code=400, detail="Defina um nome de instância primeiro")
+
+        # Verificar se instância existe na Evolution API
+        status = await evolution_service.get_connection_status(instance_name)
+
+        # Se não existe, criar automaticamente
+        if status.get("status") == "not_found" or status.get("status") is None:
+            logger.info(f"Instância {instance_name} não existe. Criando...")
+            create_result = await evolution_service.create_instance(instance_name, None)
+
+            if not create_result.get("success"):
+                raise HTTPException(status_code=400, detail=f"Erro ao criar instância: {create_result.get('error')}")
+
+            # Atualizar banco
+            try:
+                supabase.table("agencias").update({
+                    "whatsapp_api_type": "evolution"
+                }).eq("id", agencia_id).execute()
+            except Exception as db_error:
+                logger.warning(f"Aviso ao atualizar DB: {db_error}")
+
+            # Retornar QR Code da criação
+            qrcode = create_result.get("qrcode", {})
+            if isinstance(qrcode, dict):
+                qrcode = qrcode.get("base64")
+
+            return {
+                "success": True,
+                "qrcode": qrcode,
+                "message": "Instância criada. Escaneie o QR Code."
+            }
+
+        # Se existe, obter QR Code
         result = await evolution_service.get_qrcode(instance_name)
-        
+
         if result.get("success"):
             return result
         else:
             raise HTTPException(status_code=400, detail=result.get("error", "Erro ao obter QR Code"))
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -152,14 +182,14 @@ async def get_connection_status(current_user: dict = Depends(get_current_user)):
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
+
         # Buscar instance_name da agência
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("instance_name, whatsapp_api_type").eq("id", agencia_id).single().execute()
-        
+
         agencia = response.data
         instance_name = agencia.get("instance_name") if agencia else None
-        
+
         if not instance_name:
             return {
                 "success": True,
@@ -167,10 +197,10 @@ async def get_connection_status(current_user: dict = Depends(get_current_user)):
                 "connected": False,
                 "message": "Instância não configurada"
             }
-        
+
         # Verificar status
         status_result = await evolution_service.get_connection_status(instance_name)
-        
+
         # Se conectado, buscar informações adicionais
         if status_result.get("connected"):
             info_result = await evolution_service.get_instance_info(instance_name)
@@ -178,12 +208,12 @@ async def get_connection_status(current_user: dict = Depends(get_current_user)):
                 status_result["phone_number"] = info_result.get("phone_number")
                 status_result["profile_name"] = info_result.get("profile_name")
                 status_result["profile_picture"] = info_result.get("profile_picture")
-        
+
         status_result["instance_name"] = instance_name
         status_result["api_type"] = agencia.get("whatsapp_api_type", "evolution")
-        
+
         return status_result
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -200,23 +230,23 @@ async def disconnect_whatsapp(current_user: dict = Depends(get_current_user)):
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
+
         # Buscar instance_name da agência
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
-        
+
         instance_name = response.data.get("instance_name") if response.data else None
-        
+
         if not instance_name:
             raise HTTPException(status_code=400, detail="Instância não configurada")
-        
+
         result = await evolution_service.disconnect_instance(instance_name)
-        
+
         if result.get("success"):
             return {"success": True, "message": "WhatsApp desconectado com sucesso"}
         else:
             raise HTTPException(status_code=400, detail=result.get("error", "Erro ao desconectar"))
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -234,18 +264,18 @@ async def check_instance_health(current_user: dict = Depends(get_current_user)):
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
+
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
-        
+
         instance_name = response.data.get("instance_name") if response.data else None
-        
+
         if not instance_name:
             return {"healthy": False, "reason": "no_instance"}
-        
+
         result = await evolution_service.health_check(instance_name)
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -262,28 +292,28 @@ async def get_instance_token(current_user: dict = Depends(get_current_user)):
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
-        
+
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("instance_name, whatsapp_token").eq("id", agencia_id).single().execute()
-        
+
         agencia = response.data
         if not agencia or not agencia.get("instance_name"):
             return {"success": False, "token": None, "message": "Instância não configurada"}
-        
+
         # Se já temos token salvo no banco, retornar
         if agencia.get("whatsapp_token"):
             return {"success": True, "token": agencia.get("whatsapp_token")}
-        
+
         # Caso contrário, buscar da Evolution API
         instance_name = agencia.get("instance_name")
         info = await evolution_service.get_instance_info(instance_name)
-        
+
         if info.get("success"):
             token = info.get("token", "")
             return {"success": True, "token": token}
-        
+
         return {"success": False, "token": None, "message": "Não foi possível obter token"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -303,28 +333,28 @@ async def update_api_type(
     # Verificar se é super admin
     if current_user.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Apenas Super Admin pode alterar o tipo de API")
-    
+
     if request.api_type not in ["evolution", "meta"]:
         raise HTTPException(status_code=400, detail="Tipo de API inválido. Use 'evolution' ou 'meta'")
-    
+
     try:
         agencia_id = current_user.get("agencia_id")
-        
+
         # Super admin precisa especificar a agência via query param ou usar a selecionada
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Selecione uma agência primeiro")
-        
+
         supabase = get_supabase_client()
         supabase.table("agencias").update({
             "whatsapp_api_type": request.api_type
         }).eq("id", agencia_id).execute()
-        
+
         return {
             "success": True,
             "api_type": request.api_type,
             "message": f"Tipo de API atualizado para {request.api_type}"
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
