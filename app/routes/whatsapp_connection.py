@@ -30,14 +30,13 @@ async def create_whatsapp_instance(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Cria uma nova instância WhatsApp para a agência do usuário.
+    Cria uma nova instância WhatsApp ou conecta a existente.
     """
     try:
         agencia_id = current_user.get("agencia_id")
         if not agencia_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
         
-        # Buscar dados da agência
         supabase = get_supabase_client()
         response = supabase.table("agencias").select("*").eq("id", agencia_id).single().execute()
         agencia = response.data
@@ -45,18 +44,44 @@ async def create_whatsapp_instance(
         if not agencia:
             raise HTTPException(status_code=404, detail="Agência não encontrada")
         
-        # Usar instance_name da agência ou gerar um novo
         instance_name = request.instance_name or agencia.get("instance_name") or f"tenet-{agencia_id[:8]}"
         
-        # URL do webhook
-        base_url = settings.CORS_ORIGINS.split(",")[0] if settings.CORS_ORIGINS else "https://seu-dominio.com"
-        webhook_url = f"{base_url}/webhooks/whatsapp"
+        # 1. Verificar se instância já existe
+        status_check = await evolution_service.get_connection_status(instance_name)
         
-        # Criar instância na Evolution API
-        result = await evolution_service.create_instance(instance_name, webhook_url)
+        if status_check.get("status") != "not_found":
+            # Instância existe - apenas obter QR Code
+            qr_result = await evolution_service.get_qrcode(instance_name)
+            
+            # Atualizar no banco se necessário
+            if agencia.get("instance_name") != instance_name:
+                try:
+                    supabase.table("agencias").update({
+                        "instance_name": instance_name,
+                        "whatsapp_api_type": "evolution"
+                    }).eq("id", agencia_id).execute()
+                except Exception as db_error:
+                    logger.warning(f"Aviso ao atualizar DB: {db_error}")
+            
+            if qr_result.get("success"):
+                return {
+                    "success": True,
+                    "instance_name": instance_name,
+                    "qrcode": qr_result.get("qrcode"),
+                    "message": "Instância já existe. Escaneie o QR Code para conectar."
+                }
+            elif status_check.get("connected"):
+                return {
+                    "success": True,
+                    "instance_name": instance_name,
+                    "connected": True,
+                    "message": "Instância já está conectada."
+                }
+        
+        # 2. Criar nova instância
+        result = await evolution_service.create_instance(instance_name, None)
         
         if result.get("success"):
-            # Atualizar instance_name na agência com tratamento de erro
             try:
                 supabase.table("agencias").update({
                     "instance_name": instance_name,
@@ -69,6 +94,7 @@ async def create_whatsapp_instance(
                 "success": True,
                 "instance_name": instance_name,
                 "qrcode": result.get("qrcode", {}).get("base64"),
+                "hash": result.get("hash"),
                 "message": "Instância criada. Escaneie o QR Code para conectar."
             }
         else:
