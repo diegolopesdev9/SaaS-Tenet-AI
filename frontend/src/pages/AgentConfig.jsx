@@ -326,95 +326,6 @@ export default function AgentConfig({ agencyId }) {
           </div>
         )}
 
-        {/* NOVA SEÇÃO: Conexão WhatsApp (Evolution API) */}
-        {config.whatsapp_api_type === 'evolution' && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-gray-100'}`}>
-                  <Smartphone className={`w-5 h-5 ${isConnected ? 'text-green-600' : 'text-gray-400'}`} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Conexão WhatsApp</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    {isConnected ? (
-                      <><Wifi className="w-4 h-4 text-green-500" /><span className="text-sm text-green-600 font-medium">Conectado</span></>
-                    ) : (
-                      <><WifiOff className="w-4 h-4 text-gray-400" /><span className="text-sm text-gray-500">Desconectado</span></>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <button onClick={checkWhatsAppStatus} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" title="Atualizar status">
-                <RefreshCw className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Info de conexão */}
-            {isConnected && whatsappStatus?.phone_number && (
-              <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200 flex items-center gap-4">
-                {whatsappStatus.profile_picture && (
-                  <img src={whatsappStatus.profile_picture} alt="Profile" className="w-12 h-12 rounded-full" />
-                )}
-                <div className="flex-1">
-                  <p className="font-semibold text-green-900">{whatsappStatus.profile_name || 'WhatsApp Conectado'}</p>
-                  <p className="text-green-700">+{whatsappStatus.phone_number}</p>
-                  <p className="text-sm text-green-600">Instância: {whatsappStatus.instance_name}</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-green-500" />
-              </div>
-            )}
-
-            {/* QR Code */}
-            {qrCode && !isConnected && (
-              <div className="mb-4 text-center p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code com seu WhatsApp</p>
-                <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
-                  <img src={`data:image/png;base64,${qrCode}`} alt="QR Code" className="w-56 h-56" />
-                </div>
-                {polling && (
-                  <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
-                    <Loader2 className="w-4 h-4 animate-spin" /><span>Aguardando conexão...</span>
-                  </div>
-                )}
-                <p className="text-xs text-gray-400 mt-4">WhatsApp → Menu → Dispositivos conectados → Conectar</p>
-              </div>
-            )}
-
-            {/* Botões de ação */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              {!isConfigured && (
-                <button onClick={handleCreateInstance} disabled={creatingInstance} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-                  {creatingInstance ? <><Loader2 className="w-5 h-5 animate-spin" />Criando...</> : <><Smartphone className="w-5 h-5" />Conectar WhatsApp</>}
-                </button>
-              )}
-              {isConfigured && !isConnected && (
-                <>
-                  <button onClick={handleGetQrCode} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <QrCode className="w-5 h-5" />Gerar QR Code
-                  </button>
-                  <button onClick={handleCreateInstance} disabled={creatingInstance} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                    <RefreshCw className="w-5 h-5" />Nova Conexão
-                  </button>
-                </>
-              )}
-              {isConnected && (
-                <button onClick={handleDisconnect} disabled={disconnecting} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100">
-                  {disconnecting ? <><Loader2 className="w-5 h-5 animate-spin" />Desconectando...</> : <><XCircle className="w-5 h-5" />Desconectar WhatsApp</>}
-                </button>
-              )}
-            </div>
-
-            {/* Instruções */}
-            {!isConnected && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800"><strong>Como conectar:</strong> Clique em "Conectar WhatsApp", abra o WhatsApp no celular → Configurações → Dispositivos conectados → Escaneie o QR Code</p>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Seção: Informações Básicas */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -427,15 +338,9 @@ export default function AgentConfig({ agencyId }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Agência</label>
-              <input type="text" value={config.nome} onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Agência Digital XYZ" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Instance Name (Evolution API)</label>
-              <input type="text" value={config.instance_name} onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: agencia-xyz" />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Agência</label>
+            <input type="text" value={config.nome} onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Agência Digital XYZ" />
           </div>
         </div>
 
@@ -515,14 +420,109 @@ export default function AgentConfig({ agencyId }) {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {config.whatsapp_api_type === 'evolution' && (
               <>
+                {/* Conexão WhatsApp */}
+                <div className="pb-6 border-b border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-gray-100'}`}>
+                        <Smartphone className={`w-4 h-4 ${isConnected ? 'text-green-600' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">Conexão WhatsApp</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {isConnected ? (
+                            <><Wifi className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600 font-medium">Conectado</span></>
+                          ) : (
+                            <><WifiOff className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-500">Desconectado</span></>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={checkWhatsAppStatus} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" title="Atualizar status">
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Info de conexão */}
+                  {isConnected && whatsappStatus?.phone_number && (
+                    <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200 flex items-center gap-4">
+                      {whatsappStatus.profile_picture && (
+                        <img src={whatsappStatus.profile_picture} alt="Profile" className="w-12 h-12 rounded-full" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-semibold text-green-900">{whatsappStatus.profile_name || 'WhatsApp Conectado'}</p>
+                        <p className="text-green-700">+{whatsappStatus.phone_number}</p>
+                        <p className="text-sm text-green-600">Instância: {whatsappStatus.instance_name}</p>
+                      </div>
+                      <CheckCircle className="w-8 h-8 text-green-500" />
+                    </div>
+                  )}
+
+                  {/* QR Code */}
+                  {qrCode && !isConnected && (
+                    <div className="mb-4 text-center p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+                      <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code com seu WhatsApp</p>
+                      <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
+                        <img src={`data:image/png;base64,${qrCode}`} alt="QR Code" className="w-56 h-56" />
+                      </div>
+                      {polling && (
+                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+                          <Loader2 className="w-4 h-4 animate-spin" /><span>Aguardando conexão...</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 mt-4">WhatsApp → Menu → Dispositivos conectados → Conectar</p>
+                    </div>
+                  )}
+
+                  {/* Botões de ação */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {!isConfigured && (
+                      <button onClick={handleCreateInstance} disabled={creatingInstance} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
+                        {creatingInstance ? <><Loader2 className="w-4 h-4 animate-spin" />Criando...</> : <><Smartphone className="w-4 h-4" />Conectar WhatsApp</>}
+                      </button>
+                    )}
+                    {isConfigured && !isConnected && (
+                      <>
+                        <button onClick={handleGetQrCode} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                          <QrCode className="w-4 h-4" />Gerar QR Code
+                        </button>
+                        <button onClick={handleCreateInstance} disabled={creatingInstance} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                          <RefreshCw className="w-4 h-4" />Nova Conexão
+                        </button>
+                      </>
+                    )}
+                    {isConnected && (
+                      <button onClick={handleDisconnect} disabled={disconnecting} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 text-sm">
+                        {disconnecting ? <><Loader2 className="w-4 h-4 animate-spin" />Desconectando...</> : <><XCircle className="w-4 h-4" />Desconectar WhatsApp</>}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Instruções */}
+                  {!isConnected && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs text-blue-800"><strong>Como conectar:</strong> Clique em "Conectar WhatsApp", abra o WhatsApp no celular → Configurações → Dispositivos conectados → Escaneie o QR Code</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Instance Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Instance Name (Evolution API)</label>
+                  <input type="text" value={config.instance_name} onChange={(e) => setConfig(prev => ({ ...prev, instance_name: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: agencia-xyz" />
+                </div>
+
+                {/* WhatsApp Phone ID */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Phone ID</label>
                   <input type="text" value={config.whatsapp_phone_id} onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 5511999999999" />
                 </div>
 
+                {/* WhatsApp Token */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Token (Evolution API)</label>
                   <div className="relative">
@@ -538,6 +538,7 @@ export default function AgentConfig({ agencyId }) {
               </>
             )}
 
+            {/* Gemini API Key */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Gemini API Key</label>
               <div className="relative">
