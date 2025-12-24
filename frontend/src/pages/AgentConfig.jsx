@@ -255,8 +255,6 @@ export default function AgentConfig({ agencyId }) {
       if (config.qualification_criteria) payload.qualification_criteria = config.qualification_criteria
       if (config.closing_message) payload.closing_message = config.closing_message
       if (config.prompt_config) payload.prompt_config = config.prompt_config
-      if (config.whatsapp_phone_id) payload.whatsapp_phone_id = config.whatsapp_phone_id
-      if (config.whatsapp_token) payload.whatsapp_token = config.whatsapp_token
       if (config.gemini_api_key) payload.gemini_api_key = config.gemini_api_key
 
       if (user?.role === 'super_admin') {
