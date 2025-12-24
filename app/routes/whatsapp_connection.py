@@ -224,6 +224,44 @@ async def check_instance_health(current_user: dict = Depends(get_current_user)):
         return {"healthy": False, "reason": "error", "error": str(e)}
 
 
+@router.get("/instance/token")
+async def get_instance_token(current_user: dict = Depends(get_current_user)):
+    """
+    Obtém o token/hash da instância WhatsApp.
+    """
+    try:
+        agencia_id = current_user.get("agencia_id")
+        if not agencia_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        
+        supabase = get_supabase_client()
+        response = supabase.table("agencias").select("instance_name, whatsapp_token").eq("id", agencia_id).single().execute()
+        
+        agencia = response.data
+        if not agencia or not agencia.get("instance_name"):
+            return {"success": False, "token": None, "message": "Instância não configurada"}
+        
+        # Se já temos token salvo no banco, retornar
+        if agencia.get("whatsapp_token"):
+            return {"success": True, "token": agencia.get("whatsapp_token")}
+        
+        # Caso contrário, buscar da Evolution API
+        instance_name = agencia.get("instance_name")
+        info = await evolution_service.get_instance_info(instance_name)
+        
+        if info.get("success"):
+            token = info.get("token", "")
+            return {"success": True, "token": token}
+        
+        return {"success": False, "token": None, "message": "Não foi possível obter token"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao obter token: {e}")
+        return {"success": False, "token": None, "error": str(e)}
+
+
 @router.patch("/api-type")
 async def update_api_type(
     request: UpdateApiTypeRequest,
