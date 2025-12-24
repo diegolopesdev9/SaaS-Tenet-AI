@@ -195,6 +195,35 @@ async def disconnect_whatsapp(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/instance/health")
+async def check_instance_health(current_user: dict = Depends(get_current_user)):
+    """
+    Verifica a saúde real da conexão WhatsApp.
+    Retorna se a conexão está realmente funcionando.
+    """
+    try:
+        agencia_id = current_user.get("agencia_id")
+        if not agencia_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        
+        supabase = get_supabase_client()
+        response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
+        
+        instance_name = response.data.get("instance_name") if response.data else None
+        
+        if not instance_name:
+            return {"healthy": False, "reason": "no_instance"}
+        
+        result = await evolution_service.health_check(instance_name)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no health check: {e}")
+        return {"healthy": False, "reason": "error", "error": str(e)}
+
+
 @router.patch("/api-type")
 async def update_api_type(
     request: UpdateApiTypeRequest,
