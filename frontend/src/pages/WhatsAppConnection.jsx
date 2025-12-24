@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Smartphone, QrCode, CheckCircle, XCircle, RefreshCw, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
 import api from '../services/api';
@@ -12,7 +11,7 @@ export default function WhatsAppConnection({ agencyId }) {
   const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState(null);
   const [polling, setPolling] = useState(false);
-  
+
   const user = authService.getUser();
   const isSuperAdmin = user?.role === 'super_admin';
 
@@ -28,8 +27,7 @@ export default function WhatsAppConnection({ agencyId }) {
       return response.data;
     } catch (err) {
       console.error('Erro ao verificar status:', err);
-      setError('Erro ao verificar status da conexão');
-      return null;
+      return { status: 'not_configured', connected: false };
     }
   }, []);
 
@@ -82,7 +80,7 @@ export default function WhatsAppConnection({ agencyId }) {
         setQrCode(response.data.qrcode);
         setPolling(true);
       } else {
-        setError('QR Code não disponível. Tente criar uma nova conexão.');
+        setError('QR Code não disponível.');
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao obter QR Code');
@@ -90,10 +88,9 @@ export default function WhatsAppConnection({ agencyId }) {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Tem certeza que deseja desconectar o WhatsApp?')) return;
+    if (!confirm('Desconectar WhatsApp?')) return;
     try {
       setDisconnecting(true);
-      setError(null);
       await api.post('/whatsapp/instance/disconnect');
       await checkStatus();
       setQrCode(null);
@@ -119,17 +116,17 @@ export default function WhatsAppConnection({ agencyId }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Conexão WhatsApp</h1>
-        <p className="mt-1 text-sm text-gray-500">Conecte o WhatsApp para seu agente receber e enviar mensagens</p>
+        <p className="mt-1 text-sm text-gray-500">Conecte o WhatsApp para seu agente funcionar</p>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-red-600" />
           <p className="text-red-700">{error}</p>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isConnected ? 'bg-green-100' : 'bg-gray-100'}`}>
@@ -139,15 +136,9 @@ export default function WhatsAppConnection({ agencyId }) {
               <h2 className="font-semibold text-gray-900">Status da Conexão</h2>
               <div className="flex items-center gap-2 mt-1">
                 {isConnected ? (
-                  <>
-                    <Wifi className="w-4 h-4 text-green-500" />
-                    <span className="text-sm text-green-600 font-medium">Conectado</span>
-                  </>
+                  <><Wifi className="w-4 h-4 text-green-500" /><span className="text-sm text-green-600 font-medium">Conectado</span></>
                 ) : (
-                  <>
-                    <WifiOff className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500">Desconectado</span>
-                  </>
+                  <><WifiOff className="w-4 h-4 text-gray-400" /><span className="text-sm text-gray-500">Desconectado</span></>
                 )}
               </div>
             </div>
@@ -159,37 +150,28 @@ export default function WhatsAppConnection({ agencyId }) {
 
         <div className="p-6">
           {isConnected && status?.phone_number && (
-            <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-4">
-                {status.profile_picture && (
-                  <img src={status.profile_picture} alt="Profile" className="w-14 h-14 rounded-full" />
-                )}
-                <div>
-                  <p className="font-semibold text-green-900">{status.profile_name || 'WhatsApp Conectado'}</p>
-                  <p className="text-green-700">+{status.phone_number}</p>
-                  <p className="text-sm text-green-600 mt-1">Instância: {status.instance_name}</p>
-                </div>
-                <div className="ml-auto">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                </div>
+            <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200 flex items-center gap-4">
+              <div>
+                <p className="font-semibold text-green-900">{status.profile_name || 'WhatsApp Conectado'}</p>
+                <p className="text-green-700">+{status.phone_number}</p>
+                <p className="text-sm text-green-600">Instância: {status.instance_name}</p>
               </div>
+              <CheckCircle className="w-8 h-8 text-green-500 ml-auto" />
             </div>
           )}
 
           {qrCode && !isConnected && (
             <div className="mb-6 text-center p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <QrCode className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code com seu WhatsApp</p>
+              <p className="text-gray-700 font-medium mb-4">Escaneie o QR Code</p>
               <div className="bg-white p-4 rounded-lg inline-block shadow-sm">
                 <img src={`data:image/png;base64,${qrCode}`} alt="QR Code" className="w-64 h-64" />
               </div>
               {polling && (
                 <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Aguardando conexão...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" /><span>Aguardando conexão...</span>
                 </div>
               )}
-              <p className="text-xs text-gray-400 mt-4">WhatsApp → Menu → Dispositivos conectados → Conectar</p>
             </div>
           )}
 
@@ -221,21 +203,12 @@ export default function WhatsAppConnection({ agencyId }) {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <h3 className="font-semibold text-blue-900 mb-3">📱 Como conectar</h3>
         <ol className="list-decimal list-inside space-y-2 text-blue-800">
-          <li>Clique em "Conectar WhatsApp" ou "Gerar QR Code"</li>
-          <li>Abra o WhatsApp no seu celular</li>
+          <li>Clique em "Conectar WhatsApp"</li>
+          <li>Abra o WhatsApp no celular</li>
           <li>Vá em Configurações → Dispositivos conectados</li>
-          <li>Toque em "Conectar um dispositivo"</li>
-          <li>Escaneie o QR Code exibido na tela</li>
+          <li>Escaneie o QR Code</li>
         </ol>
       </div>
-
-      {isSuperAdmin && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p className="text-sm text-purple-700">
-            <strong>Super Admin:</strong> Esta agência usa <strong>{status?.api_type?.toUpperCase() || 'EVOLUTION'}</strong> API.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
