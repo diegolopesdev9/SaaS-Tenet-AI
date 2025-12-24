@@ -62,7 +62,8 @@ class EvolutionInstanceService:
                     return {
                         "success": True,
                         "instance": data.get("instance", {}),
-                        "qrcode": data.get("qrcode", {})
+                        "qrcode": data.get("qrcode", {}),
+                        "hash": data.get("hash", data.get("instance", {}).get("token", ""))
                     }
                 else:
                     logger.error(f"Erro ao criar instância: {response.status_code} - {response.text}")
@@ -257,7 +258,8 @@ class EvolutionInstanceService:
                                 "phone_number": owner.split("@")[0] if owner else None,
                                 "status": inst.get("instance", {}).get("status", "unknown"),
                                 "profile_name": inst.get("instance", {}).get("profileName"),
-                                "profile_picture": inst.get("instance", {}).get("profilePictureUrl")
+                                "profile_picture": inst.get("instance", {}).get("profilePictureUrl"),
+                                "token": inst.get("instance", {}).get("token", "")
                             }
                     return {"success": True, "status": "not_found"}
                 else:
