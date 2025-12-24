@@ -6,6 +6,7 @@ Permite criar instâncias, gerar QR Code, verificar status e desconectar.
 import logging
 import httpx
 from typing import Optional, Dict, Any
+from datetime import datetime
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -268,6 +269,51 @@ class EvolutionInstanceService:
         except Exception as e:
             logger.error(f"Erro ao obter info: {e}")
             return {"success": False, "error": str(e)}
+    
+    async def health_check(self, instance_name: str) -> Dict[str, Any]:
+        """
+        Verifica se a conexão está realmente ativa tentando buscar info do perfil.
+        Retorna status detalhado da saúde da conexão.
+        
+        Args:
+            instance_name: Nome da instância
+            
+        Returns:
+            Status de saúde detalhado da conexão
+        """
+        try:
+            # 1. Verificar estado da conexão
+            status = await self.get_connection_status(instance_name)
+            if not status.get("connected"):
+                return {"healthy": False, "reason": "not_connected", "status": status.get("status")}
+            
+            # 2. Verificar se consegue buscar informações do perfil
+            url = f"{self.base_url}/chat/fetchProfilePictureUrl/{instance_name}"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    headers=self.headers,
+                    json={"number": status.get("owner", "").replace("@s.whatsapp.net", "")},
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    return {
+                        "healthy": True,
+                        "reason": "fully_connected",
+                        "phone_number": status.get("owner", "").split("@")[0],
+                        "last_check": datetime.now().isoformat()
+                    }
+                else:
+                    return {
+                        "healthy": False,
+                        "reason": "profile_unreachable",
+                        "status": "unstable"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Health check failed: {e}")
+            return {"healthy": False, "reason": "check_failed", "error": str(e)}
 
 
 # Instância singleton
