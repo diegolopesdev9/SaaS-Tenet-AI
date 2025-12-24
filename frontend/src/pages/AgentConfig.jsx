@@ -50,6 +50,8 @@ export default function AgentConfig({ agencyId }) {
   const [qrTimer, setQrTimer] = useState(45)
   // Estado para token da instância
   const [instanceToken, setInstanceToken] = useState(null)
+  // Estado para health check
+  const [healthStatus, setHealthStatus] = useState(null)
 
   useEffect(() => {
     loadConfig()
@@ -85,6 +87,13 @@ export default function AgentConfig({ agencyId }) {
     const timer = setTimeout(() => setQrTimer(prev => prev - 1), 1000)
     return () => clearTimeout(timer)
   }, [qrCode, qrTimer])
+
+  // Verificar health quando conectado
+  useEffect(() => {
+    if (whatsappStatus?.connected) {
+      checkHealth()
+    }
+  }, [whatsappStatus?.connected])
 
   const loadUser = async () => {
     try {
@@ -130,6 +139,15 @@ export default function AgentConfig({ agencyId }) {
       setMessage({ type: 'error', text: 'Erro ao carregar configurações' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkHealth = async () => {
+    try {
+      const response = await api.get('/whatsapp/instance/health')
+      setHealthStatus(response.data)
+    } catch (err) {
+      setHealthStatus({ healthy: false, reason: 'error' })
     }
   }
 
@@ -490,6 +508,21 @@ export default function AgentConfig({ agencyId }) {
                             <><WifiOff className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-500">Desconectado</span></>
                           )}
                         </div>
+                        {whatsappStatus?.connected && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {healthStatus?.healthy ? (
+                              <span className="text-xs text-green-600 flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                Conexão verificada
+                              </span>
+                            ) : healthStatus?.healthy === false ? (
+                              <span className="text-xs text-yellow-600 flex items-center gap-1">
+                                <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                                Conexão instável - verifique no celular
+                              </span>
+                            ) : null}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <button onClick={checkWhatsAppStatus} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg" title="Atualizar status">
