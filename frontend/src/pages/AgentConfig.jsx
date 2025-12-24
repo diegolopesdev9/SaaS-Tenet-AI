@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff, Shield, MessageSquare, Smartphone, QrCode, Wifi, WifiOff, RefreshCw, XCircle } from 'lucide-react'
+import { Save, Bot, Key, CheckCircle, AlertCircle, Loader2, Eye, EyeOff, Shield, MessageSquare, Smartphone, QrCode, Wifi, WifiOff, RefreshCw, XCircle, Lock, Copy } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
 
@@ -48,6 +48,8 @@ export default function AgentConfig({ agencyId }) {
   const [polling, setPolling] = useState(false)
   // ADICIONAR estado para timer
   const [qrTimer, setQrTimer] = useState(45)
+  // Estado para token da instância
+  const [instanceToken, setInstanceToken] = useState(null)
 
   useEffect(() => {
     loadConfig()
@@ -139,6 +141,17 @@ export default function AgentConfig({ agencyId }) {
         setQrCode(null)
         setPolling(false)
       }
+      // Buscar token da instância se disponível
+      if (response.data.instance_name) {
+        try {
+          const tokenResponse = await api.get('/whatsapp/instance/token')
+          if (tokenResponse.data?.token) {
+            setInstanceToken(tokenResponse.data.token)
+          }
+        } catch (tokenErr) {
+          console.error('Erro ao buscar token:', tokenErr)
+        }
+      }
       return response.data
     } catch (err) {
       console.error('Erro ao verificar status:', err)
@@ -162,6 +175,15 @@ export default function AgentConfig({ agencyId }) {
           setConfig(prev => ({ ...prev, instance_name: response.data.instance_name }))
         }
         await checkWhatsAppStatus()
+        // Buscar token da instância criada
+        try {
+          const tokenResponse = await api.get('/whatsapp/instance/token')
+          if (tokenResponse.data?.token) {
+            setInstanceToken(tokenResponse.data.token)
+          }
+        } catch (tokenErr) {
+          console.error('Erro ao buscar token:', tokenErr)
+        }
       }
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.detail || 'Erro ao criar instância' })
@@ -239,6 +261,16 @@ export default function AgentConfig({ agencyId }) {
 
   const toggleTokenVisibility = (field) => {
     setShowTokens(prev => ({ ...prev, [field]: !prev[field] }))
+  }
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setMessage({ type: 'success', text: 'Token copiado para a área de transferência!' })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Erro ao copiar token' })
+    }
   }
 
   if (loading) {
@@ -554,21 +586,65 @@ export default function AgentConfig({ agencyId }) {
 
                 {/* WhatsApp Phone ID */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Phone ID</label>
-                  <input type="text" value={config.whatsapp_phone_id} onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: 5511999999999" />
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    WhatsApp Phone ID
+                    {whatsappStatus?.phone_number && (
+                      <Lock className="w-3.5 h-3.5 text-gray-400" />
+                    )}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={whatsappStatus?.phone_number || config.whatsapp_phone_id} 
+                    onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_phone_id: e.target.value }))} 
+                    disabled={!!whatsappStatus?.phone_number}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${whatsappStatus?.phone_number ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    placeholder="Ex: 5511999999999" 
+                  />
+                  {whatsappStatus?.phone_number && (
+                    <p className="text-xs text-gray-500 mt-1">Campo bloqueado após conexão</p>
+                  )}
                 </div>
 
                 {/* WhatsApp Token */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp Token (Evolution API)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    WhatsApp Token (Evolution API)
+                    <Lock className="w-3.5 h-3.5 text-gray-400" />
+                  </label>
                   <div className="relative">
-                    <input type={showTokens.whatsapp ? 'text' : 'password'} value={config.whatsapp_token} onChange={(e) => setConfig(prev => ({ ...prev, whatsapp_token: e.target.value }))} className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder={originalConfig.has_whatsapp_token ? '••••••••••••••••' : 'Cole seu token aqui'} />
-                    <button type="button" onClick={() => toggleTokenVisibility('whatsapp')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showTokens.whatsapp ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                    <input 
+                      type={showTokens.whatsapp ? 'text' : 'password'} 
+                      value={instanceToken || ''} 
+                      readOnly
+                      className="w-full px-4 py-2 pr-24 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none" 
+                      placeholder="Token gerado automaticamente" 
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      {instanceToken && (
+                        <button 
+                          type="button" 
+                          onClick={() => copyToClipboard(instanceToken)} 
+                          className="text-gray-400 hover:text-gray-600"
+                          title="Copiar token"
+                        >
+                          <Copy className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => toggleTokenVisibility('whatsapp')} 
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        {showTokens.whatsapp ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
-                  {originalConfig.has_whatsapp_token && !config.whatsapp_token && (
-                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded"><CheckCircle className="w-3 h-3" />Token configurado</span>
+                  {instanceToken ? (
+                    <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                      <CheckCircle className="w-3 h-3" />Token da instância configurado
+                    </span>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">Token será gerado ao criar a instância</p>
                   )}
                 </div>
               </>
