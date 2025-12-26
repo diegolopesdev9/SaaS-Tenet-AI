@@ -76,6 +76,23 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
     setShowAgencyDropdown(false)
   }
 
+  // Agrupar tenets por tipo
+  const tenetsByTipo = {
+    sdr: agencies.filter(t => t.tipo === 'sdr' || t.nicho === 'sdr'),
+    suporte: agencies.filter(t => t.tipo === 'suporte' || t.nicho === 'suporte'),
+    rh: agencies.filter(t => t.tipo === 'rh' || t.nicho === 'rh'),
+    vendas: agencies.filter(t => t.tipo === 'vendas' || t.nicho === 'vendas'),
+    custom: agencies.filter(t => t.tipo === 'custom' || t.nicho === 'custom')
+  }
+
+  const tipoLabels = {
+    sdr: '🎯 SDR',
+    suporte: '🛠️ Suporte',
+    rh: '👥 RH',
+    vendas: '💰 Vendas',
+    custom: '⚙️ Custom'
+  }
+
   // Menu para usuários de agência
   const agencyNavigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -154,7 +171,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       className="fixed inset-0 z-10" 
                       onClick={() => setShowAgencyDropdown(false)}
                     />
-                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto">
                       {/* Opção Visão Geral */}
                       <button
                         onClick={() => handleSelectAgency({ id: 'geral', nome: 'Visão Geral' })}
@@ -167,21 +184,35 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         <span className="ml-auto text-xs text-gray-400">Todas</span>
                       </button>
                       
-                      {/* Lista de Tenets */}
-                      {agencies.map((agency) => (
-                        <button
-                          key={agency.id}
-                          onClick={() => handleSelectAgency(agency)}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors ${
-                            agency.id === selectedAgencyId ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                          }`}
-                        >
-                          <Building2 className="w-4 h-4 flex-shrink-0" />
-                          <span className="text-sm font-medium truncate">{agency.nome}</span>
-                          {agency.id === selectedAgencyId && (
-                            <ChevronRight className="w-4 h-4 ml-auto flex-shrink-0" />
-                          )}
-                        </button>
+                      {/* Lista de Tenets Agrupados por Tipo */}
+                      {Object.entries(tenetsByTipo).map(([tipo, tenetsDoTipo]) => (
+                        tenetsDoTipo.length > 0 && (
+                          <div key={tipo}>
+                            {/* Cabeçalho do Grupo */}
+                            <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                {tipoLabels[tipo]}
+                              </span>
+                            </div>
+                            
+                            {/* Itens do Grupo */}
+                            {tenetsDoTipo.map((agency) => (
+                              <button
+                                key={agency.id}
+                                onClick={() => handleSelectAgency(agency)}
+                                className={`w-full flex items-center gap-2 px-3 py-2 pl-6 text-left hover:bg-gray-50 transition-colors ${
+                                  agency.id === selectedAgencyId ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                }`}
+                              >
+                                <Building2 className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-sm font-medium truncate">{agency.nome}</span>
+                                {agency.id === selectedAgencyId && (
+                                  <ChevronRight className="w-4 h-4 ml-auto flex-shrink-0" />
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )
                       ))}
                     </div>
                   </>
