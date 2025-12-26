@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { 
   Link2, CheckCircle, XCircle, Loader2, Settings, Trash2, 
-  ToggleLeft, ToggleRight, TestTube, Plus, AlertCircle 
+  ToggleLeft, ToggleRight, TestTube, Plus, AlertCircle, User, Calendar, BarChart3
 } from 'lucide-react'
 import api from '../services/api'
 
@@ -29,11 +29,39 @@ export default function Integrations({ agencyId }) {
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(null)
   const [message, setMessage] = useState(null)
+  const [adminConfig, setAdminConfig] = useState({
+    admin_name: '',
+    admin_whatsapp_number: ''
+  })
+  const [reportsConfig, setReportsConfig] = useState({
+    daily_report_enabled: true,
+    daily_report_time: '08:00',
+    weekly_report_enabled: true,
+    weekly_report_day: 1,
+    weekly_report_time: '09:00'
+  })
+  const [calendarStatus, setCalendarStatus] = useState({ connected: false })
 
   useEffect(() => {
     loadIntegrations()
     loadLogs()
+    loadAdminConfig()
+    loadCalendarStatus()
   }, [agencyId])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const calendarStatusParam = params.get('calendar')
+    
+    if (calendarStatusParam === 'connected') {
+      setMessage({ type: 'success', text: 'Google Calendar conectado com sucesso!' })
+      loadCalendarStatus()
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (calendarStatusParam === 'error') {
+      setMessage({ type: 'error', text: 'Erro ao conectar Google Calendar: ' + params.get('message') })
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const loadIntegrations = async () => {
     try {
@@ -52,6 +80,84 @@ export default function Integrations({ agencyId }) {
       setLogs(response.data)
     } catch (error) {
       console.error('Erro ao carregar logs:', error)
+    }
+  }
+
+  const loadAdminConfig = async () => {
+    try {
+      const response = await api.get('/admin-config/')
+      setAdminConfig({
+        admin_name: response.data.admin_name || '',
+        admin_whatsapp_number: response.data.admin_whatsapp_number || ''
+      })
+      if (response.data.reports) {
+        setReportsConfig(response.data.reports)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar config admin:', error)
+    }
+  }
+
+  const loadCalendarStatus = async () => {
+    try {
+      const response = await api.get('/calendar/status')
+      setCalendarStatus(response.data)
+    } catch (error) {
+      console.error('Erro ao carregar status calendar:', error)
+    }
+  }
+
+  const handleSaveAdminConfig = async () => {
+    setLoading(true)
+    try {
+      await api.post('/admin-config/', adminConfig)
+      setMessage({ type: 'success', text: 'Configuração do admin salva!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao salvar configuração' })
+    }
+    setLoading(false)
+  }
+
+  const handleSaveReportsConfig = async () => {
+    setLoading(true)
+    try {
+      await api.post('/admin-config/reports', reportsConfig)
+      setMessage({ type: 'success', text: 'Configuração de relatórios salva!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao salvar configuração' })
+    }
+    setLoading(false)
+  }
+
+  const handleTestReport = async () => {
+    setLoading(true)
+    try {
+      await api.post('/admin-config/test-report')
+      setMessage({ type: 'success', text: 'Relatório de teste enviado!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao enviar relatório' })
+    }
+    setLoading(false)
+  }
+
+  const handleConnectCalendar = async () => {
+    try {
+      const response = await api.get('/calendar/auth/url')
+      window.location.href = response.data.auth_url
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao conectar Google Calendar' })
+    }
+  }
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm('Deseja desconectar o Google Calendar?')) return
+    
+    try {
+      await api.post('/calendar/disconnect')
+      setCalendarStatus({ connected: false })
+      setMessage({ type: 'success', text: 'Google Calendar desconectado' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao desconectar' })
     }
   }
 
@@ -166,6 +272,207 @@ export default function Integrations({ agencyId }) {
           <button onClick={() => setMessage(null)} className="ml-auto">×</button>
         </div>
       )}
+
+      {/* Seção Admin WhatsApp */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <User className="w-6 h-6 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Admin do Tenet</h3>
+            <p className="text-sm text-gray-500">Configure o administrador que receberá relatórios e poderá enviar comandos</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nome do Admin
+            </label>
+            <input
+              type="text"
+              value={adminConfig.admin_name}
+              onChange={(e) => setAdminConfig({...adminConfig, admin_name: e.target.value})}
+              placeholder="Ex: João Silva"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              WhatsApp do Admin
+            </label>
+            <input
+              type="text"
+              value={adminConfig.admin_whatsapp_number}
+              onChange={(e) => setAdminConfig({...adminConfig, admin_whatsapp_number: e.target.value})}
+              placeholder="Ex: 5511999999999"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
+          </div>
+        </div>
+        
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-2">📱 Comandos disponíveis para o Admin:</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-blue-700">
+            <span>• relatorio</span>
+            <span>• leads</span>
+            <span>• leads semana</span>
+            <span>• qualificados</span>
+            <span>• metricas</span>
+            <span>• status</span>
+            <span>• pausar</span>
+            <span>• ajuda</span>
+          </div>
+        </div>
+        
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={handleSaveAdminConfig}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Salvando...' : 'Salvar Admin'}
+          </button>
+          
+          <button
+            onClick={handleTestReport}
+            disabled={loading || !adminConfig.admin_whatsapp_number}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          >
+            📊 Enviar Relatório Teste
+          </button>
+        </div>
+      </div>
+
+      {/* Seção Relatórios Automáticos */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-purple-100 rounded-lg">
+            <BarChart3 className="w-6 h-6 text-purple-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Relatórios Automáticos</h3>
+            <p className="text-sm text-gray-500">Configure o envio automático de relatórios para o admin</p>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          {/* Relatório Diário */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={reportsConfig.daily_report_enabled}
+                onChange={(e) => setReportsConfig({...reportsConfig, daily_report_enabled: e.target.checked})}
+                className="w-4 h-4 text-blue-600 rounded"
+              />
+              <div>
+                <span className="font-medium">Relatório Diário</span>
+                <p className="text-sm text-gray-500">Enviado todos os dias</p>
+              </div>
+            </div>
+            <input
+              type="time"
+              value={reportsConfig.daily_report_time}
+              onChange={(e) => setReportsConfig({...reportsConfig, daily_report_time: e.target.value})}
+              className="px-3 py-1 border border-gray-300 rounded-lg"
+            />
+          </div>
+          
+          {/* Relatório Semanal */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={reportsConfig.weekly_report_enabled}
+                onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_enabled: e.target.checked})}
+                className="w-4 h-4 text-blue-600 rounded"
+              />
+              <div>
+                <span className="font-medium">Relatório Semanal</span>
+                <p className="text-sm text-gray-500">Enviado uma vez por semana</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={reportsConfig.weekly_report_day}
+                onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_day: parseInt(e.target.value)})}
+                className="px-3 py-1 border border-gray-300 rounded-lg"
+              >
+                <option value={0}>Domingo</option>
+                <option value={1}>Segunda</option>
+                <option value={2}>Terça</option>
+                <option value={3}>Quarta</option>
+                <option value={4}>Quinta</option>
+                <option value={5}>Sexta</option>
+                <option value={6}>Sábado</option>
+              </select>
+              <input
+                type="time"
+                value={reportsConfig.weekly_report_time}
+                onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_time: e.target.value})}
+                className="px-3 py-1 border border-gray-300 rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <button
+          onClick={handleSaveReportsConfig}
+          disabled={loading}
+          className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+        >
+          Salvar Configuração de Relatórios
+        </button>
+      </div>
+
+      {/* Seção Google Calendar */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <Calendar className="w-6 h-6 text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">Google Calendar</h3>
+            <p className="text-sm text-gray-500">Conecte sua agenda para agendamento automático de reuniões</p>
+          </div>
+        </div>
+        
+        {calendarStatus.connected ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
+              <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+              <span className="text-green-700">Conectado</span>
+              <span className="text-green-600 font-medium">{calendarStatus.email}</span>
+            </div>
+            
+            <button
+              onClick={handleDisconnectCalendar}
+              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+            >
+              Desconectar Google Calendar
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-lg">
+              <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
+              <span className="text-yellow-700">Não conectado</span>
+            </div>
+            
+            <button
+              onClick={handleConnectCalendar}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <img src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png" alt="Google Calendar" className="w-5 h-5" />
+              Conectar Google Calendar
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Grid de CRMs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
