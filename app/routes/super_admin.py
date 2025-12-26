@@ -343,7 +343,7 @@ async def delete_agencia(
     agencia_id: str,
     current_user: dict = Depends(require_super_admin)
 ):
-    """Deleta uma agência e todos os dados relacionados."""
+    """Deleta uma agência e todos os dados relacionados, incluindo usuários."""
     logger.info(f"Super Admin {current_user['email']} deletando agência: {agencia_id}")
 
     supabase = get_supabase_client()
@@ -351,18 +351,20 @@ async def delete_agencia(
     try:
         # Verificar se agência existe
         agencia = supabase.table("agencias").select("id, nome").eq("id", agencia_id).execute()
-
+        
         if not agencia.data:
             raise HTTPException(status_code=404, detail="Agência não encontrada")
-
+        
         nome_agencia = agencia.data[0].get("nome", "")
-
-        # 1. Desvincular usuários da agência (não deletar, apenas desvincular)
-        supabase.table("usuarios").update({
-            "agencia_id": None
-        }).eq("agencia_id", agencia_id).execute()
-        logger.info(f"Usuários desvinculados da agência {agencia_id}")
-
+        
+        # Contar usuários que serão deletados
+        usuarios = supabase.table("usuarios").select("id").eq("agencia_id", agencia_id).execute()
+        total_usuarios = len(usuarios.data) if usuarios.data else 0
+        
+        # 1. Deletar usuários da agência
+        supabase.table("usuarios").delete().eq("agencia_id", agencia_id).execute()
+        logger.info(f"{total_usuarios} usuários deletados da agência {agencia_id}")
+        
         # 2. Deletar mensagens das conversas da agência
         conversas = supabase.table("conversas").select("id").eq("agencia_id", agencia_id).execute()
         if conversas.data:
@@ -370,29 +372,33 @@ async def delete_agencia(
             for cid in conversa_ids:
                 supabase.table("mensagens").delete().eq("conversa_id", cid).execute()
             logger.info(f"Mensagens deletadas de {len(conversa_ids)} conversas")
-
+        
         # 3. Deletar conversas da agência
         supabase.table("conversas").delete().eq("agencia_id", agencia_id).execute()
         logger.info(f"Conversas deletadas da agência {agencia_id}")
-
-        # 4. Deletar notificações da agência (se existir)
+        
+        # 4. Deletar notificações da agência
         try:
             supabase.table("notificacoes_config").delete().eq("agencia_id", agencia_id).execute()
         except:
             pass
-
-        # 5. Deletar integrações CRM (se existir)
+        
+        # 5. Deletar integrações CRM
         try:
             supabase.table("integracoes_crm").delete().eq("agencia_id", agencia_id).execute()
         except:
             pass
-
+        
         # 6. Finalmente deletar a agência
         response = supabase.table("agencias").delete().eq("id", agencia_id).execute()
 
         if response.data:
             logger.info(f"Agência {nome_agencia} deletada com sucesso")
-            return {"success": True, "message": f"Agência '{nome_agencia}' deletada com sucesso"}
+            return {
+                "success": True, 
+                "message": f"Agência '{nome_agencia}' deletada com sucesso",
+                "usuarios_deletados": total_usuarios
+            }
 
         raise HTTPException(status_code=500, detail="Erro ao deletar agência")
 
