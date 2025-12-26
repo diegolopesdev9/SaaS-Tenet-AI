@@ -1,0 +1,76 @@
+No arquivo app/schemas/admin.py, substitua TODO o conteúdo por:
+
+"""
+Schemas Pydantic para endpoints administrativos.
+"""
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, Field
+
+
+class TenetConfigResponse(BaseModel):
+    """Schema de resposta para configuração de tenet."""
+    
+    id: str
+    nome: str
+    instance_name: Optional[str] = None
+    prompt_config: Optional[str] = None
+    whatsapp_phone_id: Optional[str] = None
+    has_whatsapp_token: bool = False
+    has_gemini_key: bool = False
+    agent_name: Optional[str] = None
+    personality: Optional[str] = None
+    welcome_message: Optional[str] = None
+    qualification_questions: Optional[List[str]] = None
+    qualification_criteria: Optional[str] = None
+    closing_message: Optional[str] = None
+    whatsapp_api_type: Optional[str] = "evolution"
+    meta_phone_number_id: Optional[str] = None
+    meta_business_account_id: Optional[str] = None
+    has_meta_token: bool = False
+    tipo: Optional[str] = "sdr"
+
+
+class TenetConfigUpdate(BaseModel):
+    """Schema para atualização de configuração de tenet."""
+    
+    nome: Optional[str] = Field(None, max_length=100)
+    instance_name: Optional[str] = Field(None, max_length=100)
+    prompt_config: Optional[str] = Field(None, max_length=5000)
+    whatsapp_phone_id: Optional[str] = None
+    whatsapp_token: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    agent_name: Optional[str] = Field(None, max_length=100)
+    personality: Optional[str] = Field(None, max_length=100)
+    welcome_message: Optional[str] = Field(None, max_length=1000)
+    qualification_questions: Optional[List[str]] = None
+    qualification_criteria: Optional[str] = Field(None, max_length=2000)
+    closing_message: Optional[str] = Field(None, max_length=1000)
+    whatsapp_api_type: Optional[str] = None
+    meta_phone_number_id: Optional[str] = None
+    meta_business_account_id: Optional[str] = None
+    meta_access_token: Optional[str] = None
+    tipo: Optional[str] = None
+
+
+class ConversationSummary(BaseModel):
+    """Schema de sumário de conversa."""
+    
+    id: str
+    lead_phone: str
+    lead_status: str
+    lead_data: Dict[str, Any]
+    total_mensagens: int
+    last_message_at: Optional[str] = None
+
+
+class ApiResponse(BaseModel):
+    """Schema de resposta padrão da API."""
+    
+    success: bool
+    message: str
+    data: Optional[Dict[str, Any]] = None
+
+
+# Aliases para compatibilidade
+AgencyConfigResponse = TenetConfigResponse
+AgencyConfigUpdate = TenetConfigUpdate
