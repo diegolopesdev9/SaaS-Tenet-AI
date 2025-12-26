@@ -24,7 +24,7 @@ async def health_check() -> bool:
     try:
         client = get_supabase_client()
         # Simple query to test connection
-        result = client.table('agencias').select('id').limit(1).execute()
+        result = client.table('tenets').select('id').limit(1).execute()
         return True
     except Exception as e:
         print(f"Database health check failed: {e}")

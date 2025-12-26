@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from app.database import get_supabase_client
-from app.services.agency_service import AgencyService
+from app.services.tenet_service import TenetService
 from app.schemas.admin import AgencyConfigResponse, AgencyConfigUpdate, ApiResponse
 from app.utils.security import EncryptionService
 from app.routes.auth import get_current_user
@@ -35,10 +35,10 @@ async def get_agency_config(agency_id: str):
 
     # Inicializar cliente Supabase e serviço
     supabase = get_supabase_client()
-    agency_service = AgencyService(supabase)
+    tenet_service = TenetService(supabase)
 
-    # Buscar agência
-    agency = await agency_service.get_agency_by_id(agency_id)
+    # Buscar tenet
+    agency = await tenet_service.get_tenet_by_id(agency_id)
 
     if not agency:
         logger.warning(f"Agência não encontrada: {agency_id}")
