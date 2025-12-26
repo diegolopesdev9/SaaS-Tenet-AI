@@ -83,12 +83,16 @@ export default function Agencias() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir esta agência?')) return;
+  const handleDelete = async (id, nome, totalUsuarios) => {
+    const mensagem = totalUsuarios > 0 
+      ? `⚠️ ATENÇÃO!\n\nAo deletar a agência "${nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n• ${totalUsuarios} usuário(s) vinculado(s)\n• Todas as conversas\n• Todas as mensagens\n• Configurações e integrações\n\nEsta ação NÃO pode ser desfeita.\n\nDeseja continuar?`
+      : `Tem certeza que deseja deletar a agência "${nome}"?\n\nTodas as conversas e configurações serão removidas.\n\nEsta ação NÃO pode ser desfeita.`;
+    
+    if (!confirm(mensagem)) return;
 
     try {
       await api.delete(`/admin/agencias/${id}`);
-      setSuccess('Agência excluída com sucesso!');
+      setSuccess(`Agência "${nome}" deletada com sucesso!`);
       loadAgencias();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -232,7 +236,7 @@ export default function Agencias() {
                       <button onClick={() => handleEdit(agencia)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(agencia.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                      <button onClick={() => handleDelete(agencia.id, agencia.nome, agencia.total_usuarios || 0)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
