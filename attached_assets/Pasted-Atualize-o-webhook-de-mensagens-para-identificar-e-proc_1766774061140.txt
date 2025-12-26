@@ -1,0 +1,51 @@
+Atualize o webhook de mensagens para identificar e processar comandos do admin.
+
+=== No arquivo app/routes/webhooks.py (ou onde processa mensagens recebidas) ===
+
+Adicione no início do arquivo:
+from app.services.admin_whatsapp_service import admin_whatsapp_service
+
+Na função que processa mensagens recebidas, ANTES de processar como lead normal, adicione:
+
+async def process_incoming_message(instance_name: str, phone_number: str, message: str):
+    """Processa mensagem recebida."""
+    
+    # Buscar tenet pelo instance_name
+    supabase = get_supabase_client()
+    tenet_result = supabase.table("tenets").select("id").eq("instance_name", instance_name).execute()
+    
+    if not tenet_result.data:
+        logger.warning(f"Tenet não encontrado para instância: {instance_name}")
+        return
+    
+    tenet_id = tenet_result.data[0]["id"]
+    
+    # ========================================
+    # VERIFICAR SE É MENSAGEM DO ADMIN
+    # ========================================
+    is_admin = await admin_whatsapp_service.is_admin_number(tenet_id, phone_number)
+    
+    if is_admin:
+        logger.info(f"Mensagem do ADMIN recebida: {message[:50]}...")
+        
+        # Processar como comando
+        response = await admin_whatsapp_service.process_command(tenet_id, message)
+        
+        if response:
+            # Enviar resposta do comando
+            from app.services.whatsapp_service import whatsapp_service
+            await whatsapp_service.send_message(
+                instance_name=instance_name,
+                to=phone_number,
+                message=response
+            )
+            return  # Não processar como lead
+        
+        # Se não for comando reconhecido, pode continuar processando ou ignorar
+        logger.info(f"Mensagem do admin não é comando: {message}")
+        return  # Ignorar mensagens do admin que não são comandos
+    
+    # ========================================
+    # PROCESSAR COMO LEAD NORMAL
+    # ========================================
+    # ... resto do código existente para processar leads ...
