@@ -1,12 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { Building2, Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { Building2, Plus, Search, Edit2, Trash2, Eye, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 function Agencias() {
+  const navigate = useNavigate();
   const [tenets, setTenets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTenet, setSelectedTenet] = useState(null);
 
   useEffect(() => {
     loadTenets();
@@ -28,6 +32,34 @@ function Agencias() {
     tenet.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     tenet.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewTenet = (tenetId) => {
+    // Selecionar o tenet e ir para o dashboard
+    localStorage.setItem('selectedAgencyId', tenetId);
+    navigate('/');
+    window.location.reload(); // Recarregar para atualizar o contexto da agência
+  };
+
+  const handleEditTenet = (tenet) => {
+    setSelectedTenet(tenet);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await api.patch(`/admin/tenets/${selectedTenet.id}`, {
+        nome: selectedTenet.nome,
+        email: selectedTenet.email,
+        nicho: selectedTenet.nicho
+      });
+      alert('Tenet atualizado com sucesso');
+      setShowEditModal(false);
+      loadTenets();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao atualizar tenet');
+      console.error('Erro ao atualizar tenet:', err);
+    }
+  };
 
   const handleDeleteTenet = async (tenetId) => {
     try {
@@ -84,6 +116,81 @@ function Agencias() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Modal de Edição */}
+      {showEditModal && selectedTenet && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Editar Tenet</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome do Tenet
+                </label>
+                <input
+                  type="text"
+                  value={selectedTenet.nome}
+                  onChange={(e) => setSelectedTenet({ ...selectedTenet, nome: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={selectedTenet.email}
+                  onChange={(e) => setSelectedTenet({ ...selectedTenet, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nicho
+                </label>
+                <select
+                  value={selectedTenet.nicho || 'SDR'}
+                  onChange={(e) => setSelectedTenet({ ...selectedTenet, nicho: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="sdr">SDR</option>
+                  <option value="suporte">Suporte</option>
+                  <option value="vendas">Vendas</option>
+                  <option value="rh">RH</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Gerenciar Tenets</h1>
         <p className="text-gray-600">Visualize e gerencie todos os tenets do sistema</p>
@@ -163,10 +270,18 @@ function Agencias() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="text-blue-600 hover:text-blue-900">
+                        <button 
+                          onClick={() => handleViewTenet(tenet.id)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Visualizar Tenet"
+                        >
                           <Eye className="w-5 h-5" />
                         </button>
-                        <button className="text-gray-600 hover:text-gray-900">
+                        <button 
+                          onClick={() => handleEditTenet(tenet)}
+                          className="text-gray-600 hover:text-gray-900"
+                          title="Editar Tenet"
+                        >
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button 
