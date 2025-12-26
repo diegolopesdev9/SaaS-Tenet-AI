@@ -18,11 +18,27 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/calendar", tags=["Google Calendar"])
 
 
+# ========================================
+# MODELOS PYDANTIC (ANTES DAS ROTAS)
+# ========================================
+
 class CreateEventRequest(BaseModel):
     summary: str
     start_time: datetime
     end_time: datetime
+    description: Optional[str] = ""
+    attendees: Optional[List[str]] = []
+    location: Optional[str] = ""
 
+
+class GoogleCredentialsUpdate(BaseModel):
+    client_id: str
+    client_secret: str
+
+
+# ========================================
+# ROTAS (DEPOIS DOS MODELOS)
+# ========================================
 
 @router.post("/credentials")
 async def save_google_credentials(
@@ -82,16 +98,6 @@ async def get_credentials_status(current_user: dict = Depends(get_current_user))
     except Exception as e:
         logger.error(f"Erro ao verificar credenciais: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-    description: Optional[str] = ""
-    attendees: Optional[List[str]] = []
-    location: Optional[str] = ""
-
-
-class GoogleCredentialsUpdate(BaseModel):
-    client_id: str
-    client_secret: str
 
 
 @router.get("/auth/url")
