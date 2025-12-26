@@ -105,7 +105,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
   // Menu de administração para Super Admin
   const superAdminNavigation = [
-    { name: 'Tenets', href: '/admin/agencias', icon: Building2 },
+    { name: 'Tenets', href: '/admin/tenets', icon: Building2 },
     { name: 'Usuários', href: '/admin/usuarios', icon: Users },
     { name: 'Templates', href: '/admin/templates', icon: FileText },
     { name: 'A/B Tests', href: '/admin/ab-tests', icon: FlaskConical },

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import authService from './services/auth';
@@ -44,13 +43,13 @@ function PublicRoute({ children }) {
 function AuthenticatedApp() {
   const [user, setUser] = useState(() => authService.getUser());
   const isSuperAdmin = user?.role === 'super_admin';
-  
+
   const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
     const saved = localStorage.getItem('selectedAgencyId');
     if (saved && isSuperAdmin) return saved;
     return user?.agencia_id || null;
   });
-  
+
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(isSuperAdmin);
 
@@ -65,11 +64,11 @@ function AuthenticatedApp() {
       const response = await api.get('/admin/agencias');
       const agenciasList = response.data || [];
       setAgencies(agenciasList);
-      
+
       if (agenciasList.length > 0) {
         const savedId = localStorage.getItem('selectedAgencyId');
         const savedExists = agenciasList.some(a => a.id === savedId);
-        
+
         if (!savedId || !savedExists) {
           setSelectedAgencyId(agenciasList[0].id);
           localStorage.setItem('selectedAgencyId', agenciasList[0].id);
@@ -153,7 +152,7 @@ function App() {
           </PublicRoute>
         } 
       />
-      
+
       {/* Rotas protegidas */}
       <Route
         path="/"
@@ -169,7 +168,8 @@ function App() {
         <Route path="config" element={<AgentConfigWrapper />} />
         <Route path="integracoes" element={<IntegrationsWrapper />} />
         <Route path="notificacoes" element={<NotificationsWrapper />} />
-        <Route path="admin/agencias" element={<Agencias />} />
+        <Route path="/admin/tenets" element={<Agencias />} />
+        <Route path="/admin/agencias" element={<Navigate to="/admin/tenets" replace />} />
         <Route path="admin/usuarios" element={<Usuarios />} />
         <Route path="admin/templates" element={<TemplatesWrapper />} />
         <Route path="admin/ab-tests" element={<ABTests />} />
@@ -233,7 +233,7 @@ function WhatsAppConnectionWrapper() {
 function useAgencyId() {
   const user = authService.getUser();
   const isSuperAdmin = user?.role === 'super_admin';
-  
+
   if (isSuperAdmin) {
     return localStorage.getItem('selectedAgencyId');
   }

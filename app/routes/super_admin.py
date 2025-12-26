@@ -79,8 +79,13 @@ AgenciaResponse = TenetResponse
 # ROTAS DE TENETS
 # ============================================
 
-@router.get("/tenets")
 @router.get("/agencias")
+async def list_all_tenets_legacy(current_user: dict = Depends(get_current_user)):
+    """Lista tenets (rota legada /agencias)."""
+    return await list_all_tenets(current_user)
+
+
+@router.get("/tenets")
 async def list_all_tenets(current_user: dict = Depends(get_current_user)):
     """Lista tenets baseado no role do usuário."""
 
@@ -262,8 +267,16 @@ async def get_general_metrics(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/tenets")
 @router.post("/agencias")
+async def create_tenet_legacy(
+    tenet: TenetCreate,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Cria novo tenet (rota legada /agencias)."""
+    return await create_tenet(tenet, current_user)
+
+
+@router.post("/tenets")
 async def create_tenet(
     tenet: TenetCreate,
     current_user: dict = Depends(require_super_admin)
@@ -351,8 +364,25 @@ async def create_tenet(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/agencias/{tenet_id}/delete-preview")
+@router.get("/tenets/{tenet_id}/delete-preview")
 async def get_delete_preview(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Retorna preview do que será deletado junto com o tenet."""
+    return await get_delete_preview_impl(tenet_id, current_user)
+
+
+@router.get("/agencias/{tenet_id}/delete-preview")
+async def get_delete_preview_legacy(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Retorna preview (rota legada /agencias)."""
+    return await get_delete_preview_impl(tenet_id, current_user)
+
+
+async def get_delete_preview_impl(
     tenet_id: str,
     current_user: dict = Depends(require_super_admin)
 ):
@@ -384,8 +414,16 @@ async def get_delete_preview(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/tenets/{tenet_id}")
 @router.delete("/agencias/{tenet_id}")
+async def delete_tenet_legacy(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Deleta um tenet (rota legada /agencias)."""
+    return await delete_tenet(tenet_id, current_user)
+
+
+@router.delete("/tenets/{tenet_id}")
 async def delete_tenet(
     tenet_id: str,
     current_user: dict = Depends(require_super_admin)
@@ -446,8 +484,16 @@ async def delete_tenet(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/tenets/{tenet_id}/usuarios")
 @router.get("/agencias/{tenet_id}/usuarios")
+async def list_tenet_users_legacy(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Lista usuários (rota legada /agencias)."""
+    return await list_tenet_users(tenet_id, current_user)
+
+
+@router.get("/tenets/{tenet_id}/usuarios")
 async def list_tenet_users(
     tenet_id: str,
     current_user: dict = Depends(require_super_admin)
@@ -468,8 +514,17 @@ async def list_tenet_users(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.patch("/tenets/{tenet_id}")
 @router.patch("/agencias/{tenet_id}")
+async def update_tenet_legacy(
+    tenet_id: str,
+    request: Request,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Atualiza tenet (rota legada /agencias)."""
+    return await update_tenet(tenet_id, request, current_user)
+
+
+@router.patch("/tenets/{tenet_id}")
 async def update_tenet(
     tenet_id: str,
     request: Request,

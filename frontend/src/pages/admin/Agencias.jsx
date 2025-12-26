@@ -15,7 +15,7 @@ function Agencias() {
   const loadTenets = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/agencias');
+      const response = await api.get('/admin/tenets');
       setTenets(response.data || []);
     } catch (error) {
       console.error('Erro ao carregar tenets:', error);
@@ -32,7 +32,7 @@ function Agencias() {
   const handleDeleteTenet = async (tenetId) => {
     try {
       // Buscar preview do que será deletado
-      const preview = await api.get(`/admin/agencias/${tenetId}/delete-preview`);
+      const preview = await api.get(`/admin/tenets/${tenetId}/delete-preview`);
       const { tenet, usuarios, total_usuarios, total_conversas } = preview.data;
       
       // Montar mensagem de confirmação
@@ -64,7 +64,7 @@ function Agencias() {
       }
       
       // Deletar
-      await api.delete(`/admin/agencias/${tenetId}`);
+      await api.delete(`/admin/tenets/${tenetId}`);
       alert(`Tenet "${tenet.nome}" deletado com sucesso`);
       loadTenets(); // Recarregar lista
       
