@@ -1,0 +1,98 @@
+Implemente redirecionamento após login baseado no role do usuário.
+
+=== FRONTEND - Página de Login (src/pages/Login.jsx ou similar) ===
+
+1. Após o login bem-sucedido, redirecione baseado no role:
+
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await api.post('/auth/login', { email, password });
+    const { user, access_token } = response.data;
+    
+    // Salvar token e dados do usuário
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Redirecionar baseado no role
+    if (user.role === 'super_admin') {
+      // Super Admin vai para Dashboard Geral
+      navigate('/dashboard-geral');
+    } else {
+      // Usuário comum vai para Dashboard do seu Tenet
+      navigate('/dashboard');
+    }
+    
+  } catch (error) {
+    setError('Email ou senha incorretos');
+  }
+};
+
+=== FRONTEND - Proteção de rotas (src/App.jsx) ===
+
+2. Adicione rota para Dashboard Geral se não existir:
+
+<Route path="/dashboard-geral" element={
+  <PrivateRoute requiredRole="super_admin">
+    <DashboardGeral />
+  </PrivateRoute>
+} />
+
+<Route path="/dashboard" element={
+  <PrivateRoute>
+    <Dashboard />
+  </PrivateRoute>
+} />
+
+3. Crie componente PrivateRoute com verificação de role (se não existir):
+
+const PrivateRoute = ({ children, requiredRole }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
+=== FRONTEND - Redirecionamento na raiz (/) ===
+
+4. Na rota raiz, redirecione baseado no role:
+
+<Route path="/" element={<RootRedirect />} />
+
+// Componente RootRedirect
+const RootRedirect = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (user?.role === 'super_admin') {
+    return <Navigate to="/dashboard-geral" />;
+  }
+  
+  return <Navigate to="/dashboard" />;
+};
+
+=== FRONTEND - Sidebar ===
+
+5. No Sidebar, mostre o link correto baseado no role:
+
+{user.role === 'super_admin' ? (
+  <NavLink to="/dashboard-geral">
+    <DashboardIcon /> Dashboard Geral
+  </NavLink>
+) : (
+  <NavLink to="/dashboard">
+    <DashboardIcon /> Dashboard
+  </NavLink>
+)}
