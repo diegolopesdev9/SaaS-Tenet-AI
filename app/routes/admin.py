@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from app.database import get_supabase_client
 from app.services.tenet_service import TenetService
-from app.schemas.admin import AgencyConfigResponse, AgencyConfigUpdate, ApiResponse
+from app.schemas.admin import TenetConfigResponse, TenetConfigUpdate, ApiResponse
 from app.utils.security import EncryptionService
 from app.routes.auth import get_current_user
 
@@ -17,32 +17,32 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/agencias", tags=["Admin"])
 
 
-@router.get("/{agency_id}/config", response_model=AgencyConfigResponse)
-async def get_agency_config(agency_id: str):
+@router.get("/{tenet_id}/config", response_model=TenetConfigResponse)
+async def get_tenet_config(tenet_id: str):
     """
-    Busca configurações de uma agência específica.
+    Busca configurações de um tenet específico.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
 
     Returns:
-        AgencyConfigResponse com dados da agência
+        TenetConfigResponse com dados do tenet
 
     Raises:
-        HTTPException: 404 se agência não for encontrada
+        HTTPException: 404 se tenet não for encontrado
     """
-    logger.info(f"Buscando configurações da agência: {agency_id}")
+    logger.info(f"Buscando configurações do tenet: {tenet_id}")
 
     # Inicializar cliente Supabase e serviço
     supabase = get_supabase_client()
     tenet_service = TenetService(supabase)
 
     # Buscar tenet
-    agency = await tenet_service.get_tenet_by_id(agency_id)
+    tenet = await tenet_service.get_tenet_by_id(tenet_id)
 
-    if not agency:
-        logger.warning(f"Agência não encontrada: {agency_id}")
-        raise HTTPException(status_code=404, detail="Agência não encontrada")
+    if not tenet:
+        logger.warning(f"Tenet não encontrado: {tenet_id}")
+        raise HTTPException(status_code=404, detail="Tenet não encontrada")
 
     # Verificar se tem tokens criptografados
     has_whatsapp_token = bool(agency.get("whatsapp_token_encrypted"))

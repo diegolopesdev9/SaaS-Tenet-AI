@@ -137,15 +137,15 @@ async def test_smtp_connection(
     return result
 
 
-@router.post("/{agencia_id}/test-email")
+@router.post("/{tenet_id}/test-email")
 async def send_test_email(
-    agencia_id: str,
+    tenet_id: str,
     current_user: dict = Depends(get_current_user)
 ):
     """Envia email de teste."""
     
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     
     supabase = get_supabase_client()
@@ -161,7 +161,7 @@ async def send_test_email(
     }
     
     success = await notification_service.send_lead_notification(
-        agencia_id=agencia_id,
+        tenet_id=tenet_id,
         lead_data=test_lead,
         notification_type="qualificado"
     )

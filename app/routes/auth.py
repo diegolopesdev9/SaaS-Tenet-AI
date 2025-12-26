@@ -1,4 +1,3 @@
-
 """
 Rotas de autenticação.
 """
@@ -6,7 +5,7 @@ import logging
 from datetime import timedelta, datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
 from app.utils.rate_limit import limiter
 from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -33,30 +32,31 @@ class LoginResponse(BaseModel):
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
-    nome: str
+    password: str = Field(..., min_length=6)
+    nome: str = Field(..., max_length=100)
     tenet_id: str
+    role: str = Field(default="user", pattern="^(admin|user)$")
 
 
 # Dependency para obter usuário atual
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Extrai e valida o usuário do token JWT."""
     auth_service = AuthService()
-    
+
     token = credentials.credentials
     payload = auth_service.verify_token(token)
-    
+
     if payload is None:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
-    
+
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Token inválido")
-    
+
     user = await auth_service.get_user_by_id(user_id)
     if user is None:
         raise HTTPException(status_code=401, detail="Usuário não encontrado")
-    
+
     return user
 
 
@@ -67,14 +67,14 @@ async def login(request: Request, credentials: LoginRequest):
     Realiza login e retorna token JWT.
     """
     logger.info(f"Tentativa de login: {credentials.email}")
-    
+
     auth_service = AuthService()
     user = await auth_service.authenticate_user(credentials.email, credentials.password)
-    
+
     if not user:
         logger.warning(f"Login falhou: {credentials.email}")
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
-    
+
     # Criar token
     access_token = auth_service.create_access_token(
         data={
@@ -85,9 +85,9 @@ async def login(request: Request, credentials: LoginRequest):
         },
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    
+
     logger.info(f"Login bem-sucedido: {credentials.email}")
-    
+
     return LoginResponse(
         access_token=access_token,
         user={
@@ -122,7 +122,7 @@ async def register(request: UserCreate):
     Registra novo usuário (usar apenas para setup inicial).
     """
     logger.info(f"Registro de usuário: {request.email}")
-    
+
     auth_service = AuthService()
     user = await auth_service.create_user(
         email=request.email,
@@ -130,10 +130,10 @@ async def register(request: UserCreate):
         nome=request.nome,
         tenet_id=request.tenet_id
     )
-    
+
     if not user:
         raise HTTPException(status_code=400, detail="Erro ao criar usuário. Email pode já existir.")
-    
+
     return {"message": "Usuário criado com sucesso", "user_id": user["id"]}
 
 
@@ -146,28 +146,28 @@ async def change_password(
     try:
         body = await request.json()
         nova_senha = body.get("nova_senha")
-        
+
         if not nova_senha or len(nova_senha) < 6:
             raise HTTPException(status_code=400, detail="Senha deve ter no mínimo 6 caracteres")
-        
+
         supabase = get_supabase_client()
-        
+
         # Hash da nova senha
         nova_senha_hash = pwd_context.hash(nova_senha)
-        
+
         # Atualizar senha e remover flag de alteração obrigatória
         response = supabase.table("usuarios").update({
             "senha_hash": nova_senha_hash,
             "deve_alterar_senha": False,
             "updated_at": datetime.now(timezone.utc).isoformat()
         }).eq("id", current_user["id"]).execute()
-        
+
         if response.data:
             logger.info(f"Senha alterada para usuário: {current_user['email']}")
             return {"success": True, "message": "Senha alterada com sucesso"}
-        
+
         raise HTTPException(status_code=500, detail="Erro ao alterar senha")
-        
+
     except HTTPException:
         raise
     except Exception as e:

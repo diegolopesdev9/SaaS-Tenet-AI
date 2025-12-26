@@ -110,13 +110,13 @@ async def create_whatsapp_instance(
 
 
 @router.get("/instance/qrcode")
-async def get_qrcode(current_user: dict = Depends(get_current_user)):
+async def get_qrcode(tenet_id: str, current_user: dict = Depends(get_current_user)):
     """
     Obtém o QR Code para conexão do WhatsApp.
     Se a instância não existir, cria automaticamente.
     """
     try:
-        tenet_id = current_user.get("tenet_id")
+        # tenet_id = current_user.get("tenet_id") # This line is commented out as tenet_id is now a parameter
         if not tenet_id:
             raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 

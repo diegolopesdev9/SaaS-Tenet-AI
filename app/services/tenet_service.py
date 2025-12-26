@@ -64,3 +64,7 @@ class TenetService:
         decrypted_keys['whatsapp_phone_id'] = tenet.get('whatsapp_phone_id')
 
         return decrypted_keys
+
+
+# Alias para compatibilidade
+AgencyService = TenetService

@@ -10,7 +10,7 @@ import os
 from app.utils.rate_limit import limiter
 from app.services.whatsapp_service import WhatsAppService
 from app.services.ai_service import AIService
-from app.services.agency_service import AgencyService
+from app.services.tenet_service import TenetService
 from app.services.conversation_service import ConversationService
 from app.services.crm_service import CRMService
 from app.services.notification_service import NotificationService

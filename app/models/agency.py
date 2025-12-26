@@ -1,13 +1,13 @@
 
-"""Agency data model."""
+"""Tenet data model."""
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel
 
 
-class Agency(BaseModel):
-    """Agency model representing the agencias table."""
+class Tenet(BaseModel):
+    """Tenet model representing the tenets table."""
     
     id: UUID
     nome: str
@@ -30,3 +30,7 @@ class Agency(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Alias para compatibilidade
+Agency = Tenet
