@@ -4,7 +4,7 @@ import api from '../../services/api';
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
-  const [agencias, setAgencias] = useState([]);
+  const [tenets, setTenets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -37,12 +37,12 @@ export default function Usuarios() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usuariosRes, agenciasRes] = await Promise.all([
+      const [usuariosRes, tenetsRes] = await Promise.all([
         api.get('/admin/usuarios'),
         api.get('/admin/agencias')
       ]);
       setUsuarios(usuariosRes.data);
-      setAgencias(agenciasRes.data);
+      setTenets(tenetsRes.data);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setMessage({ type: 'error', text: 'Erro ao carregar dados' });
@@ -102,9 +102,9 @@ export default function Usuarios() {
     }
   };
 
-  const getAgenciaNome = (agenciaId) => {
-    const agencia = agencias.find(a => a.id === agenciaId);
-    return agencia?.nome || '-';
+  const getTenetNome = (tenetId) => {
+    const tenet = tenets.find(a => a.id === tenetId);
+    return tenet?.nome || '-';
   };
 
   // Funções de edição
@@ -154,7 +154,7 @@ export default function Usuarios() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <span className="ml-2">Carregando Tenets</span>
+        <span className="ml-2">Carregando dados</span>
       </div>
     );
   }
@@ -231,8 +231,8 @@ export default function Usuarios() {
                 required
               >
                 <option value="">Selecione um Tenet</option>
-                {agencias.map((agencia) => (
-                  <option key={agencia.id} value={agencia.id}>{agencia.nome}</option>
+                {tenets.map((tenet) => (
+                  <option key={tenet.id} value={tenet.id}>{tenet.nome}</option>
                 ))}
               </select>
             </div>
@@ -300,7 +300,7 @@ export default function Usuarios() {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-600">{getAgenciaNome(usuario.agencia_id)}</td>
+                <td className="px-6 py-4 text-gray-600">{getTenetNome(usuario.agencia_id)}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                     usuario.role === 'super_admin' 
@@ -402,8 +402,8 @@ export default function Usuarios() {
                     disabled={editingUser.role === 'super_admin'}
                   >
                     <option value="">Sem Tenet</option>
-                    {agencias.map((agencia) => (
-                      <option key={agencia.id} value={agencia.id}>{agencia.nome}</option>
+                    {tenets.map((tenet) => (
+                      <option key={tenet.id} value={tenet.id}>{tenet.nome}</option>
                     ))}
                   </select>
                 </div>

@@ -3,10 +3,10 @@ import { Building2, Plus, Edit, Trash2, Users, MessageSquare, X, Search, CheckCi
 import api from '../../services/api';
 
 export default function Agencias() {
-  const [agencias, setAgencias] = useState([]);
+  const [tenets, setTenets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingAgencia, setEditingAgencia] = useState(null);
+  const [editingTenet, setEditingTenet] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -23,17 +23,17 @@ export default function Agencias() {
   });
 
   useEffect(() => {
-    loadAgencias();
+    loadTenets();
   }, []);
 
-  const loadAgencias = async () => {
+  const loadTenets = async () => {
     try {
       setLoading(true);
       const response = await api.get('/admin/agencias');
-      setAgencias(response.data || []);
+      setTenets(response.data || []);
     } catch (err) {
-      console.error('Erro ao carregar agências:', err);
-      setError('Erro ao carregar agências');
+      console.error('Erro ao carregar Tenets:', err);
+      setError('Erro ao carregar Tenets');
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function Agencias() {
     setError(null);
 
     try {
-      if (editingAgencia) {
-        await api.patch(`/admin/agencias/${editingAgencia.id}`, {
+      if (editingTenet) {
+        await api.patch(`/admin/agencias/${editingTenet.id}`, {
           nome: formData.nome,
           email: formData.email,
           instance_name: formData.instance_name,
@@ -59,22 +59,22 @@ export default function Agencias() {
       }
 
       resetForm();
-      loadAgencias();
+      loadTenets();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Erro ao salvar agência:', err);
-      setError(err.response?.data?.detail || 'Erro ao salvar agência');
+      console.error('Erro ao salvar Tenet:', err);
+      setError(err.response?.data?.detail || 'Erro ao salvar Tenet');
     }
   };
 
-  const handleEdit = (agencia) => {
-    setEditingAgencia(agencia);
+  const handleEdit = (tenet) => {
+    setEditingTenet(tenet);
     setFormData({
-      nome: agencia.nome || '',
-      email: agencia.email || '',
-      instance_name: agencia.instance_name || '',
-      whatsapp_phone_id: agencia.whatsapp_phone_id || '',
-      nicho: agencia.nicho || 'sdr',
+      nome: tenet.nome || '',
+      email: tenet.email || '',
+      instance_name: tenet.instance_name || '',
+      whatsapp_phone_id: tenet.whatsapp_phone_id || '',
+      nicho: tenet.nicho || 'sdr',
       admin_nome: '',
       admin_email: '',
       admin_senha: ''
@@ -84,18 +84,18 @@ export default function Agencias() {
 
   const handleDelete = async (id, nome, totalUsuarios) => {
     const mensagem = totalUsuarios > 0
-      ? `⚠️ ATENÇÃO!\n\nAo deletar a agência "${nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n• ${totalUsuarios} usuário(s) vinculado(s)\n• Todas as conversas\n• Todas as mensagens\n• Configurações e integrações\n\nEsta ação NÃO pode ser desfeita.\n\nDeseja continuar?`
-      : `Tem certeza que deseja deletar a agência "${nome}"?\n\nTodas as conversas e configurações serão removidas.\n\nEsta ação NÃO pode ser desfeita.`;
+      ? `⚠️ ATENÇÃO!\n\nAo deletar o Tenet "${nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n• ${totalUsuarios} usuário(s) vinculado(s)\n• Todas as conversas\n• Todas as mensagens\n• Configurações e integrações\n\nEsta ação NÃO pode ser desfeita.\n\nDeseja continuar?`
+      : `Tem certeza que deseja deletar o Tenet "${nome}"?\n\nTodas as conversas e configurações serão removidas.\n\nEsta ação NÃO pode ser desfeita.`;
 
     if (!confirm(mensagem)) return;
 
     try {
       await api.delete(`/admin/agencias/${id}`);
-      setSuccess(`Agência "${nome}" deletada com sucesso!`);
-      loadAgencias();
+      setSuccess(`Tenet "${nome}" deletado com sucesso!`);
+      loadTenets();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erro ao excluir agência');
+      setError(err.response?.data?.detail || 'Erro ao excluir Tenet');
     }
   };
 
@@ -110,7 +110,7 @@ export default function Agencias() {
       admin_email: '',
       admin_senha: ''
     });
-    setEditingAgencia(null);
+    setEditingTenet(null);
     setShowModal(false);
     setError(null);
   };
@@ -126,7 +126,7 @@ export default function Agencias() {
     return colors[nicho?.toLowerCase()] || colors.custom;
   };
 
-  const filteredAgencias = agencias.filter(a =>
+  const filteredTenets = tenets.filter(a =>
     a.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -180,8 +180,8 @@ export default function Agencias() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenet</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nicho</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">TENET</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">TIPO</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuários</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Leads</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Criado</th>
@@ -189,7 +189,7 @@ export default function Agencias() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredAgencias.length === 0 ? (
+            {filteredTenets.length === 0 ? (
               <tr>
                 <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -197,45 +197,45 @@ export default function Agencias() {
                 </td>
               </tr>
             ) : (
-              filteredAgencias.map((agencia) => (
-                <tr key={agencia.id} className="hover:bg-gray-50">
+              filteredTenets.map((tenet) => (
+                <tr key={tenet.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{agencia.nome}</div>
-                        <div className="text-sm text-gray-500">{agencia.email}</div>
+                        <div className="font-medium text-gray-900">{tenet.nome}</div>
+                        <div className="text-sm text-gray-500">{tenet.email}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getNichoColor(agencia.nicho)}`}>
-                      {agencia.nicho?.toUpperCase() || 'SDR'}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getNichoColor(tenet.nicho)}`}>
+                      {tenet.nicho?.toUpperCase() || 'SDR'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 text-gray-600">
                       <Users className="w-4 h-4" />
-                      <span>{agencia.total_usuarios || 0}</span>
+                      <span>{tenet.total_usuarios || 0}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1 text-gray-600">
                       <MessageSquare className="w-4 h-4" />
-                      <span>{agencia.total_conversas || 0}</span>
+                      <span>{tenet.total_conversas || 0}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(agencia.created_at).toLocaleDateString('pt-BR')}
+                    {new Date(tenet.created_at).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleEdit(agencia)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                      <button onClick={() => handleEdit(tenet)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(agencia.id, agencia.nome, agencia.total_usuarios || 0)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                      <button onClick={() => handleDelete(tenet.id, tenet.nome, tenet.total_usuarios || 0)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -252,7 +252,7 @@ export default function Agencias() {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                {editingAgencia ? 'Editar Tenet' : 'Novo Tenet'}
+                {editingTenet ? 'Editar Tenet' : 'Novo Tenet'}
               </h2>
               <button onClick={resetForm} className="p-1 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
@@ -320,7 +320,7 @@ export default function Agencias() {
                 </div>
               </div>
 
-              {!editingAgencia && (
+              {!editingTenet && (
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">Administrador</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -364,7 +364,7 @@ export default function Agencias() {
                   Cancelar
                 </button>
                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  {editingAgencia ? 'Salvar' : 'Novo Tenet'}
+                  {editingTenet ? 'Salvar' : 'Novo Tenet'}
                 </button>
               </div>
             </form>

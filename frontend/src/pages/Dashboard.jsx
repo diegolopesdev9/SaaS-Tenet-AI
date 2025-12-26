@@ -141,7 +141,7 @@ export default function Dashboard({ agencyId }) {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total de Tenets</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_agencias || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">cadastradas</p>
+                <p className="text-xs text-gray-500 mt-1">cadastrados</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Building2 className="w-6 h-6 text-purple-600" />
