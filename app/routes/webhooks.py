@@ -14,6 +14,7 @@ from app.services.tenet_service import TenetService
 from app.services.conversation_service import ConversationService
 from app.services.crm_service import CRMService
 from app.services.notification_service import NotificationService
+from app.services.admin_whatsapp_service import admin_whatsapp_service
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -73,11 +74,11 @@ async def verify_meta_webhook(
     """
     # Token de verificação (configure no .env ou use um padrão para teste)
     VERIFY_TOKEN = os.getenv("META_WEBHOOK_VERIFY_TOKEN", "tenet_ai_verify_token")
-    
+
     if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
         logger.info("Webhook Meta verificado com sucesso")
         return int(hub_challenge)
-    
+
     logger.warning(f"Falha na verificação do webhook Meta: mode={hub_mode}")
     raise HTTPException(status_code=403, detail="Verification failed")
 
@@ -90,31 +91,31 @@ async def receive_meta_webhook(request: Request):
     """
     try:
         payload = await request.json()
-        
+
         # Verifica se é uma notificação de mensagem
         if payload.get("object") != "whatsapp_business_account":
             return {"status": "ignored", "reason": "not whatsapp"}
-        
+
         # Importa o parser
         from app.services.meta_whatsapp_service import MetaWhatsAppService
-        
+
         # Extrai dados da mensagem
         message_data = MetaWhatsAppService.parse_webhook_message(payload)
-        
+
         if not message_data:
             return {"status": "ok", "message": "no message to process"}
-        
+
         # Log da mensagem recebida
         logger.info(f"Mensagem Meta recebida de {message_data.get('from', 'unknown')[:6]}***")
-        
+
         # TODO: Processar mensagem similar ao webhook Evolution
         # Por enquanto, apenas confirma recebimento
-        
+
         return {
             "status": "received",
             "message_id": message_data.get("message_id")
         }
-        
+
     except Exception as e:
         logger.error(f"Erro no webhook Meta: {e}")
         return {"status": "error", "detail": str(e)}
