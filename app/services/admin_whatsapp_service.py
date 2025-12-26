@@ -1,0 +1,402 @@
+
+"""
+Serviço para gerenciar comandos do admin via WhatsApp e relatórios.
+"""
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Dict, List
+from app.database import get_supabase_client
+
+logger = logging.getLogger(__name__)
+
+
+class AdminWhatsAppService:
+    """Serviço para processar comandos do admin e enviar relatórios."""
+    
+    # Comandos disponíveis
+    COMMANDS = {
+        "relatorio": "Gera relatório completo",
+        "leads": "Lista leads do dia",
+        "leads hoje": "Lista leads de hoje",
+        "leads semana": "Lista leads da semana",
+        "conversas": "Resumo de conversas ativas",
+        "qualificados": "Lista leads qualificados",
+        "metricas": "Métricas gerais",
+        "ajuda": "Lista comandos disponíveis",
+        "pausar": "Pausa o bot temporariamente",
+        "retomar": "Retoma o bot",
+        "status": "Status do bot"
+    }
+    
+    def __init__(self):
+        self.supabase = get_supabase_client()
+    
+    async def is_admin_number(self, tenet_id: str, phone_number: str) -> bool:
+        """Verifica se o número é do admin do tenet."""
+        try:
+            result = self.supabase.table("tenets").select(
+                "admin_whatsapp_number"
+            ).eq("id", tenet_id).execute()
+            
+            if not result.data:
+                return False
+            
+            admin_number = result.data[0].get("admin_whatsapp_number")
+            if not admin_number:
+                return False
+            
+            # Normalizar números para comparação
+            normalized_admin = self._normalize_phone(admin_number)
+            normalized_incoming = self._normalize_phone(phone_number)
+            
+            return normalized_admin == normalized_incoming
+            
+        except Exception as e:
+            logger.error(f"Erro ao verificar admin: {e}")
+            return False
+    
+    def _normalize_phone(self, phone: str) -> str:
+        """Normaliza número de telefone removendo caracteres especiais."""
+        if not phone:
+            return ""
+        # Remove tudo que não é número
+        normalized = ''.join(filter(str.isdigit, phone))
+        # Se começar com 55 e tiver mais de 11 dígitos, remove o 55
+        if normalized.startswith('55') and len(normalized) > 11:
+            normalized = normalized[2:]
+        return normalized
+    
+    async def process_command(self, tenet_id: str, message: str) -> Optional[str]:
+        """Processa comando do admin e retorna resposta."""
+        command = message.lower().strip()
+        
+        # Log do comando
+        await self._log_command(tenet_id, command, message)
+        
+        if command in ["ajuda", "help", "comandos", "?"]:
+            return self._get_help_message()
+        
+        elif command in ["relatorio", "relatório", "report"]:
+            return await self._generate_full_report(tenet_id)
+        
+        elif command in ["leads", "leads hoje"]:
+            return await self._get_leads_today(tenet_id)
+        
+        elif command == "leads semana":
+            return await self._get_leads_week(tenet_id)
+        
+        elif command in ["conversas", "ativas"]:
+            return await self._get_active_conversations(tenet_id)
+        
+        elif command in ["qualificados", "qualified"]:
+            return await self._get_qualified_leads(tenet_id)
+        
+        elif command in ["metricas", "métricas", "metrics"]:
+            return await self._get_metrics(tenet_id)
+        
+        elif command in ["status", "bot"]:
+            return await self._get_bot_status(tenet_id)
+        
+        elif command in ["pausar", "pause", "parar"]:
+            return await self._pause_bot(tenet_id)
+        
+        elif command in ["retomar", "resume", "continuar"]:
+            return await self._resume_bot(tenet_id)
+        
+        else:
+            return None  # Não é um comando reconhecido
+    
+    def _get_help_message(self) -> str:
+        """Retorna mensagem de ajuda com comandos disponíveis."""
+        msg = "🤖 *Comandos Disponíveis*\n\n"
+        for cmd, desc in self.COMMANDS.items():
+            msg += f"• *{cmd}* - {desc}\n"
+        return msg
+    
+    async def _generate_full_report(self, tenet_id: str) -> str:
+        """Gera relatório completo do tenet."""
+        try:
+            now = datetime.now(timezone.utc)
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            week_start = today_start - timedelta(days=7)
+            
+            # Buscar dados
+            conversas = self.supabase.table("conversas").select(
+                "id, lead_status, lead_phone, created_at, lead_data"
+            ).eq("tenet_id", tenet_id).gte("created_at", week_start.isoformat()).execute()
+            
+            data = conversas.data or []
+            
+            # Métricas
+            total_leads = len(data)
+            leads_hoje = len([c for c in data if c.get("created_at", "")[:10] == now.strftime("%Y-%m-%d")])
+            qualificados = len([c for c in data if c.get("lead_status") == "qualificado"])
+            agendados = len([c for c in data if c.get("lead_status") == "agendado"])
+            em_andamento = len([c for c in data if c.get("lead_status") == "em_andamento"])
+            
+            # Calcular taxa
+            taxa_conversao = round((qualificados + agendados) / max(total_leads, 1) * 100, 1)
+            
+            msg = f"""📊 *Relatório - {now.strftime("%d/%m/%Y %H:%M")}*
+
+📈 *Últimos 7 dias:*
+- Total de leads: {total_leads}
+- Leads hoje: {leads_hoje}
+- Em andamento: {em_andamento}
+- Qualificados: {qualificados}
+- Agendados: {agendados}
+- Taxa de conversão: {taxa_conversao}%
+
+"""
+            
+            # Últimos 5 leads
+            if data:
+                msg += "*🆕 Últimos leads:*\n"
+                for lead in sorted(data, key=lambda x: x.get("created_at", ""), reverse=True)[:5]:
+                    phone = lead.get("lead_phone", "")[-4:]
+                    status = lead.get("lead_status", "novo")
+                    nome = lead.get("lead_data", {}).get("nome", "Não identificado")
+                    msg += f"• {nome} (***{phone}) - {status}\n"
+            
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar relatório: {e}")
+            return "❌ Erro ao gerar relatório. Tente novamente."
+    
+    async def _get_leads_today(self, tenet_id: str) -> str:
+        """Retorna leads de hoje."""
+        try:
+            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            result = self.supabase.table("conversas").select(
+                "lead_phone, lead_status, lead_data, created_at"
+            ).eq("tenet_id", tenet_id).gte("created_at", today.isoformat()).execute()
+            
+            leads = result.data or []
+            
+            if not leads:
+                return "📭 Nenhum lead recebido hoje."
+            
+            msg = f"📋 *Leads de Hoje ({len(leads)})*\n\n"
+            
+            for lead in leads:
+                phone = lead.get("lead_phone", "")[-4:]
+                status = lead.get("lead_status", "novo")
+                nome = lead.get("lead_data", {}).get("nome", "Não identificado")
+                hora = lead.get("created_at", "")
+                if hora:
+                    hora = datetime.fromisoformat(hora.replace("Z", "+00:00")).strftime("%H:%M")
+                msg += f"• {hora} - {nome} (***{phone}) - _{status}_\n"
+            
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar leads hoje: {e}")
+            return "❌ Erro ao buscar leads."
+    
+    async def _get_leads_week(self, tenet_id: str) -> str:
+        """Retorna leads da semana."""
+        try:
+            week_start = datetime.now(timezone.utc) - timedelta(days=7)
+            
+            result = self.supabase.table("conversas").select(
+                "lead_phone, lead_status, lead_data, created_at"
+            ).eq("tenet_id", tenet_id).gte("created_at", week_start.isoformat()).execute()
+            
+            leads = result.data or []
+            
+            if not leads:
+                return "📭 Nenhum lead nos últimos 7 dias."
+            
+            msg = f"📋 *Leads da Semana ({len(leads)})*\n\n"
+            
+            # Agrupar por dia
+            by_day = {}
+            for lead in leads:
+                date = lead.get("created_at", "")[:10]
+                if date not in by_day:
+                    by_day[date] = []
+                by_day[date].append(lead)
+            
+            for date in sorted(by_day.keys(), reverse=True):
+                dt = datetime.strptime(date, "%Y-%m-%d")
+                msg += f"*{dt.strftime('%d/%m')}* - {len(by_day[date])} leads\n"
+            
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar leads semana: {e}")
+            return "❌ Erro ao buscar leads."
+    
+    async def _get_active_conversations(self, tenet_id: str) -> str:
+        """Retorna conversas ativas."""
+        try:
+            result = self.supabase.table("conversas").select(
+                "lead_phone, lead_status, lead_data, last_message_at"
+            ).eq("tenet_id", tenet_id).eq("lead_status", "em_andamento").execute()
+            
+            conversas = result.data or []
+            
+            if not conversas:
+                return "💬 Nenhuma conversa ativa no momento."
+            
+            msg = f"💬 *Conversas Ativas ({len(conversas)})*\n\n"
+            
+            for conv in conversas[:10]:
+                phone = conv.get("lead_phone", "")[-4:]
+                nome = conv.get("lead_data", {}).get("nome", "Não identificado")
+                msg += f"• {nome} (***{phone})\n"
+            
+            if len(conversas) > 10:
+                msg += f"\n_...e mais {len(conversas) - 10} conversas_"
+            
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar conversas: {e}")
+            return "❌ Erro ao buscar conversas."
+    
+    async def _get_qualified_leads(self, tenet_id: str) -> str:
+        """Retorna leads qualificados."""
+        try:
+            result = self.supabase.table("conversas").select(
+                "lead_phone, lead_data, created_at"
+            ).eq("tenet_id", tenet_id).eq("lead_status", "qualificado").execute()
+            
+            leads = result.data or []
+            
+            if not leads:
+                return "⭐ Nenhum lead qualificado ainda."
+            
+            msg = f"⭐ *Leads Qualificados ({len(leads)})*\n\n"
+            
+            for lead in leads[:10]:
+                phone = lead.get("lead_phone", "")[-4:]
+                nome = lead.get("lead_data", {}).get("nome", "Não identificado")
+                email = lead.get("lead_data", {}).get("email", "")
+                msg += f"• {nome} (***{phone})"
+                if email:
+                    msg += f" - {email}"
+                msg += "\n"
+            
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar qualificados: {e}")
+            return "❌ Erro ao buscar leads qualificados."
+    
+    async def _get_metrics(self, tenet_id: str) -> str:
+        """Retorna métricas gerais."""
+        try:
+            # Total de conversas
+            total = self.supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).execute()
+            
+            # Por status
+            qualificados = self.supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).eq("lead_status", "qualificado").execute()
+            agendados = self.supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).eq("lead_status", "agendado").execute()
+            perdidos = self.supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).eq("lead_status", "perdido").execute()
+            
+            total_count = total.count or 0
+            qualificados_count = qualificados.count or 0
+            agendados_count = agendados.count or 0
+            perdidos_count = perdidos.count or 0
+            
+            taxa = round((qualificados_count + agendados_count) / max(total_count, 1) * 100, 1)
+            
+            msg = f"""📊 *Métricas Gerais*
+
+- Total de leads: {total_count}
+- Qualificados: {qualificados_count}
+- Agendados: {agendados_count}
+- Perdidos: {perdidos_count}
+- Taxa de conversão: {taxa}%
+"""
+            return msg
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar métricas: {e}")
+            return "❌ Erro ao buscar métricas."
+    
+    async def _get_bot_status(self, tenet_id: str) -> str:
+        """Retorna status do bot."""
+        try:
+            result = self.supabase.table("tenets").select(
+                "nome, instance_name, whatsapp_api_type"
+            ).eq("id", tenet_id).execute()
+            
+            if not result.data:
+                return "❌ Tenet não encontrado."
+            
+            tenet = result.data[0]
+            
+            return f"""🤖 *Status do Bot*
+
+- Tenet: {tenet.get("nome")}
+- Instância: {tenet.get("instance_name", "Não configurada")}
+- API: {tenet.get("whatsapp_api_type", "evolution")}
+- Status: ✅ Ativo
+"""
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar status: {e}")
+            return "❌ Erro ao buscar status."
+    
+    async def _pause_bot(self, tenet_id: str) -> str:
+        """Pausa o bot temporariamente."""
+        # TODO: Implementar lógica de pausa
+        return "⏸️ Bot pausado temporariamente. Use *retomar* para reativar."
+    
+    async def _resume_bot(self, tenet_id: str) -> str:
+        """Retoma o bot."""
+        # TODO: Implementar lógica de retomada
+        return "▶️ Bot retomado com sucesso!"
+    
+    async def _log_command(self, tenet_id: str, command: str, request_text: str):
+        """Registra comando no log."""
+        try:
+            self.supabase.table("admin_commands_log").insert({
+                "tenet_id": tenet_id,
+                "command": command,
+                "request_text": request_text,
+                "executed_at": datetime.now(timezone.utc).isoformat()
+            }).execute()
+        except Exception as e:
+            logger.warning(f"Erro ao logar comando: {e}")
+    
+    async def send_daily_report(self, tenet_id: str) -> bool:
+        """Envia relatório diário para o admin."""
+        try:
+            # Buscar número do admin
+            result = self.supabase.table("tenets").select(
+                "admin_whatsapp_number, instance_name"
+            ).eq("id", tenet_id).execute()
+            
+            if not result.data:
+                return False
+            
+            admin_number = result.data[0].get("admin_whatsapp_number")
+            instance_name = result.data[0].get("instance_name")
+            
+            if not admin_number or not instance_name:
+                return False
+            
+            # Gerar relatório
+            report = await self._generate_full_report(tenet_id)
+            
+            # Enviar via Evolution API
+            from app.services.whatsapp_service import whatsapp_service
+            await whatsapp_service.send_message(
+                instance_name=instance_name,
+                to=admin_number,
+                message=f"📊 *Relatório Diário*\n\n{report}"
+            )
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Erro ao enviar relatório diário: {e}")
+            return False
+
+
+admin_whatsapp_service = AdminWhatsAppService()
