@@ -1,0 +1,152 @@
+Implemente a exclusão de Tenet com alerta mostrando usuários que serão deletados.
+
+=== BACKEND (app/routes/super_admin.py) ===
+
+1. Crie uma rota para obter preview antes de deletar:
+
+@router.get("/agencias/{tenet_id}/delete-preview")
+async def get_delete_preview(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Retorna preview do que será deletado junto com o tenet."""
+    supabase = get_supabase_client()
+    
+    try:
+        # Buscar tenet
+        tenet = supabase.table("tenets").select("id, nome").eq("id", tenet_id).execute()
+        if not tenet.data:
+            raise HTTPException(status_code=404, detail="Tenet não encontrado")
+        
+        # Contar usuários vinculados
+        usuarios = supabase.table("usuarios").select("id, nome, email").eq("tenet_id", tenet_id).execute()
+        
+        # Contar conversas
+        conversas = supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).execute()
+        
+        return {
+            "tenet": tenet.data[0],
+            "usuarios": usuarios.data or [],
+            "total_usuarios": len(usuarios.data) if usuarios.data else 0,
+            "total_conversas": conversas.count or 0
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao obter preview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+2. Atualize a rota DELETE /agencias/{tenet_id} para deletar tudo:
+
+@router.delete("/agencias/{tenet_id}")
+async def delete_tenet(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Deleta um tenet e todos os dados relacionados."""
+    logger.info(f"Super Admin {current_user['email']} deletando tenet: {tenet_id}")
+
+    supabase = get_supabase_client()
+
+    try:
+        # Verificar se tenet existe
+        tenet = supabase.table("tenets").select("id, nome").eq("id", tenet_id).execute()
+        if not tenet.data:
+            raise HTTPException(status_code=404, detail="Tenet não encontrado")
+        
+        nome_tenet = tenet.data[0].get("nome", "")
+        
+        # 1. Contar usuários que serão deletados
+        usuarios = supabase.table("usuarios").select("id").eq("tenet_id", tenet_id).execute()
+        total_usuarios = len(usuarios.data) if usuarios.data else 0
+        
+        # 2. Deletar usuários do tenet
+        supabase.table("usuarios").delete().eq("tenet_id", tenet_id).execute()
+        logger.info(f"{total_usuarios} usuários deletados do tenet {tenet_id}")
+        
+        # 3. Deletar mensagens das conversas
+        conversas = supabase.table("conversas").select("id").eq("tenet_id", tenet_id).execute()
+        if conversas.data:
+            for conv in conversas.data:
+                supabase.table("mensagens").delete().eq("conversa_id", conv["id"]).execute()
+        
+        # 4. Deletar conversas
+        supabase.table("conversas").delete().eq("tenet_id", tenet_id).execute()
+        
+        # 5. Deletar outras tabelas relacionadas
+        try:
+            supabase.table("notificacoes_config").delete().eq("tenet_id", tenet_id).execute()
+        except:
+            pass
+        try:
+            supabase.table("integracoes_crm").delete().eq("tenet_id", tenet_id).execute()
+        except:
+            pass
+        
+        # 6. Deletar o tenet
+        response = supabase.table("tenets").delete().eq("id", tenet_id).execute()
+
+        return {
+            "success": True,
+            "message": f"Tenet '{nome_tenet}' deletado com sucesso",
+            "usuarios_deletados": total_usuarios
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao deletar tenet: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+=== FRONTEND (página de Tenets) ===
+
+3. Crie um modal de confirmação antes de deletar:
+
+const handleDeleteTenet = async (tenetId) => {
+  try {
+    // Buscar preview do que será deletado
+    const preview = await api.get(`/admin/agencias/${tenetId}/delete-preview`);
+    const { tenet, usuarios, total_usuarios, total_conversas } = preview.data;
+    
+    // Montar mensagem de confirmação
+    let mensagem = `⚠️ ATENÇÃO!\n\nAo deletar o Tenet "${tenet.nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n`;
+    
+    if (total_usuarios > 0) {
+      mensagem += `• ${total_usuarios} usuário(s):\n`;
+      usuarios.slice(0, 5).forEach(u => {
+        mensagem += `  - ${u.nome} (${u.email})\n`;
+      });
+      if (total_usuarios > 5) {
+        mensagem += `  - e mais ${total_usuarios - 5} usuário(s)...\n`;
+      }
+    }
+    
+    mensagem += `• ${total_conversas} conversa(s) e suas mensagens\n`;
+    mensagem += `• Todas as configurações e integrações\n\n`;
+    mensagem += `Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?`;
+    
+    if (!confirm(mensagem)) return;
+    
+    // Confirmar novamente para tenets com usuários
+    if (total_usuarios > 0) {
+      const confirmar = prompt(`Digite "${tenet.nome}" para confirmar a exclusão:`);
+      if (confirmar !== tenet.nome) {
+        alert('Nome incorreto. Exclusão cancelada.');
+        return;
+      }
+    }
+    
+    // Deletar
+    await api.delete(`/admin/agencias/${tenetId}`);
+    setMessage({ type: 'success', text: `Tenet "${tenet.nome}" deletado com sucesso` });
+    loadTenets(); // Recarregar lista
+    
+  } catch (err) {
+    setMessage({ type: 'error', text: err.response?.data?.detail || 'Erro ao deletar tenet' });
+  }
+};
+
+4. No botão de deletar, chame a nova função:
+   onClick={() => handleDeleteTenet(tenet.id)}
