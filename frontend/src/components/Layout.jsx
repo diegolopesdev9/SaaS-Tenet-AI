@@ -244,28 +244,32 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                   <span className="flex-1">Dashboard Geral</span>
                 </NavLink>
 
-                <div className="px-3 py-2 mt-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
-                </div>
-                {superAdminNavigation.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <NavLink
-                      key={item.name}
-                      to={item.href}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-purple-50 text-purple-700'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }`
-                      }
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                    </NavLink>
-                  )
-                })}
+                {user?.role === 'super_admin' && (
+                  <>
+                    <div className="px-3 py-2 mt-4">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
+                    </div>
+                    {superAdminNavigation.map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <NavLink
+                          key={item.name}
+                          to={item.href}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-purple-50 text-purple-700'
+                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                        >
+                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <span className="flex-1">{item.name}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </>
+                )}
               </>
             )}
 
@@ -295,28 +299,32 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                   )
                 })}
 
-                <div className="px-3 py-2 mt-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
-                </div>
-                {superAdminNavigation.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <NavLink
-                      key={item.name}
-                      to={item.href}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-purple-50 text-purple-700'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                        }`
-                      }
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                    </NavLink>
-                  )
-                })}
+                {user?.role === 'super_admin' && (
+                  <>
+                    <div className="px-3 py-2 mt-4">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
+                    </div>
+                    {superAdminNavigation.map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <NavLink
+                          key={item.name}
+                          to={item.href}
+                          className={({ isActive }) =>
+                            `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-purple-50 text-purple-700'
+                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            }`
+                          }
+                        >
+                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <span className="flex-1">{item.name}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </>
+                )}
               </>
             )}
 

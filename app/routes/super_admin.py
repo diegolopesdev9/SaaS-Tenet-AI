@@ -83,18 +83,24 @@ AgenciaResponse = TenetResponse
 @router.get("/tenets")
 @router.get("/agencias")
 async def list_all_tenets(current_user: dict = Depends(get_current_user)):
-    """Lista todos os tenets com métricas resumidas (apenas super_admin)."""
-
-    if current_user.get("role") != "super_admin":
-        raise HTTPException(status_code=403, detail="Acesso restrito a super administradores")
+    """Lista tenets baseado no role do usuário."""
 
     supabase = get_supabase_client()
 
     try:
-        # Buscar tenets
-        response = supabase.table("tenets").select(
-            "id, nome, email, created_at, instance_name, whatsapp_phone_id, nicho"
-        ).order("nome").execute()
+        # Super Admin vê todos os tenets
+        if current_user.get("role") == "super_admin":
+            response = supabase.table("tenets").select(
+                "id, nome, email, created_at, instance_name, whatsapp_phone_id, nicho"
+            ).order("nome").execute()
+        else:
+            # Usuário comum só vê seu próprio tenet
+            tenet_id = current_user.get("tenet_id")
+            if not tenet_id:
+                return []
+            response = supabase.table("tenets").select(
+                "id, nome, email, created_at, instance_name, whatsapp_phone_id, nicho"
+            ).eq("id", tenet_id).execute()
 
         tenets = response.data or []
 
