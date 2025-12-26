@@ -6,8 +6,8 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 
 
-class AgencyConfigResponse(BaseModel):
-    """Schema de resposta para configuração de agência."""
+class TenetConfigResponse(BaseModel):
+    """Schema de resposta para configuração de tenet."""
     
     id: str
     nome: str
@@ -26,11 +26,11 @@ class AgencyConfigResponse(BaseModel):
     meta_phone_number_id: Optional[str] = None
     meta_business_account_id: Optional[str] = None
     has_meta_token: bool = False
-    nicho: Optional[str] = "sdr"
+    tipo: Optional[str] = "sdr"
 
 
-class AgencyConfigUpdate(BaseModel):
-    """Schema para atualização de configuração de agência."""
+class TenetConfigUpdate(BaseModel):
+    """Schema para atualização de configuração de tenet."""
     
     nome: Optional[str] = Field(None, max_length=100)
     instance_name: Optional[str] = Field(None, max_length=100)
@@ -48,7 +48,7 @@ class AgencyConfigUpdate(BaseModel):
     meta_phone_number_id: Optional[str] = None
     meta_business_account_id: Optional[str] = None
     meta_access_token: Optional[str] = None
-    nicho: Optional[str] = None
+    tipo: Optional[str] = None
 
 
 class ConversationSummary(BaseModel):
@@ -68,3 +68,8 @@ class ApiResponse(BaseModel):
     success: bool
     message: str
     data: Optional[Dict[str, Any]] = None
+
+
+# Aliases para compatibilidade
+AgencyConfigResponse = TenetConfigResponse
+AgencyConfigUpdate = TenetConfigUpdate
