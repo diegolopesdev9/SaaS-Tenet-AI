@@ -1,0 +1,57 @@
+Implemente controle de permissões para que usuários comuns só vejam seu próprio Tenet.
+
+=== BACKEND (app/routes/super_admin.py) ===
+
+1. Na rota GET /api/admin/agencias (ou /tenets), adicione filtro por role:
+
+@router.get("/agencias")
+async def list_all_tenets(current_user: dict = Depends(get_current_user)):
+    """Lista tenets baseado no role do usuário."""
+    
+    supabase = get_supabase_client()
+    
+    try:
+        # Super Admin vê todos os tenets
+        if current_user.get("role") == "super_admin":
+            response = supabase.table("tenets").select(
+                "id, nome, email, created_at, instance_name, whatsapp_phone_id, tipo"
+            ).order("nome").execute()
+        else:
+            # Usuário comum só vê seu próprio tenet
+            tenet_id = current_user.get("tenet_id")
+            if not tenet_id:
+                return []
+            response = supabase.table("tenets").select(
+                "id, nome, email, created_at, instance_name, whatsapp_phone_id, tipo"
+            ).eq("id", tenet_id).execute()
+        
+        tenets = response.data or []
+        
+        # Continua com a lógica de contagem de usuários e conversas...
+        # (manter o resto do código igual)
+
+=== FRONTEND ===
+
+2. No Sidebar, oculte a seção ADMINISTRAÇÃO para usuários não super_admin:
+
+{user.role === 'super_admin' && (
+  <div className="admin-section">
+    <span className="section-title">ADMINISTRAÇÃO</span>
+    <NavLink to="/admin/agencias">Tenets</NavLink>
+    <NavLink to="/admin/usuarios">Usuários</NavLink>
+    <NavLink to="/admin/templates">Templates</NavLink>
+    <NavLink to="/admin/ab-tests">A/B Tests</NavLink>
+  </div>
+)}
+
+3. Para usuários comuns, o dropdown de Tenet deve:
+   - Mostrar apenas seu Tenet (já vem filtrado do backend)
+   - OU ocultar completamente o seletor se só tem 1 tenet
+
+4. Na página de Tenets, redirecione usuários não super_admin:
+
+useEffect(() => {
+  if (user && user.role !== 'super_admin') {
+    navigate('/dashboard'); // ou mostrar mensagem de acesso negado
+  }
+}, [user]);
