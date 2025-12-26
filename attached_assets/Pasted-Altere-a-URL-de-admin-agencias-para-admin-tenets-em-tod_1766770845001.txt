@@ -1,0 +1,53 @@
+Altere a URL de /admin/agencias para /admin/tenets em todo o projeto.
+
+=== FRONTEND ===
+
+1. No arquivo src/App.jsx (ou onde estão as rotas):
+   - Trocar: path="/admin/agencias" → path="/admin/tenets"
+   - Adicionar redirect de /admin/agencias para /admin/tenets (compatibilidade)
+
+   Exemplo:
+   <Route path="/admin/tenets" element={<Agencias />} />
+   <Route path="/admin/agencias" element={<Navigate to="/admin/tenets" replace />} />
+
+2. No Sidebar (src/components/Sidebar.jsx ou similar):
+   - Trocar: to="/admin/agencias" → to="/admin/tenets"
+   - Trocar: href="/admin/agencias" → href="/admin/tenets"
+
+3. Em qualquer outro arquivo que tenha links ou navigate para /admin/agencias:
+   - Trocar para /admin/tenets
+
+=== BACKEND ===
+
+4. No arquivo app/routes/super_admin.py:
+   - Manter as rotas em /api/admin/agencias funcionando (não quebrar frontend antigo)
+   - OU criar rotas duplicadas com prefixo /api/admin/tenets
+
+   Opção simples - adicionar alias no final do arquivo:
+   
+   # Alias para novas URLs
+   @router.get("/tenets")
+   async def list_tenets_alias(current_user: dict = Depends(get_current_user)):
+       return await list_all_tenets(current_user)
+   
+   @router.post("/tenets")
+   async def create_tenet_alias(tenet: TenetCreate, current_user: dict = Depends(require_super_admin)):
+       return await create_tenet(tenet, current_user)
+   
+   @router.delete("/tenets/{tenet_id}")
+   async def delete_tenet_alias(tenet_id: str, current_user: dict = Depends(require_super_admin)):
+       return await delete_tenet(tenet_id, current_user)
+   
+   @router.get("/tenets/{tenet_id}/delete-preview")
+   async def preview_alias(tenet_id: str, current_user: dict = Depends(require_super_admin)):
+       return await get_delete_preview(tenet_id, current_user)
+
+5. Atualize as chamadas de API no frontend:
+   - /api/admin/agencias → /api/admin/tenets
+   - Ou mantenha /api/admin/agencias se preferir só mudar a URL visível
+
+=== BUSCAR E SUBSTITUIR ===
+
+Nos arquivos do frontend, faça:
+- "/admin/agencias" → "/admin/tenets"
+- '/admin/agencias' → '/admin/tenets'
