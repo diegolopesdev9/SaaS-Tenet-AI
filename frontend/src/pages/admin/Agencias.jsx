@@ -29,6 +29,51 @@ function Agencias() {
     tenet.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleDeleteTenet = async (tenetId) => {
+    try {
+      // Buscar preview do que será deletado
+      const preview = await api.get(`/admin/agencias/${tenetId}/delete-preview`);
+      const { tenet, usuarios, total_usuarios, total_conversas } = preview.data;
+      
+      // Montar mensagem de confirmação
+      let mensagem = `⚠️ ATENÇÃO!\n\nAo deletar o Tenet "${tenet.nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n`;
+      
+      if (total_usuarios > 0) {
+        mensagem += `• ${total_usuarios} usuário(s):\n`;
+        usuarios.slice(0, 5).forEach(u => {
+          mensagem += `  - ${u.nome} (${u.email})\n`;
+        });
+        if (total_usuarios > 5) {
+          mensagem += `  - e mais ${total_usuarios - 5} usuário(s)...\n`;
+        }
+      }
+      
+      mensagem += `• ${total_conversas} conversa(s) e suas mensagens\n`;
+      mensagem += `• Todas as configurações e integrações\n\n`;
+      mensagem += `Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?`;
+      
+      if (!confirm(mensagem)) return;
+      
+      // Confirmar novamente para tenets com usuários
+      if (total_usuarios > 0) {
+        const confirmar = prompt(`Digite "${tenet.nome}" para confirmar a exclusão:`);
+        if (confirmar !== tenet.nome) {
+          alert('Nome incorreto. Exclusão cancelada.');
+          return;
+        }
+      }
+      
+      // Deletar
+      await api.delete(`/admin/agencias/${tenetId}`);
+      alert(`Tenet "${tenet.nome}" deletado com sucesso`);
+      loadTenets(); // Recarregar lista
+      
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao deletar tenet');
+      console.error('Erro ao deletar tenet:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -124,7 +169,11 @@ function Agencias() {
                         <button className="text-gray-600 hover:text-gray-900">
                           <Edit2 className="w-5 h-5" />
                         </button>
-                        <button className="text-red-600 hover:text-red-900">
+                        <button 
+                          onClick={() => handleDeleteTenet(tenet.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Deletar Tenet"
+                        >
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>

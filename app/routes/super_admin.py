@@ -1,4 +1,3 @@
-
 """
 Rotas de Super Admin para gerenciamento de tenets e usuários.
 """
@@ -352,13 +351,46 @@ async def create_tenet(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/agencias/{tenet_id}/delete-preview")
+async def get_delete_preview(
+    tenet_id: str,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Retorna preview do que será deletado junto com o tenet."""
+    supabase = get_supabase_client()
+
+    try:
+        # Buscar tenet
+        tenet = supabase.table("tenets").select("id, nome").eq("id", tenet_id).execute()
+        if not tenet.data:
+            raise HTTPException(status_code=404, detail="Tenet não encontrado")
+
+        # Contar usuários vinculados
+        usuarios = supabase.table("usuarios").select("id, nome, email").eq("tenet_id", tenet_id).execute()
+
+        # Contar conversas
+        conversas = supabase.table("conversas").select("id", count="exact").eq("tenet_id", tenet_id).execute()
+
+        return {
+            "tenet": tenet.data[0],
+            "usuarios": usuarios.data or [],
+            "total_usuarios": len(usuarios.data) if usuarios.data else 0,
+            "total_conversas": conversas.count or 0
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao obter preview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.delete("/tenets/{tenet_id}")
 @router.delete("/agencias/{tenet_id}")
 async def delete_tenet(
     tenet_id: str,
     current_user: dict = Depends(require_super_admin)
 ):
-    """Deleta um tenet e todos os dados relacionados, incluindo usuários."""
+    """Deleta um tenet e todos os dados relacionados."""
     logger.info(f"Super Admin {current_user['email']} deletando tenet: {tenet_id}")
 
     supabase = get_supabase_client()
@@ -366,56 +398,46 @@ async def delete_tenet(
     try:
         # Verificar se tenet existe
         tenet = supabase.table("tenets").select("id, nome").eq("id", tenet_id).execute()
-        
         if not tenet.data:
             raise HTTPException(status_code=404, detail="Tenet não encontrado")
-        
+
         nome_tenet = tenet.data[0].get("nome", "")
-        
-        # Contar usuários que serão deletados
+
+        # 1. Contar usuários que serão deletados
         usuarios = supabase.table("usuarios").select("id").eq("tenet_id", tenet_id).execute()
         total_usuarios = len(usuarios.data) if usuarios.data else 0
-        
-        # 1. Deletar usuários do tenet
+
+        # 2. Deletar usuários do tenet
         supabase.table("usuarios").delete().eq("tenet_id", tenet_id).execute()
         logger.info(f"{total_usuarios} usuários deletados do tenet {tenet_id}")
-        
-        # 2. Deletar mensagens das conversas do tenet
+
+        # 3. Deletar mensagens das conversas
         conversas = supabase.table("conversas").select("id").eq("tenet_id", tenet_id).execute()
         if conversas.data:
-            conversa_ids = [c["id"] for c in conversas.data]
-            for cid in conversa_ids:
-                supabase.table("mensagens").delete().eq("conversa_id", cid).execute()
-            logger.info(f"Mensagens deletadas de {len(conversa_ids)} conversas")
-        
-        # 3. Deletar conversas do tenet
+            for conv in conversas.data:
+                supabase.table("mensagens").delete().eq("conversa_id", conv["id"]).execute()
+
+        # 4. Deletar conversas
         supabase.table("conversas").delete().eq("tenet_id", tenet_id).execute()
-        logger.info(f"Conversas deletadas do tenet {tenet_id}")
-        
-        # 4. Deletar notificações do tenet
+
+        # 5. Deletar outras tabelas relacionadas
         try:
             supabase.table("notificacoes_config").delete().eq("tenet_id", tenet_id).execute()
         except:
             pass
-        
-        # 5. Deletar integrações CRM
         try:
             supabase.table("integracoes_crm").delete().eq("tenet_id", tenet_id).execute()
         except:
             pass
-        
-        # 6. Finalmente deletar o tenet
+
+        # 6. Deletar o tenet
         response = supabase.table("tenets").delete().eq("id", tenet_id).execute()
 
-        if response.data:
-            logger.info(f"Tenet {nome_tenet} deletado com sucesso")
-            return {
-                "success": True, 
-                "message": f"Tenet '{nome_tenet}' deletado com sucesso",
-                "usuarios_deletados": total_usuarios
-            }
-
-        raise HTTPException(status_code=500, detail="Erro ao deletar tenet")
+        return {
+            "success": True,
+            "message": f"Tenet '{nome_tenet}' deletado com sucesso",
+            "usuarios_deletados": total_usuarios
+        }
 
     except HTTPException:
         raise
