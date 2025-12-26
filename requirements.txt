@@ -17,3 +17,6 @@ pytest==8.0.2
 pytest-asyncio==0.23.5
 # Observability
 sentry-sdk[fastapi]==1.40.0
+google-api-python-client
+google-auth
+google-auth-oauthlib

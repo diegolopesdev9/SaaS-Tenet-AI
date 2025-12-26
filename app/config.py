@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = Field(..., description="Supabase anon/service key")
     ENCRYPTION_KEY: str = Field(..., description="Fernet encryption master key")
     ENVIRONMENT: str = Field(default="development", description="Environment: dev/prod")
-    
+
     # Sentry
     SENTRY_DSN: str = Field(
         default="",
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         default=30,
         description="Token expiration time in minutes"
     )
-    
+
     # Encryption
     FERNET_KEY: str = Field(
         default="",
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         default="http://localhost:3000,http://localhost:5173",
         description="Comma-separated list of allowed origins"
     )
-    
+
     @property
     def cors_origins_list(self) -> list:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
@@ -54,8 +54,13 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # WhatsApp Configuration
-    EVOLUTION_API_URL: str = Field(..., description="Evolution API URL")
-    EVOLUTION_API_KEY: str = Field(..., description="Evolution API Key")
+    EVOLUTION_API_URL: str = os.getenv("EVOLUTION_API_URL", "")
+    EVOLUTION_API_KEY: str = os.getenv("EVOLUTION_API_KEY", "")
+
+    # Google Calendar
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "")
 
     # Meta WhatsApp
     META_WEBHOOK_VERIFY_TOKEN: str = Field(
