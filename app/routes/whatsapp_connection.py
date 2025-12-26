@@ -32,18 +32,18 @@ async def create_whatsapp_instance(
     Cria uma nova instância WhatsApp ou conecta a existente.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("*").eq("id", agencia_id).single().execute()
-        agencia = response.data
+        response = supabase.table("tenets").select("*").eq("id", tenet_id).single().execute()
+        tenet = response.data
 
-        if not agencia:
-            raise HTTPException(status_code=404, detail="Agência não encontrada")
+        if not tenet:
+            raise HTTPException(status_code=404, detail="Tenet não encontrado")
 
-        instance_name = request.instance_name or agencia.get("instance_name") or f"tenet-{agencia_id[:8]}"
+        instance_name = request.instance_name or tenet.get("instance_name") or f"tenet-{tenet_id[:8]}"
 
         # 1. Verificar se instância já existe na Evolution API
         status_check = await evolution_service.get_connection_status(instance_name)
@@ -66,10 +66,10 @@ async def create_whatsapp_instance(
 
             # Atualizar no banco
             try:
-                supabase.table("agencias").update({
+                supabase.table("tenets").update({
                     "instance_name": instance_name,
                     "whatsapp_api_type": "evolution"
-                }).eq("id", agencia_id).execute()
+                }).eq("id", tenet_id).execute()
             except Exception as db_error:
                 logger.warning(f"Aviso ao atualizar DB: {db_error}")
 
@@ -85,10 +85,10 @@ async def create_whatsapp_instance(
 
         if result.get("success"):
             try:
-                supabase.table("agencias").update({
+                supabase.table("tenets").update({
                     "instance_name": instance_name,
                     "whatsapp_api_type": "evolution"
-                }).eq("id", agencia_id).execute()
+                }).eq("id", tenet_id).execute()
             except Exception as db_error:
                 logger.warning(f"Aviso ao atualizar DB: {db_error}")
 
@@ -116,12 +116,12 @@ async def get_qrcode(current_user: dict = Depends(get_current_user)):
     Se a instância não existir, cria automaticamente.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
+        response = supabase.table("tenets").select("instance_name").eq("id", tenet_id).single().execute()
 
         instance_name = response.data.get("instance_name") if response.data else None
 
@@ -141,9 +141,9 @@ async def get_qrcode(current_user: dict = Depends(get_current_user)):
 
             # Atualizar banco
             try:
-                supabase.table("agencias").update({
+                supabase.table("tenets").update({
                     "whatsapp_api_type": "evolution"
-                }).eq("id", agencia_id).execute()
+                }).eq("id", tenet_id).execute()
             except Exception as db_error:
                 logger.warning(f"Aviso ao atualizar DB: {db_error}")
 
@@ -179,16 +179,16 @@ async def get_connection_status(current_user: dict = Depends(get_current_user)):
     Verifica o status de conexão do WhatsApp.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
-        # Buscar instance_name da agência
+        # Buscar instance_name do tenet
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("instance_name, whatsapp_api_type").eq("id", agencia_id).single().execute()
+        response = supabase.table("tenets").select("instance_name, whatsapp_api_type").eq("id", tenet_id).single().execute()
 
-        agencia = response.data
-        instance_name = agencia.get("instance_name") if agencia else None
+        tenet = response.data
+        instance_name = tenet.get("instance_name") if tenet else None
 
         if not instance_name:
             return {
@@ -210,7 +210,7 @@ async def get_connection_status(current_user: dict = Depends(get_current_user)):
                 status_result["profile_picture"] = info_result.get("profile_picture")
 
         status_result["instance_name"] = instance_name
-        status_result["api_type"] = agencia.get("whatsapp_api_type", "evolution")
+        status_result["api_type"] = tenet.get("whatsapp_api_type", "evolution")
 
         return status_result
 
@@ -227,13 +227,13 @@ async def disconnect_whatsapp(current_user: dict = Depends(get_current_user)):
     Desconecta o WhatsApp da instância.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
-        # Buscar instance_name da agência
+        # Buscar instance_name do tenet
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
+        response = supabase.table("tenets").select("instance_name").eq("id", tenet_id).single().execute()
 
         instance_name = response.data.get("instance_name") if response.data else None
 
@@ -261,12 +261,12 @@ async def check_instance_health(current_user: dict = Depends(get_current_user)):
     Retorna se a conexão está realmente funcionando.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("instance_name").eq("id", agencia_id).single().execute()
+        response = supabase.table("tenets").select("instance_name").eq("id", tenet_id).single().execute()
 
         instance_name = response.data.get("instance_name") if response.data else None
 
@@ -289,23 +289,23 @@ async def get_instance_token(current_user: dict = Depends(get_current_user)):
     Obtém o token/hash da instância WhatsApp.
     """
     try:
-        agencia_id = current_user.get("agencia_id")
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Usuário não vinculado a uma agência")
+        tenet_id = current_user.get("tenet_id")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
 
         supabase = get_supabase_client()
-        response = supabase.table("agencias").select("instance_name, whatsapp_token").eq("id", agencia_id).single().execute()
+        response = supabase.table("tenets").select("instance_name, whatsapp_token").eq("id", tenet_id).single().execute()
 
-        agencia = response.data
-        if not agencia or not agencia.get("instance_name"):
+        tenet = response.data
+        if not tenet or not tenet.get("instance_name"):
             return {"success": False, "token": None, "message": "Instância não configurada"}
 
         # Se já temos token salvo no banco, retornar
-        if agencia.get("whatsapp_token"):
-            return {"success": True, "token": agencia.get("whatsapp_token")}
+        if tenet.get("whatsapp_token"):
+            return {"success": True, "token": tenet.get("whatsapp_token")}
 
         # Caso contrário, buscar da Evolution API
-        instance_name = agencia.get("instance_name")
+        instance_name = tenet.get("instance_name")
         info = await evolution_service.get_instance_info(instance_name)
 
         if info.get("success"):
@@ -338,16 +338,16 @@ async def update_api_type(
         raise HTTPException(status_code=400, detail="Tipo de API inválido. Use 'evolution' ou 'meta'")
 
     try:
-        agencia_id = current_user.get("agencia_id")
+        tenet_id = current_user.get("tenet_id")
 
         # Super admin precisa especificar a agência via query param ou usar a selecionada
-        if not agencia_id:
-            raise HTTPException(status_code=400, detail="Selecione uma agência primeiro")
+        if not tenet_id:
+            raise HTTPException(status_code=400, detail="Selecione um Tenet primeiro")
 
         supabase = get_supabase_client()
-        supabase.table("agencias").update({
+        supabase.table("tenets").update({
             "whatsapp_api_type": request.api_type
-        }).eq("id", agencia_id).execute()
+        }).eq("id", tenet_id).execute()
 
         return {
             "success": True,
