@@ -41,12 +41,19 @@ export default function Integrations({ agencyId }) {
     weekly_report_time: '09:00'
   })
   const [calendarStatus, setCalendarStatus] = useState({ connected: false })
+  const [showGoogleTutorial, setShowGoogleTutorial] = useState(false)
+  const [googleCredentials, setGoogleCredentials] = useState({
+    client_id: '',
+    client_secret: ''
+  })
+  const [credentialsConfigured, setCredentialsConfigured] = useState(false)
 
   useEffect(() => {
     loadIntegrations()
     loadLogs()
     loadAdminConfig()
     loadCalendarStatus()
+    loadCredentialsStatus()
   }, [agencyId])
 
   useEffect(() => {
@@ -105,6 +112,34 @@ export default function Integrations({ agencyId }) {
     } catch (error) {
       console.error('Erro ao carregar status calendar:', error)
     }
+  }
+
+  const loadCredentialsStatus = async () => {
+    try {
+      const response = await api.get('/calendar/credentials/status')
+      setCredentialsConfigured(response.data.configured)
+    } catch (error) {
+      console.error('Erro ao verificar credenciais:', error)
+    }
+  }
+
+  const handleSaveGoogleCredentials = async () => {
+    if (!googleCredentials.client_id || !googleCredentials.client_secret) {
+      setMessage({ type: 'error', text: 'Preencha todas as credenciais' })
+      return
+    }
+    
+    setLoading(true)
+    try {
+      await api.post('/calendar/credentials', googleCredentials)
+      setMessage({ type: 'success', text: 'Credenciais salvas com sucesso!' })
+      setCredentialsConfigured(true)
+      setGoogleCredentials({ client_id: '', client_secret: '' })
+      loadCredentialsStatus()
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao salvar credenciais' })
+    }
+    setLoading(false)
   }
 
   const handleSaveAdminConfig = async () => {
@@ -431,46 +466,187 @@ export default function Integrations({ agencyId }) {
 
       {/* Seção Google Calendar */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-red-100 rounded-lg">
-            <Calendar className="w-6 h-6 text-red-600" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Calendar className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Google Calendar</h3>
+              <p className="text-sm text-gray-500">Conecte sua agenda para agendamento automático de reuniões</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold">Google Calendar</h3>
-            <p className="text-sm text-gray-500">Conecte sua agenda para agendamento automático de reuniões</p>
-          </div>
+          
+          <button
+            onClick={() => setShowGoogleTutorial(!showGoogleTutorial)}
+            className="flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
+          >
+            <AlertCircle className="w-5 h-5" />
+            Como configurar?
+          </button>
         </div>
         
-        {calendarStatus.connected ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
-              <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-              <span className="text-green-700">Conectado</span>
-              <span className="text-green-600 font-medium">{calendarStatus.email}</span>
+        {/* Tutorial expandível */}
+        {showGoogleTutorial && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-semibold text-blue-800 mb-3">📋 Passo a passo para configurar o Google Calendar</h4>
+            
+            <ol className="space-y-3 text-sm text-blue-700">
+              <li className="flex gap-2">
+                <span className="font-bold">1.</span>
+                <div>
+                  Acesse o <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Cloud Console</a>
+                </div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">2.</span>
+                <div>Crie um novo projeto ou selecione um existente</div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">3.</span>
+                <div>
+                  Vá em <strong>APIs e Serviços</strong> → <strong>Biblioteca</strong> → Pesquise por <strong>"Google Calendar API"</strong> → Clique em <strong>Ativar</strong>
+                </div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">4.</span>
+                <div>
+                  Vá em <strong>APIs e Serviços</strong> → <strong>Credenciais</strong> → <strong>Criar Credenciais</strong> → <strong>ID do cliente OAuth</strong>
+                </div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">5.</span>
+                <div>
+                  Se pedido, configure a <strong>Tela de Consentimento OAuth</strong>:
+                  <ul className="ml-4 mt-1 list-disc">
+                    <li>Tipo: Externo</li>
+                    <li>Nome do app: Seu nome de preferência</li>
+                    <li>Email de suporte: Seu email</li>
+                  </ul>
+                </div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">6.</span>
+                <div>
+                  Na criação do ID do cliente OAuth:
+                  <ul className="ml-4 mt-1 list-disc">
+                    <li>Tipo: <strong>Aplicativo Web</strong></li>
+                    <li>Nome: TENET AI Calendar</li>
+                    <li>Origens JavaScript autorizadas: <code className="bg-blue-100 px-1 rounded">https://saasmultiagentesdr-production.up.railway.app</code></li>
+                    <li>URIs de redirecionamento: <code className="bg-blue-100 px-1 rounded">https://saasmultiagentesdr-production.up.railway.app/api/calendar/auth/callback</code></li>
+                  </ul>
+                </div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">7.</span>
+                <div>Clique em <strong>Criar</strong> e copie o <strong>Client ID</strong> e <strong>Client Secret</strong></div>
+              </li>
+              
+              <li className="flex gap-2">
+                <span className="font-bold">8.</span>
+                <div>Cole as credenciais nos campos abaixo e clique em <strong>Salvar Credenciais</strong></div>
+              </li>
+            </ol>
+            
+            <div className="mt-4 p-3 bg-yellow-100 rounded-lg">
+              <p className="text-yellow-800 text-sm">
+                <strong>⚠️ Importante:</strong> Enquanto seu app estiver em "Teste" no Google, adicione os emails que poderão usar a integração em "Usuários de teste" na Tela de Consentimento.
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Status das credenciais */}
+        <div className={`flex items-center gap-2 p-3 rounded-lg mb-4 ${credentialsConfigured ? 'bg-green-50' : 'bg-yellow-50'}`}>
+          <span className={`w-3 h-3 rounded-full ${credentialsConfigured ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+          <span className={credentialsConfigured ? 'text-green-700' : 'text-yellow-700'}>
+            {credentialsConfigured ? 'Credenciais configuradas' : 'Credenciais não configuradas'}
+          </span>
+        </div>
+        
+        {/* Formulário de credenciais */}
+        {!credentialsConfigured && (
+          <div className="space-y-4 mb-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Client ID
+              </label>
+              <input
+                type="text"
+                value={googleCredentials.client_id}
+                onChange={(e) => setGoogleCredentials({...googleCredentials, client_id: e.target.value})}
+                placeholder="Cole o Client ID do Google aqui"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Client Secret
+              </label>
+              <input
+                type="password"
+                value={googleCredentials.client_secret}
+                onChange={(e) => setGoogleCredentials({...googleCredentials, client_secret: e.target.value})}
+                placeholder="Cole o Client Secret do Google aqui"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              />
             </div>
             
             <button
-              onClick={handleDisconnectCalendar}
-              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              onClick={handleSaveGoogleCredentials}
+              disabled={loading || !googleCredentials.client_id || !googleCredentials.client_secret}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              Desconectar Google Calendar
+              {loading ? 'Salvando...' : 'Salvar Credenciais'}
             </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-lg">
-              <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-700">Não conectado</span>
-            </div>
-            
-            <button
-              onClick={handleConnectCalendar}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              <img src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png" alt="Google Calendar" className="w-5 h-5" />
-              Conectar Google Calendar
-            </button>
-          </div>
+        )}
+        
+        {/* Botão para reconfigurar credenciais */}
+        {credentialsConfigured && !calendarStatus.connected && (
+          <button
+            onClick={() => setCredentialsConfigured(false)}
+            className="text-sm text-gray-500 hover:text-gray-700 mb-4"
+          >
+            Alterar credenciais
+          </button>
+        )}
+        
+        {/* Status da conexão e botão de conectar */}
+        {credentialsConfigured && (
+          <>
+            {calendarStatus.connected ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
+                  <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                  <span className="text-green-700">Conectado</span>
+                  <span className="text-green-600 font-medium">{calendarStatus.email}</span>
+                </div>
+                
+                <button
+                  onClick={handleDisconnectCalendar}
+                  className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                >
+                  Desconectar Google Calendar
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleConnectCalendar}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                <img src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png" alt="Google Calendar" className="w-5 h-5" />
+                Conectar Google Calendar
+              </button>
+            )}
+          </>
         )}
       </div>
 

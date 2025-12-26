@@ -29,30 +29,51 @@ class GoogleCalendarService:
         self.client_secret = settings.GOOGLE_CLIENT_SECRET
         self.redirect_uri = settings.GOOGLE_REDIRECT_URI
     
-    def get_authorization_url(self, tenet_id: str) -> str:
-        """Gera URL de autorização OAuth2."""
-        flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": self.client_id,
-                    "client_secret": self.client_secret,
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [self.redirect_uri]
-                }
-            },
-            scopes=SCOPES
-        )
-        flow.redirect_uri = self.redirect_uri
-        
-        authorization_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true',
-            state=tenet_id,
-            prompt='consent'
-        )
-        
-        return authorization_url
+    async def get_authorization_url(self, tenet_id: str) -> dict:
+        """Gera URL de autorização OAuth2 usando credenciais do tenet."""
+        try:
+            supabase = get_supabase_client()
+            
+            # Buscar credenciais do tenet
+            result = supabase.table("google_calendar_integrations").select(
+                "google_client_id_encrypted, google_client_secret_encrypted"
+            ).eq("tenet_id", tenet_id).execute()
+            
+            if not result.data or not result.data[0].get("google_client_id_encrypted"):
+                return {"success": False, "error": "Credenciais do Google não configuradas"}
+            
+            client_id = self.encryption.decrypt(result.data[0]["google_client_id_encrypted"])
+            client_secret = self.encryption.decrypt(result.data[0]["google_client_secret_encrypted"])
+            
+            # Buscar redirect_uri do ambiente ou usar padrão
+            redirect_uri = settings.GOOGLE_REDIRECT_URI or f"{settings.BASE_URL}/api/calendar/auth/callback"
+            
+            flow = Flow.from_client_config(
+                {
+                    "web": {
+                        "client_id": client_id,
+                        "client_secret": client_secret,
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token",
+                        "redirect_uris": [redirect_uri]
+                    }
+                },
+                scopes=SCOPES
+            )
+            flow.redirect_uri = redirect_uri
+            
+            authorization_url, state = flow.authorization_url(
+                access_type='offline',
+                include_granted_scopes='true',
+                state=tenet_id,
+                prompt='consent'
+            )
+            
+            return {"success": True, "auth_url": authorization_url}
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar URL: {e}")
+            return {"success": False, "error": str(e)}
     
     async def handle_callback(self, code: str, tenet_id: str) -> Dict:
         """Processa callback do OAuth2 e salva tokens."""

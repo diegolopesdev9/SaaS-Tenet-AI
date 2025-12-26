@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional, List
 from app.routes.auth import get_current_user
+from app.utils.security import EncryptionService
 from app.services.google_calendar_service import google_calendar_service
 from app.database import get_supabase_client
 
@@ -21,9 +22,76 @@ class CreateEventRequest(BaseModel):
     summary: str
     start_time: datetime
     end_time: datetime
+
+
+@router.post("/credentials")
+async def save_google_credentials(
+    credentials: GoogleCredentialsUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Salva credenciais do Google para o Tenet."""
+    tenet_id = current_user.get("agencia_id")
+    if not tenet_id:
+        raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
+    
+    try:
+        encryption = EncryptionService()
+        
+        supabase = get_supabase_client()
+        
+        data = {
+            "tenet_id": tenet_id,
+            "google_client_id_encrypted": encryption.encrypt(credentials.client_id),
+            "google_client_secret_encrypted": encryption.encrypt(credentials.client_secret),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        # Upsert
+        existing = supabase.table("google_calendar_integrations").select("id").eq("tenet_id", tenet_id).execute()
+        
+        if existing.data:
+            supabase.table("google_calendar_integrations").update(data).eq("tenet_id", tenet_id).execute()
+        else:
+            data["created_at"] = datetime.utcnow().isoformat()
+            supabase.table("google_calendar_integrations").insert(data).execute()
+        
+        return {"success": True, "message": "Credenciais salvas com sucesso"}
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar credenciais: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/credentials/status")
+async def get_credentials_status(current_user: dict = Depends(get_current_user)):
+    """Verifica se as credenciais do Google estão configuradas."""
+    tenet_id = current_user.get("agencia_id")
+    if not tenet_id:
+        raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
+    
+    try:
+        supabase = get_supabase_client()
+        result = supabase.table("google_calendar_integrations").select(
+            "google_client_id_encrypted"
+        ).eq("tenet_id", tenet_id).execute()
+        
+        has_credentials = bool(result.data and result.data[0].get("google_client_id_encrypted"))
+        
+        return {"configured": has_credentials}
+        
+    except Exception as e:
+        logger.error(f"Erro ao verificar credenciais: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
     description: Optional[str] = ""
     attendees: Optional[List[str]] = []
     location: Optional[str] = ""
+
+
+class GoogleCredentialsUpdate(BaseModel):
+    client_id: str
+    client_secret: str
 
 
 @router.get("/auth/url")
@@ -34,8 +102,15 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
     try:
-        auth_url = google_calendar_service.get_authorization_url(tenet_id)
-        return {"auth_url": auth_url}
+        result = await google_calendar_service.get_authorization_url(tenet_id)
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error", "Erro ao gerar URL"))
+        
+        return {"auth_url": result.get("auth_url")}
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erro ao gerar URL de auth: {e}")
         raise HTTPException(status_code=500, detail=str(e))
