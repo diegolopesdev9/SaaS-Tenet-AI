@@ -35,7 +35,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     nome: str
-    agencia_id: str
+    tenet_id: str
 
 
 # Dependency para obter usuário atual
@@ -80,7 +80,7 @@ async def login(request: Request, credentials: LoginRequest):
         data={
             "sub": user["id"],
             "email": user["email"],
-            "agencia_id": user["agencia_id"],
+            "tenet_id": user["tenet_id"],
             "role": user.get("role", "admin")
         },
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -94,7 +94,7 @@ async def login(request: Request, credentials: LoginRequest):
             "id": user["id"],
             "email": user["email"],
             "nome": user["nome"],
-            "agencia_id": user["agencia_id"],
+            "tenet_id": user["tenet_id"],
             "role": user.get("role", "admin"),
             "deve_alterar_senha": user.get("deve_alterar_senha", False)
         }
@@ -110,7 +110,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "id": current_user["id"],
         "email": current_user["email"],
         "nome": current_user["nome"],
-        "agencia_id": current_user["agencia_id"],
+        "tenet_id": current_user["tenet_id"],
         "role": current_user.get("role", "admin"),
         "deve_alterar_senha": current_user.get("deve_alterar_senha", False)
     }
@@ -128,7 +128,7 @@ async def register(request: UserCreate):
         email=request.email,
         password=request.password,
         nome=request.nome,
-        agencia_id=request.agencia_id
+        tenet_id=request.tenet_id
     )
     
     if not user:
