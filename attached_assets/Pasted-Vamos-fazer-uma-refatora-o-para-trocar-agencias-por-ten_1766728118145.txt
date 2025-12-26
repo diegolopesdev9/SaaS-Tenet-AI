@@ -1,0 +1,76 @@
+Vamos fazer uma refatoração para trocar "agencias" por "tenets" em todo o projeto. Execute as seguintes tarefas:
+
+=== PARTE 1: RENOMEAR ARQUIVOS ===
+
+1. Renomeie o arquivo:
+   app/services/agency_service.py → app/services/tenet_service.py
+
+=== PARTE 2: ATUALIZAR IMPORTS E REFERÊNCIAS ===
+
+Em TODOS os arquivos Python do projeto, faça buscar e substituir:
+
+# Tabelas e colunas do banco
+"agencias" → "tenets"
+"agencia_id" → "tenet_id"
+
+# Classes e serviços
+"AgencyService" → "TenetService"
+"agency_service" → "tenet_service"
+"AgencyConfigResponse" → "TenetConfigResponse"
+"AgencyConfigUpdate" → "TenetConfigUpdate"
+"AgenciaCreate" → "TenetCreate"
+"AgenciaResponse" → "TenetResponse"
+
+# Variáveis
+"agency_id" → "tenet_id"
+"agency" → "tenet"
+"agencia" → "tenet"
+
+# Mensagens (manter acentuação)
+"agência" → "tenet"
+"Agência" → "Tenet"
+"agências" → "tenets"
+"Agências" → "Tenets"
+
+=== PARTE 3: ARQUIVOS ESPECÍFICOS ===
+
+3.1 Em app/services/tenet_service.py (após renomear):
+- Trocar class AgencyService → class TenetService
+- Trocar get_agency_by_id → get_tenet_by_id
+- Trocar get_agency_by_instance → get_tenet_by_instance
+- Trocar decrypt_agency_keys → decrypt_tenet_keys
+
+3.2 Em app/routes/auth.py:
+- Trocar todas referências de agencia_id para tenet_id
+- No token JWT: "agencia_id" → "tenet_id"
+- Na classe UserCreate: agencia_id: str → tenet_id: str
+
+3.3 Em app/routes/admin.py:
+- Atualizar import: from app.services.tenet_service import TenetService
+- Trocar todas referências
+
+3.4 Em app/routes/super_admin.py:
+- Trocar todas referências
+- Renomear classes internas AgenciaCreate → TenetCreate
+- Atualizar mensagens de log
+
+3.5 Em app/routes/whatsapp_connection.py:
+- Trocar todas referências de agencias/agencia_id para tenets/tenet_id
+
+3.6 Em app/schemas/admin.py:
+- Trocar nicho → tipo
+- Renomear classes Agency* → Tenet*
+
+=== PARTE 4: MANTER COMPATIBILIDADE (OPCIONAL) ===
+
+No final de app/services/tenet_service.py, adicionar alias:
+AgencyService = TenetService
+
+No final de app/schemas/admin.py, adicionar aliases:
+AgencyConfigResponse = TenetConfigResponse
+AgencyConfigUpdate = TenetConfigUpdate
+
+=== IMPORTANTE ===
+- NÃO altere nomes de rotas da API ainda (manter /api/agencias funcionando)
+- Apenas mude referências internas ao banco de dados e classes
+- Faça backup antes de começar
