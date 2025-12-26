@@ -88,7 +88,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
   // Menu de administração para Super Admin
   const superAdminNavigation = [
-    { name: 'Agências', href: '/admin/agencias', icon: Building2 },
+    { name: 'Tenets', href: '/admin/agencias', icon: Building2 },
     { name: 'Usuários', href: '/admin/usuarios', icon: Users },
     { name: 'Templates', href: '/admin/templates', icon: FileText },
     { name: 'A/B Tests', href: '/admin/ab-tests', icon: FlaskConical },
@@ -128,7 +128,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
               </div>
             </div>
 
-            {/* Seletor de Agência para Super Admin */}
+            {/* Seletor de Tenet para Super Admin */}
             {isSuperAdmin && agencies.length > 0 && (
               <div className="relative">
                 <button
@@ -167,7 +167,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         <span className="ml-auto text-xs text-gray-400">Todas</span>
                       </button>
                       
-                      {/* Lista de Agências */}
+                      {/* Lista de Tenets */}
                       {agencies.map((agency) => (
                         <button
                           key={agency.id}
@@ -238,11 +238,11 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
               </>
             )}
 
-            {/* Menu do Super Admin - Agência Selecionada */}
+            {/* Menu do Super Admin - Tenet Selecionado */}
             {isSuperAdmin && !isGeneralView && (
               <>
                 <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Agência: {agencyName}</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tenet: {agencyName}</p>
                 </div>
                 {agencyNavigation.map((item) => {
                   const Icon = item.icon

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Trash2, Loader2, AlertCircle, CheckCircle, ToggleLeft, ToggleRight, Settings, X, Save, Eye, EyeOff, Key } from 'lucide-react';
 import api from '../../services/api';
@@ -10,7 +9,7 @@ export default function Usuarios() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  
+
   // Modal de edição
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -22,7 +21,7 @@ export default function Usuarios() {
     forcar_troca_senha: true
   });
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [form, setForm] = useState({
     nome: '',
     email: '',
@@ -125,7 +124,7 @@ export default function Usuarios() {
   const handleUpdateUser = async () => {
     setSaving(true);
     setMessage(null);
-    
+
     try {
       const dataToSend = {
         nome: editForm.nome,
@@ -133,13 +132,13 @@ export default function Usuarios() {
         role: editForm.role,
         agencia_id: editForm.agencia_id || null
       };
-      
+
       // Só envia senha se foi preenchida
       if (editForm.nova_senha) {
         dataToSend.nova_senha = editForm.nova_senha;
         dataToSend.forcar_troca_senha = editForm.forcar_troca_senha;
       }
-      
+
       await api.patch(`/admin/usuarios/${editingUser.id}`, dataToSend);
       setMessage({ type: 'success', text: 'Usuário atualizado com sucesso!' });
       setEditingUser(null);
@@ -155,6 +154,7 @@ export default function Usuarios() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="ml-2">Carregando Tenets</span>
       </div>
     );
   }
@@ -223,14 +223,14 @@ export default function Usuarios() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Agência</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
               <select
                 value={form.agencia_id}
                 onChange={(e) => setForm({ ...form, agencia_id: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Selecione uma agência</option>
+                <option value="">Selecione um Tenet</option>
                 {agencias.map((agencia) => (
                   <option key={agencia.id} value={agencia.id}>{agencia.nome}</option>
                 ))}
@@ -243,7 +243,7 @@ export default function Usuarios() {
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="admin">Admin da Agência</option>
+                <option value="admin">Admin do Tenet</option>
                 <option value="user">Usuário</option>
               </select>
             </div>
@@ -273,7 +273,7 @@ export default function Usuarios() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuário</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agência</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenet</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
@@ -370,7 +370,7 @@ export default function Usuarios() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
@@ -381,7 +381,7 @@ export default function Usuarios() {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input 
@@ -391,23 +391,23 @@ export default function Usuarios() {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Agência</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
                   <select 
                     value={editForm.agencia_id} 
                     onChange={(e) => setEditForm({ ...editForm, agencia_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={editingUser.role === 'super_admin'}
                   >
-                    <option value="">Sem agência</option>
+                    <option value="">Sem Tenet</option>
                     {agencias.map((agencia) => (
                       <option key={agencia.id} value={agencia.id}>{agencia.nome}</option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Acesso</label>
                   <select 
@@ -416,12 +416,12 @@ export default function Usuarios() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={editingUser.role === 'super_admin'}
                   >
-                    <option value="admin">Admin da Agência</option>
+                    <option value="admin">Admin do Tenet</option>
                     <option value="user">Usuário</option>
                   </select>
                 </div>
               </div>
-              
+
               {/* Seção de Reset de Senha */}
               <div className="pt-4 border-t">
                 <div className="flex items-center gap-2 mb-3">
@@ -429,7 +429,7 @@ export default function Usuarios() {
                   <span className="text-sm font-medium text-gray-700">Resetar Senha</span>
                   <span className="text-xs text-gray-400">(deixe em branco para manter a atual)</span>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <input 
@@ -456,7 +456,7 @@ export default function Usuarios() {
                     Gerar
                   </button>
                 </div>
-                
+
                 {editForm.nova_senha && (
                   <label className="flex items-center gap-2 mt-2 text-sm text-gray-600">
                     <input
@@ -470,7 +470,7 @@ export default function Usuarios() {
                 )}
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
               <button 
                 onClick={() => setEditingUser(null)} 

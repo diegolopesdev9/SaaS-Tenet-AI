@@ -145,7 +145,7 @@ export default function Templates({ agencyId }) {
             <div>
               <h3 className="font-medium text-blue-900">Templates do {getNichoName(agencyNicho)}</h3>
               <p className="text-sm text-blue-700 mt-1">
-                Você tem acesso aos templates do nicho da sua agência. 
+                Você tem acesso aos templates do nicho do seu Tenet. 
                 Para acessar outros nichos, entre em contato com o administrador.
               </p>
             </div>

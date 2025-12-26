@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Edit, Trash2, Users, MessageSquare, X, Search, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
@@ -53,12 +52,12 @@ export default function Agencias() {
           whatsapp_phone_id: formData.whatsapp_phone_id,
           nicho: formData.nicho
         });
-        setSuccess('Agência atualizada com sucesso!');
+        setSuccess('Tenet atualizado com sucesso!');
       } else {
         await api.post('/admin/agencias', formData);
-        setSuccess('Agência criada com sucesso!');
+        setSuccess('Tenet criado com sucesso!');
       }
-      
+
       resetForm();
       loadAgencias();
       setTimeout(() => setSuccess(null), 3000);
@@ -84,10 +83,10 @@ export default function Agencias() {
   };
 
   const handleDelete = async (id, nome, totalUsuarios) => {
-    const mensagem = totalUsuarios > 0 
+    const mensagem = totalUsuarios > 0
       ? `⚠️ ATENÇÃO!\n\nAo deletar a agência "${nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n• ${totalUsuarios} usuário(s) vinculado(s)\n• Todas as conversas\n• Todas as mensagens\n• Configurações e integrações\n\nEsta ação NÃO pode ser desfeita.\n\nDeseja continuar?`
       : `Tem certeza que deseja deletar a agência "${nome}"?\n\nTodas as conversas e configurações serão removidas.\n\nEsta ação NÃO pode ser desfeita.`;
-    
+
     if (!confirm(mensagem)) return;
 
     try {
@@ -144,15 +143,15 @@ export default function Agencias() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Agências</h1>
-          <p className="mt-1 text-sm text-gray-500">Crie e gerencie as agências do TENET AI</p>
+          <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Tenets</h1>
+          <p className="mt-1 text-sm text-gray-500">Crie e gerencie os Tenets do TENET AI</p>
         </div>
         <button
           onClick={() => { resetForm(); setShowModal(true); }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <Plus className="w-4 h-4" />
-          Nova Agência
+          Novo Tenet
         </button>
       </div>
 
@@ -170,7 +169,7 @@ export default function Agencias() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Buscar agências..."
+          placeholder="Buscar Tenets..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
@@ -181,7 +180,7 @@ export default function Agencias() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agência</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenet</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nicho</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuários</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Leads</th>
@@ -194,7 +193,7 @@ export default function Agencias() {
               <tr>
                 <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p>Nenhuma agência encontrada</p>
+                  <p>Nenhum Tenet encontrado</p>
                 </td>
               </tr>
             ) : (
@@ -253,7 +252,7 @@ export default function Agencias() {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                {editingAgencia ? 'Editar Agência' : 'Nova Agência'}
+                {editingAgencia ? 'Editar Tenet' : 'Novo Tenet'}
               </h2>
               <button onClick={resetForm} className="p-1 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
@@ -262,10 +261,10 @@ export default function Agencias() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Dados da Agência</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Dados do Tenet</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Tenet *</label>
                     <input
                       type="text"
                       value={formData.nome}
@@ -304,7 +303,7 @@ export default function Agencias() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nicho do Agente *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nicho do Tenet *</label>
                     <select
                       value={formData.nicho}
                       onChange={(e) => setFormData({...formData, nicho: e.target.value})}
@@ -365,7 +364,7 @@ export default function Agencias() {
                   Cancelar
                 </button>
                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  {editingAgencia ? 'Salvar' : 'Criar Agência'}
+                  {editingAgencia ? 'Salvar' : 'Novo Tenet'}
                 </button>
               </div>
             </form>

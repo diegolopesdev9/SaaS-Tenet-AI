@@ -96,7 +96,7 @@ export default function Dashboard({ agencyId }) {
           </div>
           <p className="mt-1 text-sm text-gray-500">
             {isGeneralView 
-              ? `Visão consolidada de ${advancedMetrics?.total_agencias || 0} agências`
+              ? `Visão consolidada de ${advancedMetrics?.total_agencias || 0} Tenets`
               : 'Visão geral das suas conversas e métricas'
             }
           </p>
@@ -139,7 +139,7 @@ export default function Dashboard({ agencyId }) {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total de Agências</p>
+                <p className="text-sm font-medium text-gray-600">Total de Tenets</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_agencias || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">cadastradas</p>
               </div>
@@ -311,18 +311,18 @@ export default function Dashboard({ agencyId }) {
         </div>
       </div>
 
-      {/* Ranking de Agências (apenas na Visão Geral) */}
+      {/* Ranking de Tenets (apenas na Visão Geral) */}
       {isGeneralView && advancedMetrics?.agency_breakdown?.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-4">
             <Building2 className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Desempenho por Agência</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Desempenho por Tenet</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Agência</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Tenet</th>
                   <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Total Leads</th>
                   <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Qualificados</th>
                   <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase">Taxa</th>

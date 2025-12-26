@@ -334,7 +334,7 @@ export default function AgentConfig({ agencyId }) {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">API do WhatsApp</h2>
-                <p className="text-sm text-gray-600">Selecione qual API usar para esta agência</p>
+                <p className="text-sm text-gray-600">Selecione qual API usar para este Tenet</p>
               </div>
             </div>
 
@@ -401,13 +401,13 @@ export default function AgentConfig({ agencyId }) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Informações Básicas</h2>
-              <p className="text-sm text-gray-600">Nome e identificação da agência</p>
+              <p className="text-sm text-gray-600">Nome e identificação do Tenet</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Agência</label>
-            <input type="text" value={config.nome} onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Agência Digital XYZ" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nome do Tenet</label>
+            <input type="text" value={config.nome} onChange={(e) => setConfig(prev => ({ ...prev, nome: e.target.value }))} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Tenet Digital XYZ" />
           </div>
         </div>
 
