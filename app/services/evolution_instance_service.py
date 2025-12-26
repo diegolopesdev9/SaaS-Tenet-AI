@@ -54,7 +54,7 @@ class EvolutionInstanceService:
                     url,
                     json=payload,
                     headers=self.headers,
-                    timeout=30.0
+                    timeout=60.0
                 )
                 
                 if response.status_code in [200, 201]:
