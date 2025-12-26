@@ -17,8 +17,20 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await authService.login(email, password);
-      navigate('/');
+      const response = await authService.login(email, password);
+      
+      // Obter dados do usuário após login
+      const user = authService.getUser();
+      
+      // Redirecionar baseado no role
+      if (user?.role === 'super_admin') {
+        // Super Admin vai para Dashboard Geral (visão geral)
+        localStorage.setItem('selectedAgencyId', 'geral');
+        navigate('/');
+      } else {
+        // Usuário comum vai para Dashboard do seu Tenet
+        navigate('/');
+      }
     } catch (err) {
       console.error('Erro no login:', err);
       if (err.response?.data?.detail) {

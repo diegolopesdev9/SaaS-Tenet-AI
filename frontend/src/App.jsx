@@ -46,7 +46,11 @@ function AuthenticatedApp() {
 
   const [selectedAgencyId, setSelectedAgencyId] = useState(() => {
     const saved = localStorage.getItem('selectedAgencyId');
-    if (saved && isSuperAdmin) return saved;
+    // Super Admin: se não tiver seleção, definir como 'geral'
+    if (isSuperAdmin) {
+      return saved || 'geral';
+    }
+    // Usuário comum: usar agencia_id
     return user?.agencia_id || null;
   });
 
@@ -65,13 +69,19 @@ function AuthenticatedApp() {
       const agenciasList = response.data || [];
       setAgencies(agenciasList);
 
-      if (agenciasList.length > 0) {
-        const savedId = localStorage.getItem('selectedAgencyId');
+      // Verificar se há seleção salva
+      const savedId = localStorage.getItem('selectedAgencyId');
+      
+      // Se não houver seleção ou for inválida, definir como 'geral'
+      if (!savedId) {
+        setSelectedAgencyId('geral');
+        localStorage.setItem('selectedAgencyId', 'geral');
+      } else if (savedId !== 'geral') {
+        // Verificar se o tenet salvo ainda existe
         const savedExists = agenciasList.some(a => a.id === savedId);
-
-        if (!savedId || !savedExists) {
-          setSelectedAgencyId(agenciasList[0].id);
-          localStorage.setItem('selectedAgencyId', agenciasList[0].id);
+        if (!savedExists) {
+          setSelectedAgencyId('geral');
+          localStorage.setItem('selectedAgencyId', 'geral');
         }
       }
     } catch (error) {
@@ -100,7 +110,7 @@ function AuthenticatedApp() {
   }
 
   // Loading para super admin
-  if (isSuperAdmin && (loading || !agencyId)) {
+  if (isSuperAdmin && loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

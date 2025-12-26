@@ -232,9 +232,10 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                 </div>
                 <NavLink
                   to="/"
+                  end
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                      isActive && location.pathname === '/'
                         ? 'bg-purple-50 text-purple-700'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }`
