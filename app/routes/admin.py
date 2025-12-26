@@ -13,6 +13,10 @@ from app.routes.auth import get_current_user
 # Configurar logging
 logger = logging.getLogger(__name__)
 
+# Aliases para compatibilidade
+AgencyConfigUpdate = TenetConfigUpdate
+AgencyConfigResponse = TenetConfigResponse
+
 # Criar router
 router = APIRouter(prefix="/api/agencias", tags=["Admin"])
 
@@ -45,63 +49,63 @@ async def get_tenet_config(tenet_id: str):
         raise HTTPException(status_code=404, detail="Tenet não encontrada")
 
     # Verificar se tem tokens criptografados
-    has_whatsapp_token = bool(agency.get("whatsapp_token_encrypted"))
-    has_gemini_key = bool(agency.get("gemini_api_key_encrypted"))
+    has_whatsapp_token = bool(tenet.get("whatsapp_token_encrypted"))
+    has_gemini_key = bool(tenet.get("gemini_api_key_encrypted"))
 
     # Construir resposta
-    response = AgencyConfigResponse(
-        id=agency.get("id"),
-        nome=agency.get("nome"),
-        instance_name=agency.get("instance_name"),
-        prompt_config=agency.get("prompt_config"),
-        whatsapp_phone_id=agency.get("whatsapp_phone_id"),
+    response = TenetConfigResponse(
+        id=tenet.get("id"),
+        nome=tenet.get("nome"),
+        instance_name=tenet.get("instance_name"),
+        prompt_config=tenet.get("prompt_config"),
+        whatsapp_phone_id=tenet.get("whatsapp_phone_id"),
         has_whatsapp_token=has_whatsapp_token,
         has_gemini_key=has_gemini_key,
-        agent_name=agency.get("agent_name"),
-        personality=agency.get("personality"),
-        welcome_message=agency.get("welcome_message"),
-        qualification_questions=agency.get("qualification_questions"),
-        qualification_criteria=agency.get("qualification_criteria"),
-        closing_message=agency.get("closing_message"),
-        whatsapp_api_type=agency.get("whatsapp_api_type", "evolution"),
-        meta_phone_number_id=agency.get("meta_phone_number_id"),
-        meta_business_account_id=agency.get("meta_business_account_id"),
-        has_meta_token=bool(agency.get("meta_access_token_encrypted")),
-        nicho=agency.get("nicho", "sdr")
+        agent_name=tenet.get("agent_name"),
+        personality=tenet.get("personality"),
+        welcome_message=tenet.get("welcome_message"),
+        qualification_questions=tenet.get("qualification_questions"),
+        qualification_criteria=tenet.get("qualification_criteria"),
+        closing_message=tenet.get("closing_message"),
+        whatsapp_api_type=tenet.get("whatsapp_api_type", "evolution"),
+        meta_phone_number_id=tenet.get("meta_phone_number_id"),
+        meta_business_account_id=tenet.get("meta_business_account_id"),
+        has_meta_token=bool(tenet.get("meta_access_token_encrypted")),
+        tipo=tenet.get("nicho", "sdr")
     )
 
-    logger.info(f"Configurações retornadas para agência: {agency.get('nome')}")
+    logger.info(f"Configurações retornadas para tenet: {tenet.get('nome')}")
 
     return response
 
 
-@router.post("/{agency_id}/config", response_model=ApiResponse)
-async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
+@router.post("/{tenet_id}/config", response_model=ApiResponse)
+async def update_tenet_config(tenet_id: str, config: TenetConfigUpdate):
     """
-    Atualiza configurações de uma agência.
+    Atualiza configurações de um tenet.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
         config: Dados de configuração a atualizar
 
     Returns:
         ApiResponse com resultado da operação
 
     Raises:
-        HTTPException: 404 se agência não for encontrada
+        HTTPException: 404 se tenet não for encontrado
     """
-    logger.info(f"Atualizando configurações da agência: {agency_id}")
+    logger.info(f"Atualizando configurações do tenet: {tenet_id}")
 
     # Inicializar cliente Supabase e serviço
     supabase = get_supabase_client()
-    agency_service = AgencyService(supabase)
+    tenet_service = TenetService(supabase)
 
-    # Verificar se agência existe
-    agency = await agency_service.get_agency_by_id(agency_id)
+    # Verificar se tenet existe
+    tenet = await tenet_service.get_tenet_by_id(tenet_id)
 
-    if not agency:
-        logger.warning(f"Agência não encontrada: {agency_id}")
-        raise HTTPException(status_code=404, detail="Agência não encontrada")
+    if not tenet:
+        logger.warning(f"Tenet não encontrado: {tenet_id}")
+        raise HTTPException(status_code=404, detail="Tenet não encontrado")
 
     # Montar dict de atualização apenas com campos preenchidos
     update_data = {}
@@ -171,39 +175,39 @@ async def update_agency_config(agency_id: str, config: AgencyConfigUpdate):
 
     # Executar update no Supabase
     try:
-        result = supabase.table("agencias").update(update_data).eq("id", agency_id).execute()
+        result = supabase.table("tenets").update(update_data).eq("id", tenet_id).execute()
 
-        logger.info(f"Agência {agency_id} atualizada com sucesso")
+        logger.info(f"Tenet {tenet_id} atualizado com sucesso")
 
         return ApiResponse(
             success=True,
             message="Configurações atualizadas com sucesso",
-            data={"agency_id": agency_id, "updated_fields": list(update_data.keys())}
+            data={"tenet_id": tenet_id, "updated_fields": list(update_data.keys())}
         )
 
     except Exception as e:
-        logger.error(f"Erro ao atualizar agência: {str(e)}")
+        logger.error(f"Erro ao atualizar tenet: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar configurações: {str(e)}")
 
 
-@router.get("/{agency_id}/conversas")
+@router.get("/{tenet_id}/conversas")
 async def list_conversations(
-    agency_id: str,
+    tenet_id: str,
     status: str = None,
     limit: int = 50
 ):
     """
-    Lista todas as conversas de uma agência.
+    Lista todas as conversas de um tenet.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
         status: Filtrar por status (opcional)
         limit: Limite de resultados (padrão 50)
 
     Returns:
         Lista de conversas com total
     """
-    logger.info(f"Listando conversas da agência {agency_id}")
+    logger.info(f"Listando conversas do tenet {tenet_id}")
 
     supabase = get_supabase_client()
 
@@ -211,7 +215,7 @@ async def list_conversations(
         # Construir query
         query = supabase.table("conversas").select(
             "id, lead_phone, lead_status, lead_data, total_mensagens, last_message_at, created_at"
-        ).eq("agencia_id", agency_id)
+        ).eq("tenet_id", tenet_id)
 
         # Filtrar por status se fornecido
         if status:
@@ -231,13 +235,13 @@ async def list_conversations(
         raise HTTPException(status_code=500, detail=f"Erro ao listar conversas: {str(e)}")
 
 
-@router.get("/{agency_id}/conversas/{conversation_id}")
-async def get_conversation(agency_id: str, conversation_id: str):
+@router.get("/{tenet_id}/conversas/{conversation_id}")
+async def get_conversation(tenet_id: str, conversation_id: str):
     """
     Busca uma conversa específica por ID.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
         conversation_id: UUID da conversa
 
     Returns:
@@ -246,7 +250,7 @@ async def get_conversation(agency_id: str, conversation_id: str):
     Raises:
         HTTPException: 404 se conversa não for encontrada
     """
-    logger.info(f"Buscando conversa {conversation_id} da agência {agency_id}")
+    logger.info(f"Buscando conversa {conversation_id} do tenet {tenet_id}")
 
     # Inicializar cliente Supabase
     supabase = get_supabase_client()
@@ -256,7 +260,7 @@ async def get_conversation(agency_id: str, conversation_id: str):
         response = supabase.table("conversas").select("*").eq(
             "id", conversation_id
         ).eq(
-            "agencia_id", agency_id
+            "tenet_id", tenet_id
         ).execute()
 
         # Verificar se encontrou a conversa
@@ -276,9 +280,9 @@ async def get_conversation(agency_id: str, conversation_id: str):
         raise HTTPException(status_code=500, detail=f"Erro ao buscar conversa: {str(e)}")
 
 
-@router.patch("/{agency_id}/conversas/{conversation_id}/status")
+@router.patch("/{tenet_id}/conversas/{conversation_id}/status")
 async def update_conversation_status(
-    agency_id: str,
+    tenet_id: str,
     conversation_id: str,
     new_status: str
 ):
@@ -286,7 +290,7 @@ async def update_conversation_status(
     Atualiza o status de uma conversa.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
         conversation_id: UUID da conversa
         new_status: Novo status do lead
 
@@ -317,7 +321,7 @@ async def update_conversation_status(
         }).eq(
             "id", conversation_id
         ).eq(
-            "agencia_id", agency_id
+            "tenet_id", tenet_id
         ).execute()
 
         # Verificar se encontrou e atualizou o registro
@@ -339,28 +343,28 @@ async def update_conversation_status(
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar status: {str(e)}")
 
 
-@router.get("/{agency_id}/metrics")
-async def get_agency_metrics(agency_id: str):
+@router.get("/{tenet_id}/metrics")
+async def get_tenet_metrics(tenet_id: str):
     """
-    Retorna métricas consolidadas de conversas da agência.
+    Retorna métricas consolidadas de conversas do tenet.
 
     Args:
-        agency_id: UUID da agência
+        tenet_id: UUID do tenet
 
     Returns:
         Objeto com métricas: total de leads, mensagens, taxa de qualificação e contagem por status
     """
-    logger.info(f"Calculando métricas da agência {agency_id}")
+    logger.info(f"Calculando métricas do tenet {tenet_id}")
 
     # Inicializar cliente Supabase
     supabase = get_supabase_client()
 
     try:
-        # Buscar todas as conversas da agência
+        # Buscar todas as conversas do tenet
         response = supabase.table("conversas").select(
             "lead_status, total_mensagens"
         ).eq(
-            "agencia_id", agency_id
+            "tenet_id", tenet_id
         ).execute()
 
         conversas = response.data or []
@@ -397,9 +401,9 @@ async def get_agency_metrics(agency_id: str):
         raise HTTPException(status_code=500, detail=f"Erro ao calcular métricas: {str(e)}")
 
 
-@router.get("/{agency_id}/metrics/advanced")
+@router.get("/{tenet_id}/metrics/advanced")
 async def get_advanced_metrics(
-    agency_id: str,
+    tenet_id: str,
     period: str = "7d",
     current_user: dict = Depends(get_current_user)
 ):
@@ -411,7 +415,7 @@ async def get_advanced_metrics(
     from datetime import datetime, timedelta, timezone
 
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agency_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
 
     # Calcular data inicial baseado no período
@@ -425,7 +429,7 @@ async def get_advanced_metrics(
         # Buscar todas as conversas do período
         response = supabase.table("conversas").select(
             "id, lead_status, total_mensagens, created_at, last_message_at, lead_data"
-        ).eq("agencia_id", agency_id).gte(
+        ).eq("tenet_id", tenet_id).gte(
             "created_at", start_date.isoformat()
         ).execute()
 
