@@ -109,3 +109,4 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ## Licença
 
 Proprietary - Todos os direitos reservados
+# Force rebuild Sat Dec 27 01:01:31 AM UTC 2025
