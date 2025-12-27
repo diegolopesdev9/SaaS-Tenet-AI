@@ -42,13 +42,20 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
     try:
+        # Log para debug
+        from app.config import settings
+        logger.info(f"GOOGLE_CLIENT_ID configurado: {bool(settings.GOOGLE_CLIENT_ID)}")
+        logger.info(f"GOOGLE_CLIENT_SECRET configurado: {bool(settings.GOOGLE_CLIENT_SECRET)}")
+        logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
+        
         auth_url = google_calendar_service.get_authorization_url(tenet_id)
         return {"auth_url": auth_url}
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"ValueError: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao gerar URL de auth: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao gerar URL de autorização")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL: {str(e)}")
 
 
 @router.get("/auth/callback")
