@@ -1,0 +1,99 @@
+Preciso corrigir o carregamento das variáveis do Google Calendar e adicionar logs de debug.
+
+=== ARQUIVO: app/config.py ===
+
+Localize estas linhas (seção Google Calendar):
+
+    # Google Calendar
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "")
+
+SUBSTITUA por:
+
+    # Google Calendar
+    GOOGLE_CLIENT_ID: str = Field(
+        default="",
+        description="Google OAuth Client ID"
+    )
+    GOOGLE_CLIENT_SECRET: str = Field(
+        default="",
+        description="Google OAuth Client Secret"
+    )
+    GOOGLE_REDIRECT_URI: str = Field(
+        default="",
+        description="Google OAuth Redirect URI"
+    )
+
+=== ARQUIVO: app/routes/google_calendar.py ===
+
+Na rota get_auth_url, SUBSTITUA todo o bloco try/except por:
+
+@router.get("/auth/url")
+async def get_auth_url(current_user: dict = Depends(get_current_user)):
+    """Retorna URL de autorização do Google."""
+    tenet_id = current_user.get("agencia_id")
+    if not tenet_id:
+        raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
+    
+    from app.config import settings
+    
+    # Debug: logar valores das variáveis
+    logger.info(f"=== DEBUG GOOGLE CALENDAR ===")
+    logger.info(f"GOOGLE_CLIENT_ID existe: {bool(settings.GOOGLE_CLIENT_ID)}")
+    logger.info(f"GOOGLE_CLIENT_ID primeiros chars: {settings.GOOGLE_CLIENT_ID[:20] if settings.GOOGLE_CLIENT_ID else 'VAZIO'}")
+    logger.info(f"GOOGLE_CLIENT_SECRET existe: {bool(settings.GOOGLE_CLIENT_SECRET)}")
+    logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
+    logger.info(f"============================")
+    
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Credenciais do Google não configuradas. CLIENT_ID={bool(settings.GOOGLE_CLIENT_ID)}, SECRET={bool(settings.GOOGLE_CLIENT_SECRET)}"
+        )
+    
+    try:
+        auth_url = google_calendar_service.get_authorization_url(tenet_id)
+        return {"auth_url": auth_url}
+    except ValueError as e:
+        logger.error(f"ValueError: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao gerar URL de auth: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL: {str(e)}")
+
+
+Faça também a mesma verificação na rota /status:
+
+@router.get("/status")
+async def get_calendar_status(current_user: dict = Depends(get_current_user)):
+    """Retorna status da integração com Google Calendar."""
+    tenet_id = current_user.get("agencia_id")
+    if not tenet_id:
+        raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
+    
+    from app.config import settings
+    
+    # Se credenciais não configuradas, retornar não conectado (sem erro)
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        logger.warning("Google Calendar: credenciais não configuradas")
+        return {"connected": False, "reason": "credentials_not_configured"}
+    
+    try:
+        supabase = get_supabase_client()
+        result = supabase.table("google_calendar_integrations").select(
+            "google_email, is_active, created_at, updated_at"
+        ).eq("tenet_id", tenet_id).execute()
+        
+        if result.data and result.data[0].get("is_active"):
+            return {
+                "connected": True,
+                "email": result.data[0].get("google_email"),
+                "connected_at": result.data[0].get("created_at")
+            }
+        
+        return {"connected": False}
+        
+    except Exception as e:
+        logger.error(f"Erro ao verificar status: {e}")
+        return {"connected": False, "error": str(e)}
