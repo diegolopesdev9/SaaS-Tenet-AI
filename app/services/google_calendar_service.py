@@ -3,6 +3,7 @@
 Serviço de integração com Google Calendar.
 """
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 from google.oauth2.credentials import Credentials
@@ -25,9 +26,16 @@ SCOPES = [
 class GoogleCalendarService:
     def __init__(self):
         self.encryption = EncryptionService()
-        self.client_id = settings.GOOGLE_CLIENT_ID
-        self.client_secret = settings.GOOGLE_CLIENT_SECRET
-        self.redirect_uri = settings.GOOGLE_REDIRECT_URI
+        # Ler diretamente do ambiente para garantir que funciona
+        self.client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
+        self.client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+        self.redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "")
+        
+        # Log de inicialização
+        logger.info(f"GoogleCalendarService inicializado:")
+        logger.info(f"  CLIENT_ID configurado: {bool(self.client_id)}")
+        logger.info(f"  CLIENT_SECRET configurado: {bool(self.client_secret)}")
+        logger.info(f"  REDIRECT_URI: {self.redirect_uri}")
     
     def get_authorization_url(self, tenet_id: str) -> str:
         """Gera URL de autorização OAuth2."""
