@@ -41,13 +41,23 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
+    from app.config import settings
+    
+    # Debug: logar valores das variáveis
+    logger.info(f"=== DEBUG GOOGLE CALENDAR ===")
+    logger.info(f"GOOGLE_CLIENT_ID existe: {bool(settings.GOOGLE_CLIENT_ID)}")
+    logger.info(f"GOOGLE_CLIENT_ID primeiros chars: {settings.GOOGLE_CLIENT_ID[:20] if settings.GOOGLE_CLIENT_ID else 'VAZIO'}")
+    logger.info(f"GOOGLE_CLIENT_SECRET existe: {bool(settings.GOOGLE_CLIENT_SECRET)}")
+    logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
+    logger.info(f"============================")
+    
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Credenciais do Google não configuradas. CLIENT_ID={bool(settings.GOOGLE_CLIENT_ID)}, SECRET={bool(settings.GOOGLE_CLIENT_SECRET)}"
+        )
+    
     try:
-        # Log para debug
-        from app.config import settings
-        logger.info(f"GOOGLE_CLIENT_ID configurado: {bool(settings.GOOGLE_CLIENT_ID)}")
-        logger.info(f"GOOGLE_CLIENT_SECRET configurado: {bool(settings.GOOGLE_CLIENT_SECRET)}")
-        logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
-        
         auth_url = google_calendar_service.get_authorization_url(tenet_id)
         return {"auth_url": auth_url}
     except ValueError as e:
@@ -82,6 +92,13 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
+    from app.config import settings
+    
+    # Se credenciais não configuradas, retornar não conectado (sem erro)
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        logger.warning("Google Calendar: credenciais não configuradas")
+        return {"connected": False, "reason": "credentials_not_configured"}
+    
     try:
         supabase = get_supabase_client()
         result = supabase.table("google_calendar_integrations").select(
@@ -99,7 +116,7 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
         
     except Exception as e:
         logger.error(f"Erro ao verificar status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"connected": False, "error": str(e)}
 
 
 @router.post("/disconnect")
