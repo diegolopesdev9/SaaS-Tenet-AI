@@ -3,6 +3,7 @@
 Rotas para integração com Google Calendar.
 """
 import logging
+import os
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import RedirectResponse
@@ -41,21 +42,12 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
-    from app.config import settings
+    # Verificar diretamente do ambiente (igual ao serviço)
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
     
-    # Debug: logar valores das variáveis
-    logger.info(f"=== DEBUG GOOGLE CALENDAR ===")
-    logger.info(f"GOOGLE_CLIENT_ID existe: {bool(settings.GOOGLE_CLIENT_ID)}")
-    logger.info(f"GOOGLE_CLIENT_ID primeiros chars: {settings.GOOGLE_CLIENT_ID[:20] if settings.GOOGLE_CLIENT_ID else 'VAZIO'}")
-    logger.info(f"GOOGLE_CLIENT_SECRET existe: {bool(settings.GOOGLE_CLIENT_SECRET)}")
-    logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
-    logger.info(f"============================")
-    
-    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Credenciais do Google não configuradas. CLIENT_ID={bool(settings.GOOGLE_CLIENT_ID)}, SECRET={bool(settings.GOOGLE_CLIENT_SECRET)}"
-        )
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Credenciais do Google não configuradas")
     
     try:
         auth_url = google_calendar_service.get_authorization_url(tenet_id)
@@ -92,11 +84,11 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
-    from app.config import settings
+    # Verificar diretamente do ambiente
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
     
-    # Se credenciais não configuradas, retornar não conectado (sem erro)
-    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-        logger.warning("Google Calendar: credenciais não configuradas")
+    if not client_id or not client_secret:
         return {"connected": False, "reason": "credentials_not_configured"}
     
     try:
