@@ -58,9 +58,18 @@ class Settings(BaseSettings):
     EVOLUTION_API_KEY: str = os.getenv("EVOLUTION_API_KEY", "")
 
     # Google Calendar
-    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
-    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
-    GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "")
+    GOOGLE_CLIENT_ID: str = Field(
+        default="",
+        description="Google OAuth Client ID"
+    )
+    GOOGLE_CLIENT_SECRET: str = Field(
+        default="",
+        description="Google OAuth Client Secret"
+    )
+    GOOGLE_REDIRECT_URI: str = Field(
+        default="",
+        description="Google OAuth Redirect URI"
+    )
 
     # Meta WhatsApp
     META_WEBHOOK_VERIFY_TOKEN: str = Field(
