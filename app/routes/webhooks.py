@@ -14,6 +14,7 @@ from app.services.tenet_service import TenetService
 from app.services.conversation_service import ConversationService
 from app.services.crm_service import CRMService
 from app.services.notification_service import NotificationService
+from app.services.tenet_service import AgencyService
 from app.services.admin_whatsapp_service import admin_whatsapp_service
 from app.database import get_supabase_client
 from app.config import settings
@@ -302,10 +303,11 @@ async def receive_whatsapp_webhook(request: Request):
         # ATUALIZAÇÃO DO HISTÓRICO
         # ============================================
         await conversation_service.update_conversation_history(
-            conversation_data.get("conversa_id"),
-            message_text,
-            ai_result.get("response", ""),
-            ai_result.get("extracted_data", {})
+            tenet_id=agency_id,
+            lead_phone=sender_phone,
+            user_message=message_text,
+            assistant_message=ai_result.get("response", ""),
+            lead_data=ai_result.get("extracted_data", {})
         )
 
         # ============================================
