@@ -61,7 +61,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 @router.post("/login", response_model=LoginResponse)
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 async def login(request: Request, credentials: LoginRequest):
     """
     Realiza login e retorna token JWT.
