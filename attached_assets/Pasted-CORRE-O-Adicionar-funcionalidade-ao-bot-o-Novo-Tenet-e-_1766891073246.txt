@@ -1,0 +1,128 @@
+CORREÇÃO: Adicionar funcionalidade ao botão "Novo Tenet" e renomear arquivo.
+
+=== ARQUIVO: frontend/src/pages/admin/Agencias.jsx ===
+
+1. ADICIONE estes estados após os existentes (linha ~12):
+
+const [showCreateModal, setShowCreateModal] = useState(false);
+const [newTenet, setNewTenet] = useState({
+  nome: '',
+  email: '',
+  nicho: 'sdr'
+});
+
+2. ADICIONE esta função após handleDeleteTenet:
+
+const handleCreateTenet = async () => {
+  try {
+    if (!newTenet.nome || !newTenet.email) {
+      alert('Nome e email são obrigatórios');
+      return;
+    }
+    
+    await api.post('/admin/tenets', newTenet);
+    alert('Tenet criado com sucesso!');
+    setShowCreateModal(false);
+    setNewTenet({ nome: '', email: '', nicho: 'sdr' });
+    loadTenets();
+  } catch (err) {
+    alert(err.response?.data?.detail || 'Erro ao criar tenet');
+    console.error('Erro ao criar tenet:', err);
+  }
+};
+
+3. SUBSTITUA o botão "Novo Tenet" (linha ~201 aproximadamente):
+
+DE:
+<button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+  <Plus className="w-5 h-5" />
+  Novo Tenet
+</button>
+
+PARA:
+<button 
+  onClick={() => setShowCreateModal(true)}
+  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+>
+  <Plus className="w-5 h-5" />
+  Novo Tenet
+</button>
+
+4. ADICIONE o Modal de Criação APÓS o Modal de Edição (após a linha que fecha o primeiro modal):
+
+{/* Modal de Criação */}
+{showCreateModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-900">Novo Tenet</h2>
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nome do Tenet *
+          </label>
+          <input
+            type="text"
+            value={newTenet.nome}
+            onChange={(e) => setNewTenet({ ...newTenet, nome: e.target.value })}
+            placeholder="Ex: Empresa XYZ"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Email *
+          </label>
+          <input
+            type="email"
+            value={newTenet.email}
+            onChange={(e) => setNewTenet({ ...newTenet, email: e.target.value })}
+            placeholder="contato@empresa.com"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nicho
+          </label>
+          <select
+            value={newTenet.nicho}
+            onChange={(e) => setNewTenet({ ...newTenet, nicho: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="sdr">SDR</option>
+            <option value="suporte">Suporte</option>
+            <option value="vendas">Vendas</option>
+            <option value="rh">RH</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleCreateTenet}
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Criar Tenet
+        </button>
+      </div>
+    </div>
+  </div>
+)}
