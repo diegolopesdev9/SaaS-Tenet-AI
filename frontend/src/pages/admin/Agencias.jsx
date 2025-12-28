@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Building2, Plus, Search, Edit2, Trash2, Eye, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,12 @@ function Agencias() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTenet, setSelectedTenet] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTenet, setNewTenet] = useState({
+    nome: '',
+    email: '',
+    nicho: 'sdr'
+  });
 
   useEffect(() => {
     loadTenets();
@@ -42,15 +47,20 @@ function Agencias() {
 
   const handleEditTenet = (tenet) => {
     setSelectedTenet(tenet);
+    setEditTenet({
+      nome: tenet.nome,
+      email: tenet.email,
+      nicho: tenet.nicho
+    });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     try {
       await api.patch(`/admin/tenets/${selectedTenet.id}`, {
-        nome: selectedTenet.nome,
-        email: selectedTenet.email,
-        nicho: selectedTenet.nicho
+        nome: editTenet.nome,
+        email: editTenet.email,
+        nicho: editTenet.nicho
       });
       alert('Tenet atualizado com sucesso');
       setShowEditModal(false);
@@ -66,10 +76,10 @@ function Agencias() {
       // Buscar preview do que será deletado
       const preview = await api.get(`/admin/tenets/${tenetId}/delete-preview`);
       const { tenet, usuarios, total_usuarios, total_conversas } = preview.data;
-      
+
       // Montar mensagem de confirmação
       let mensagem = `⚠️ ATENÇÃO!\n\nAo deletar o Tenet "${tenet.nome}", os seguintes dados serão PERMANENTEMENTE removidos:\n\n`;
-      
+
       if (total_usuarios > 0) {
         mensagem += `• ${total_usuarios} usuário(s):\n`;
         usuarios.slice(0, 5).forEach(u => {
@@ -79,13 +89,13 @@ function Agencias() {
           mensagem += `  - e mais ${total_usuarios - 5} usuário(s)...\n`;
         }
       }
-      
+
       mensagem += `• ${total_conversas} conversa(s) e suas mensagens\n`;
       mensagem += `• Todas as configurações e integrações\n\n`;
       mensagem += `Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?`;
-      
+
       if (!confirm(mensagem)) return;
-      
+
       // Confirmar novamente para tenets com usuários
       if (total_usuarios > 0) {
         const confirmar = prompt(`Digite "${tenet.nome}" para confirmar a exclusão:`);
@@ -94,17 +104,36 @@ function Agencias() {
           return;
         }
       }
-      
+
       // Deletar
       await api.delete(`/admin/tenets/${tenetId}`);
       alert(`Tenet "${tenet.nome}" deletado com sucesso`);
       loadTenets(); // Recarregar lista
-      
+
     } catch (err) {
       alert(err.response?.data?.detail || 'Erro ao deletar tenet');
       console.error('Erro ao deletar tenet:', err);
     }
   };
+
+  const handleCreateTenet = async () => {
+    try {
+      if (!newTenet.nome || !newTenet.email) {
+        alert('Nome e email são obrigatórios');
+        return;
+      }
+
+      await api.post('/admin/tenets', newTenet);
+      alert('Tenet criado com sucesso!');
+      setShowCreateModal(false);
+      setNewTenet({ nome: '', email: '', nicho: 'sdr' });
+      loadTenets();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao criar tenet');
+      console.error('Erro ao criar tenet:', err);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -129,7 +158,7 @@ function Agencias() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,31 +166,31 @@ function Agencias() {
                 </label>
                 <input
                   type="text"
-                  value={selectedTenet.nome}
-                  onChange={(e) => setSelectedTenet({ ...selectedTenet, nome: e.target.value })}
+                  value={editTenet.nome}
+                  onChange={(e) => setEditTenet({ ...editTenet, nome: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
                 </label>
                 <input
                   type="email"
-                  value={selectedTenet.email}
-                  onChange={(e) => setSelectedTenet({ ...selectedTenet, email: e.target.value })}
+                  value={editTenet.email}
+                  onChange={(e) => setEditTenet({ ...editTenet, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nicho
                 </label>
                 <select
-                  value={selectedTenet.nicho || 'SDR'}
-                  onChange={(e) => setSelectedTenet({ ...selectedTenet, nicho: e.target.value })}
+                  value={editTenet.nicho}
+                  onChange={(e) => setEditTenet({ ...editTenet, nicho: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="sdr">SDR</option>
@@ -172,7 +201,7 @@ function Agencias() {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowEditModal(false)}
@@ -185,6 +214,83 @@ function Agencias() {
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Criação */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Novo Tenet</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome do Tenet *
+                </label>
+                <input
+                  type="text"
+                  value={newTenet.nome}
+                  onChange={(e) => setNewTenet({ ...newTenet, nome: e.target.value })}
+                  placeholder="Ex: Empresa XYZ"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={newTenet.email}
+                  onChange={(e) => setNewTenet({ ...newTenet, email: e.target.value })}
+                  placeholder="contato@empresa.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nicho
+                </label>
+                <select
+                  value={newTenet.nicho}
+                  onChange={(e) => setNewTenet({ ...newTenet, nicho: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="sdr">SDR</option>
+                  <option value="suporte">Suporte</option>
+                  <option value="vendas">Vendas</option>
+                  <option value="rh">RH</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateTenet}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Criar Tenet
               </button>
             </div>
           </div>
@@ -208,10 +314,13 @@ function Agencias() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-5 h-5" />
-          Novo Tenet
-        </button>
+        <button 
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Novo Tenet
+            </button>
       </div>
 
       {/* Tenets List */}
