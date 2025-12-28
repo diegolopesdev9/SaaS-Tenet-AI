@@ -65,7 +65,7 @@ function AuthenticatedApp() {
 
   const loadAgencies = async () => {
     try {
-      const response = await api.get('/admin/agencias');
+      const response = await api.get('/admin/tenets');
       const agenciasList = response.data || [];
       setAgencies(agenciasList);
 
