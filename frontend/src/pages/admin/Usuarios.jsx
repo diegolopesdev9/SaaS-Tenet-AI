@@ -68,7 +68,7 @@ export default function Usuarios() {
     try {
       await api.post('/admin/usuarios', form);
       setMessage({ type: 'success', text: 'Usuário criado com sucesso!' });
-      setForm({ nome: '', email: '', password: '', agencia_id: '', role: 'admin' });
+      setForm({ nome: '', email: '', password: '', tenet_id: '', role: 'admin' });
       setShowForm(false);
       loadData();
     } catch (error) {
