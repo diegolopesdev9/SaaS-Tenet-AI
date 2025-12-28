@@ -16,24 +16,24 @@ router = APIRouter(prefix="/api/ab-tests", tags=["A/B Testing"])
 @router.get("")
 async def list_tests(current_user: dict = Depends(get_current_user)):
     """Lista A/B tests da agência"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
-    tests = await ab_test_service.list_tests(UUID(agencia_id))
+    tests = await ab_test_service.list_tests(UUID(tenet_id))
     return {"tests": tests, "total": len(tests)}
 
 @router.post("")
 async def create_test(test: ABTestCreate, current_user: dict = Depends(get_current_user)):
     """Cria novo A/B test"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
     if current_user.get("role") not in ["admin", "super_admin"]:
         raise HTTPException(status_code=403, detail="Apenas admins podem criar testes")
     
-    result = await ab_test_service.create_test(UUID(agencia_id), test)
+    result = await ab_test_service.create_test(UUID(tenet_id), test)
     if not result:
         raise HTTPException(status_code=500, detail="Erro ao criar teste")
     
@@ -42,11 +42,11 @@ async def create_test(test: ABTestCreate, current_user: dict = Depends(get_curre
 @router.get("/active")
 async def get_active_test(current_user: dict = Depends(get_current_user)):
     """Busca teste ativo da agência"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
-    test = await ab_test_service.get_active_test(UUID(agencia_id))
+    test = await ab_test_service.get_active_test(UUID(tenet_id))
     if not test:
         return {"active_test": None}
     return {"active_test": test}

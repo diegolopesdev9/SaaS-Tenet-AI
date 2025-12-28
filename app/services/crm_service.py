@@ -373,11 +373,11 @@ class CRMService:
         self.supabase = supabase_client
         self.encryption = EncryptionService()
     
-    async def get_active_integrations(self, agencia_id: str) -> List[Dict[str, Any]]:
+    async def get_active_integrations(self, tenet_id: str) -> List[Dict[str, Any]]:
         """Busca integrações ativas de uma agência."""
         try:
             response = self.supabase.table("integracoes_crm").select("*").eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq("is_active", True).execute()
             return response.data or []
         except Exception as e:
@@ -386,16 +386,16 @@ class CRMService:
     
     async def send_lead_to_crms(
         self,
-        agencia_id: str,
+        tenet_id: str,
         conversa_id: str,
         lead_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Envia lead para todos os CRMs ativos da agência."""
         
-        integrations = await self.get_active_integrations(agencia_id)
+        integrations = await self.get_active_integrations(tenet_id)
         
         if not integrations:
-            logger.info(f"Nenhuma integração CRM ativa para agência {agencia_id}")
+            logger.info(f"Nenhuma integração CRM ativa para agência {tenet_id}")
             return {"sent": 0, "results": []}
         
         results = []
@@ -417,7 +417,7 @@ class CRMService:
                 
                 # Registrar log
                 await self._log_sync(
-                    agencia_id=agencia_id,
+                    tenet_id=tenet_id,
                     conversa_id=conversa_id,
                     crm_type=crm_type,
                     lead_phone=lead_data.get("phone"),
@@ -451,7 +451,7 @@ class CRMService:
     
     async def _log_sync(
         self,
-        agencia_id: str,
+        tenet_id: str,
         conversa_id: str,
         crm_type: str,
         lead_phone: str,
@@ -463,7 +463,7 @@ class CRMService:
         """Registra log de sincronização."""
         try:
             self.supabase.table("crm_sync_logs").insert({
-                "agencia_id": agencia_id,
+                "tenet_id": tenet_id,
                 "conversa_id": conversa_id,
                 "crm_type": crm_type,
                 "lead_phone": lead_phone,
@@ -478,7 +478,7 @@ class CRMService:
     
     async def save_integration(
         self,
-        agencia_id: str,
+        tenet_id: str,
         crm_type: str,
         api_key: str = None,
         api_token: str = None,
@@ -490,7 +490,7 @@ class CRMService:
         """Salva ou atualiza configuração de integração."""
         
         data = {
-            "agencia_id": agencia_id,
+            "tenet_id": tenet_id,
             "crm_type": crm_type,
             "is_active": is_active,
             "updated_at": datetime.now(timezone.utc).isoformat()
@@ -515,7 +515,7 @@ class CRMService:
             # Upsert
             response = self.supabase.table("integracoes_crm").upsert(
                 data,
-                on_conflict="agencia_id,crm_type"
+                on_conflict="tenet_id,crm_type"
             ).execute()
             
             return {"success": True, "data": response.data}
@@ -523,11 +523,11 @@ class CRMService:
             logger.error(f"Erro ao salvar integração: {e}")
             return {"success": False, "error": str(e)}
     
-    async def test_integration(self, agencia_id: str, crm_type: str) -> bool:
+    async def test_integration(self, tenet_id: str, crm_type: str) -> bool:
         """Testa conexão com um CRM."""
         try:
             response = self.supabase.table("integracoes_crm").select("*").eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq("crm_type", crm_type).execute()
             
             if not response.data:

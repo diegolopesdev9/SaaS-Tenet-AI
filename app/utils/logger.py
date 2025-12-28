@@ -20,8 +20,8 @@ class JSONFormatter(logging.Formatter):
         }
         
         # Adiciona campos extras se existirem
-        if hasattr(record, "agencia_id"):
-            log_obj["agencia_id"] = record.agencia_id
+        if hasattr(record, "tenet_id"):
+            log_obj["tenet_id"] = record.tenet_id
         if hasattr(record, "user_id"):
             log_obj["user_id"] = record.user_id
         if hasattr(record, "request_id"):

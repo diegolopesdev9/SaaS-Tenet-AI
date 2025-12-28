@@ -81,7 +81,7 @@ class AuthService:
         except Exception:
             return None
     
-    async def create_user(self, email: str, password: str, nome: str, agencia_id: str) -> Optional[dict]:
+    async def create_user(self, email: str, password: str, nome: str, tenet_id: str) -> Optional[dict]:
         """Cria novo usuário."""
         try:
             senha_hash = self.get_password_hash(password)
@@ -90,7 +90,7 @@ class AuthService:
                 "email": email,
                 "senha_hash": senha_hash,
                 "nome": nome,
-                "agencia_id": agencia_id
+                "tenet_id": tenet_id
             }).execute()
             
             if response.data and len(response.data) > 0:

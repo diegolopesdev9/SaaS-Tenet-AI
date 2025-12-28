@@ -30,7 +30,7 @@ class ABTestUpdate(BaseModel):
 
 class ABTestResponse(BaseModel):
     id: UUID
-    agencia_id: UUID
+    tenet_id: UUID
     nome: str
     descricao: Optional[str]
     variante_a_nome: str

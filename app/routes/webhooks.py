@@ -221,7 +221,7 @@ async def receive_whatsapp_webhook(request: Request):
 
         # Buscar histórico da conversa
         conversation_data = await conversation_service.get_conversation_history(
-            agencia_id=agency_id,
+            tenet_id=agency_id,
             lead_phone=sender_phone,
             limit_messages=10
         )
@@ -333,7 +333,7 @@ async def receive_whatsapp_webhook(request: Request):
 
                 # Enviar para CRMs ativos
                 crm_result = await crm_service.send_lead_to_crms(
-                    agencia_id=agency_id,
+                    tenet_id=agency_id,
                     conversa_id=conversation_data.get("conversa_id"),
                     lead_data=crm_lead_data
                 )
@@ -369,7 +369,7 @@ async def receive_whatsapp_webhook(request: Request):
 
                 # Enviar notificação
                 await notification_service.send_lead_notification(
-                    agencia_id=agency_id,
+                    tenet_id=agency_id,
                     lead_data=notification_lead_data,
                     notification_type="qualificado"
                 )

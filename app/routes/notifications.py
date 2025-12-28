@@ -43,21 +43,21 @@ class SMTPTestRequest(BaseModel):
 # ROTAS
 # ============================================
 
-@router.get("/{agencia_id}/config")
+@router.get("/{tenet_id}/config")
 async def get_notification_config(
-    agencia_id: str,
+    tenet_id: str,
     current_user: dict = Depends(get_current_user)
 ):
     """Busca configuração de notificações da agência."""
     
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     
     supabase = get_supabase_client()
     notification_service = NotificationService(supabase)
     
-    config = await notification_service.get_notification_config(agencia_id)
+    config = await notification_service.get_notification_config(tenet_id)
     
     if not config:
         # Retornar config padrão se não existir
@@ -91,23 +91,23 @@ async def get_notification_config(
     }
 
 
-@router.post("/{agencia_id}/config")
+@router.post("/{tenet_id}/config")
 async def save_notification_config(
-    agencia_id: str,
+    tenet_id: str,
     config: NotificationConfigUpdate,
     current_user: dict = Depends(get_current_user)
 ):
     """Salva configuração de notificações."""
     
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     
     supabase = get_supabase_client()
     notification_service = NotificationService(supabase)
     
     result = await notification_service.save_notification_config(
-        agencia_id=agencia_id,
+        tenet_id=tenet_id,
         config=config.model_dump()
     )
     
@@ -117,16 +117,16 @@ async def save_notification_config(
     return {"success": True, "message": "Configurações de notificação salvas com sucesso"}
 
 
-@router.post("/{agencia_id}/test-smtp")
+@router.post("/{tenet_id}/test-smtp")
 async def test_smtp_connection(
-    agencia_id: str,
+    tenet_id: str,
     smtp_config: SMTPTestRequest,
     current_user: dict = Depends(get_current_user)
 ):
     """Testa conexão SMTP."""
     
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     
     supabase = get_supabase_client()
@@ -172,16 +172,16 @@ async def send_test_email(
         raise HTTPException(status_code=500, detail="Falha ao enviar email de teste. Verifique as configurações.")
 
 
-@router.get("/{agencia_id}/logs")
+@router.get("/{tenet_id}/logs")
 async def get_notification_logs(
-    agencia_id: str,
+    tenet_id: str,
     limit: int = 50,
     current_user: dict = Depends(get_current_user)
 ):
     """Lista logs de notificações enviadas."""
     
     # Verificar permissão
-    if current_user.get("role") != "super_admin" and current_user.get("agencia_id") != agencia_id:
+    if current_user.get("role") != "super_admin" and current_user.get("tenet_id") != tenet_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     
     supabase = get_supabase_client()
@@ -189,7 +189,7 @@ async def get_notification_logs(
     try:
         response = supabase.table("notificacoes_log").select(
             "id, tipo, destinatario, assunto, status, lead_phone, created_at"
-        ).eq("agencia_id", agencia_id).order("created_at", desc=True).limit(limit).execute()
+        ).eq("tenet_id", tenet_id).order("created_at", desc=True).limit(limit).execute()
         
         return response.data or []
     except Exception as e:

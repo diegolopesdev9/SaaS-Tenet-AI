@@ -17,28 +17,28 @@ class ABTestService:
     def __init__(self):
         self.supabase = get_supabase_client()
     
-    async def create_test(self, agencia_id: UUID, test: ABTestCreate) -> Optional[Dict]:
+    async def create_test(self, tenet_id: UUID, test: ABTestCreate) -> Optional[Dict]:
         """Cria novo A/B test"""
         try:
             data = test.model_dump()
-            data["agencia_id"] = str(agencia_id)
+            data["tenet_id"] = str(tenet_id)
             
             result = self.supabase.table("ab_tests").insert(data).execute()
             
             if result.data:
-                logger.info(f"A/B Test '{test.nome}' criado para agência {agencia_id}")
+                logger.info(f"A/B Test '{test.nome}' criado para agência {tenet_id}")
                 return result.data[0]
             return None
         except Exception as e:
             logger.error(f"Erro ao criar A/B test: {e}")
             return None
     
-    async def get_active_test(self, agencia_id: UUID) -> Optional[Dict]:
+    async def get_active_test(self, tenet_id: UUID) -> Optional[Dict]:
         """Busca teste ativo da agência"""
         try:
             result = self.supabase.table("ab_tests")\
                 .select("*")\
-                .eq("agencia_id", str(agencia_id))\
+                .eq("tenet_id", str(tenet_id))\
                 .eq("status", "running")\
                 .limit(1)\
                 .execute()
@@ -47,9 +47,9 @@ class ABTestService:
         except:
             return None
     
-    async def select_variant(self, agencia_id: UUID) -> tuple[Optional[str], Optional[UUID]]:
+    async def select_variant(self, tenet_id: UUID) -> tuple[Optional[str], Optional[UUID]]:
         """Seleciona variante para nova conversa baseado no percentual"""
-        test = await self.get_active_test(agencia_id)
+        test = await self.get_active_test(tenet_id)
         
         if not test:
             return None, None
@@ -59,14 +59,14 @@ class ABTestService:
             return "B", UUID(test["id"])
         return "A", UUID(test["id"])
     
-    async def get_prompt_for_variant(self, agencia_id: UUID) -> tuple[Optional[str], Optional[str], Optional[UUID]]:
+    async def get_prompt_for_variant(self, tenet_id: UUID) -> tuple[Optional[str], Optional[str], Optional[UUID]]:
         """Retorna o prompt da variante selecionada"""
-        test = await self.get_active_test(agencia_id)
+        test = await self.get_active_test(tenet_id)
         
         if not test:
             return None, None, None
         
-        variant, test_id = await self.select_variant(agencia_id)
+        variant, test_id = await self.select_variant(tenet_id)
         
         if variant == "B":
             return test["variante_b_prompt"], variant, test_id
@@ -166,12 +166,12 @@ class ABTestService:
         except:
             return False
     
-    async def list_tests(self, agencia_id: UUID) -> List[Dict]:
+    async def list_tests(self, tenet_id: UUID) -> List[Dict]:
         """Lista todos os A/B tests da agência"""
         try:
             result = self.supabase.table("ab_tests")\
                 .select("*")\
-                .eq("agencia_id", str(agencia_id))\
+                .eq("tenet_id", str(tenet_id))\
                 .order("created_at", desc=True)\
                 .execute()
             return result.data or []

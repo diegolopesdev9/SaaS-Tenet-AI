@@ -20,11 +20,11 @@ class NotificationService:
         self.supabase = supabase_client
         self.encryption = EncryptionService()
     
-    async def get_notification_config(self, agencia_id: str) -> Optional[Dict[str, Any]]:
+    async def get_notification_config(self, tenet_id: str) -> Optional[Dict[str, Any]]:
         """Busca configuração de notificações da agência."""
         try:
             response = self.supabase.table("notificacoes_config").select("*").eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).execute()
             return response.data[0] if response.data else None
         except Exception as e:
@@ -33,13 +33,13 @@ class NotificationService:
     
     async def save_notification_config(
         self,
-        agencia_id: str,
+        tenet_id: str,
         config: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Salva configuração de notificações."""
         try:
             data = {
-                "agencia_id": agencia_id,
+                "tenet_id": tenet_id,
                 "email_ativo": config.get("email_ativo", False),
                 "emails_destinatarios": config.get("emails_destinatarios", []),
                 "notificar_lead_qualificado": config.get("notificar_lead_qualificado", True),
@@ -59,7 +59,7 @@ class NotificationService:
             
             # Upsert
             response = self.supabase.table("notificacoes_config").upsert(
-                data, on_conflict="agencia_id"
+                data, on_conflict="tenet_id"
             ).execute()
             
             return {"success": True, "data": response.data}
@@ -69,17 +69,17 @@ class NotificationService:
     
     async def send_lead_notification(
         self,
-        agencia_id: str,
+        tenet_id: str,
         lead_data: Dict[str, Any],
         notification_type: str = "qualificado"
     ) -> bool:
         """Envia notificação de lead qualificado/agendado."""
         
         # Buscar configuração
-        config = await self.get_notification_config(agencia_id)
+        config = await self.get_notification_config(tenet_id)
         
         if not config or not config.get("email_ativo"):
-            logger.info(f"Notificações desativadas para agência {agencia_id}")
+            logger.info(f"Notificações desativadas para agência {tenet_id}")
             return False
         
         # Verificar tipo de notificação
@@ -91,7 +91,7 @@ class NotificationService:
         # Obter destinatários
         destinatarios = config.get("emails_destinatarios", [])
         if not destinatarios:
-            logger.warning(f"Nenhum destinatário configurado para agência {agencia_id}")
+            logger.warning(f"Nenhum destinatário configurado para agência {tenet_id}")
             return False
         
         # Montar email
@@ -103,7 +103,7 @@ class NotificationService:
         for email in destinatarios:
             result = await self._send_email(config, email, subject, body)
             await self._log_notification(
-                agencia_id=agencia_id,
+                tenet_id=tenet_id,
                 tipo=notification_type,
                 destinatario=email,
                 assunto=subject,
@@ -231,7 +231,7 @@ class NotificationService:
     
     async def _log_notification(
         self,
-        agencia_id: str,
+        tenet_id: str,
         tipo: str,
         destinatario: str,
         assunto: str,
@@ -242,7 +242,7 @@ class NotificationService:
         """Registra log de notificação."""
         try:
             self.supabase.table("notificacoes_log").insert({
-                "agencia_id": agencia_id,
+                "tenet_id": tenet_id,
                 "tipo": tipo,
                 "destinatario": destinatario,
                 "assunto": assunto,

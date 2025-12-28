@@ -33,12 +33,12 @@ class SearchQuery(BaseModel):
 @router.post("/documents")
 async def add_document(doc: DocumentCreate, current_user: dict = Depends(get_current_user)):
     """Adiciona documento à base de conhecimento"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
     result = await rag_service.add_document(
-        agencia_id=UUID(agencia_id),
+        tenet_id=UUID(tenet_id),
         titulo=doc.titulo,
         conteudo=doc.conteudo,
         categoria=doc.categoria,
@@ -54,23 +54,23 @@ async def add_document(doc: DocumentCreate, current_user: dict = Depends(get_cur
 async def list_documents(categoria: Optional[str] = None, 
                          current_user: dict = Depends(get_current_user)):
     """Lista documentos da base de conhecimento"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
-    docs = await rag_service.list_documents(UUID(agencia_id), categoria)
+    docs = await rag_service.list_documents(UUID(tenet_id), categoria)
     return {"documents": docs, "total": len(docs)}
 
 @router.post("/search")
 async def search_knowledge(search: SearchQuery, 
                            current_user: dict = Depends(get_current_user)):
     """Busca semântica na base de conhecimento"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
     results = await rag_service.search(
-        agencia_id=UUID(agencia_id),
+        tenet_id=UUID(tenet_id),
         query=search.query,
         limit=search.limit,
         categoria=search.categoria

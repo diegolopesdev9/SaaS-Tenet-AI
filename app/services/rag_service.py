@@ -15,7 +15,7 @@ class RAGService:
     def __init__(self):
         self.supabase = get_supabase_client()
     
-    async def add_document(self, agencia_id: UUID, titulo: str, conteudo: str,
+    async def add_document(self, tenet_id: UUID, titulo: str, conteudo: str,
                            categoria: str = "geral", metadata: dict = None) -> Optional[Dict]:
         """Adiciona documento à base de conhecimento com embedding"""
         try:
@@ -27,7 +27,7 @@ class RAGService:
                 return None
             
             data = {
-                "agencia_id": str(agencia_id),
+                "tenet_id": str(tenet_id),
                 "titulo": titulo,
                 "conteudo": conteudo,
                 "categoria": categoria,
@@ -46,7 +46,7 @@ class RAGService:
             logger.error(f"Erro ao adicionar documento: {e}")
             return None
     
-    async def search(self, agencia_id: UUID, query: str, 
+    async def search(self, tenet_id: UUID, query: str, 
                      limit: int = 5, categoria: str = None) -> List[Dict]:
         """Busca documentos relevantes por similaridade semântica"""
         try:
@@ -60,7 +60,7 @@ class RAGService:
             result = self.supabase.rpc(
                 "search_knowledge_base",
                 {
-                    "p_agencia_id": str(agencia_id),
+                    "p_tenet_id": str(tenet_id),
                     "p_query_embedding": query_embedding,
                     "p_limit": limit,
                     "p_categoria": categoria
@@ -73,10 +73,10 @@ class RAGService:
             logger.error(f"Erro na busca RAG: {e}")
             return []
     
-    async def get_context_for_ai(self, agencia_id: UUID, query: str, 
+    async def get_context_for_ai(self, tenet_id: UUID, query: str, 
                                   max_docs: int = 3) -> str:
         """Retorna contexto formatado para injetar no prompt da IA"""
-        docs = await self.search(agencia_id, query, limit=max_docs)
+        docs = await self.search(tenet_id, query, limit=max_docs)
         
         if not docs:
             return ""
@@ -87,12 +87,12 @@ class RAGService:
         
         return "\n".join(context_parts)
     
-    async def list_documents(self, agencia_id: UUID, categoria: str = None) -> List[Dict]:
+    async def list_documents(self, tenet_id: UUID, categoria: str = None) -> List[Dict]:
         """Lista documentos da base de conhecimento"""
         try:
             query = self.supabase.table("knowledge_base")\
                 .select("id, titulo, categoria, created_at")\
-                .eq("agencia_id", str(agencia_id))\
+                .eq("tenet_id", str(tenet_id))\
                 .eq("ativo", True)
             
             if categoria:

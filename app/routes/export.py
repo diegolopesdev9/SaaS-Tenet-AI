@@ -24,8 +24,8 @@ async def export_leads_csv(
     current_user: dict = Depends(get_current_user)
 ):
     """Exporta leads em formato CSV"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
     try:
@@ -34,7 +34,7 @@ async def export_leads_csv(
         # Query base
         query = supabase.table("conversas")\
             .select("id, telefone, nome_lead, email_lead, empresa_lead, cargo_lead, status, dados_coletados, created_at")\
-            .eq("agencia_id", agencia_id)
+            .eq("tenet_id", tenet_id)
         
         # Filtros opcionais
         if status:
@@ -75,7 +75,7 @@ async def export_leads_csv(
         # Nome do arquivo
         filename = f"leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         
-        logger.info(f"Exportação CSV: {len(leads)} leads para agência {agencia_id}")
+        logger.info(f"Exportação CSV: {len(leads)} leads para agência {tenet_id}")
         
         return StreamingResponse(
             iter([output.getvalue()]),
@@ -93,8 +93,8 @@ async def export_leads_json(
     current_user: dict = Depends(get_current_user)
 ):
     """Exporta leads em formato JSON"""
-    agencia_id = current_user.get("agencia_id")
-    if not agencia_id:
+    tenet_id = current_user.get("tenet_id")
+    if not tenet_id:
         raise HTTPException(status_code=400, detail="Agência não encontrada")
     
     try:
@@ -102,7 +102,7 @@ async def export_leads_json(
         
         query = supabase.table("conversas")\
             .select("*")\
-            .eq("agencia_id", agencia_id)
+            .eq("tenet_id", tenet_id)
         
         if status:
             query = query.eq("status", status)

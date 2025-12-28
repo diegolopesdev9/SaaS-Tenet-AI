@@ -32,7 +32,7 @@ class ConversationService:
     
     async def get_conversation_history(
         self, 
-        agencia_id: str, 
+        tenet_id: str, 
         lead_phone: str,
         limit_messages: int = 10
     ) -> Dict[str, Any]:
@@ -40,7 +40,7 @@ class ConversationService:
         Busca o histórico de conversas de um lead específico.
         
         Args:
-            agencia_id: UUID da agência
+            tenet_id: UUID da agência
             lead_phone: Número de telefone do lead (sem @s.whatsapp.net)
             limit_messages: Limite de mensagens a retornar (padrão: 10 últimas)
             
@@ -48,11 +48,11 @@ class ConversationService:
             Dict contendo histórico, status e dados do lead
         """
         try:
-            logger.info(f"Buscando histórico para lead {lead_phone} da agência {agencia_id}")
+            logger.info(f"Buscando histórico para lead {lead_phone} da agência {tenet_id}")
             
             # Buscar conversa existente
             response = self.supabase.table("conversas").select("*").eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq(
                 "lead_phone", lead_phone
             ).execute()
@@ -100,7 +100,7 @@ class ConversationService:
     
     async def update_conversation_history(
         self,
-        agencia_id: str,
+        tenet_id: str,
         lead_phone: str,
         user_message: str,
         assistant_message: str,
@@ -112,7 +112,7 @@ class ConversationService:
         Cria uma nova conversa se não existir (upsert).
         
         Args:
-            agencia_id: UUID da agência
+            tenet_id: UUID da agência
             lead_phone: Número de telefone do lead
             user_message: Mensagem enviada pelo usuário
             assistant_message: Resposta do assistente
@@ -143,7 +143,7 @@ class ConversationService:
             ]
             
             # Buscar conversa existente
-            existing = await self.get_conversation_history(agencia_id, lead_phone)
+            existing = await self.get_conversation_history(tenet_id, lead_phone)
             
             conversa_id = None
             
@@ -156,7 +156,7 @@ class ConversationService:
                 full_response = self.supabase.table("conversas").select(
                     "historico_json"
                 ).eq(
-                    "agencia_id", agencia_id
+                    "tenet_id", tenet_id
                 ).eq(
                     "lead_phone", lead_phone
                 ).execute()
@@ -193,7 +193,7 @@ class ConversationService:
                 response = self.supabase.table("conversas").update(
                     update_data
                 ).eq(
-                    "agencia_id", agencia_id
+                    "tenet_id", tenet_id
                 ).eq(
                     "lead_phone", lead_phone
                 ).execute()
@@ -203,7 +203,7 @@ class ConversationService:
             else:
                 # Criar nova conversa
                 insert_data = {
-                    "agencia_id": agencia_id,
+                    "tenet_id": tenet_id,
                     "lead_phone": lead_phone,
                     "historico_json": new_turns,
                     "lead_status": lead_status or "em_andamento",
@@ -262,7 +262,7 @@ class ConversationService:
     
     async def update_lead_status(
         self,
-        agencia_id: str,
+        tenet_id: str,
         lead_phone: str,
         new_status: str
     ) -> bool:
@@ -270,7 +270,7 @@ class ConversationService:
         Atualiza apenas o status do lead.
         
         Args:
-            agencia_id: UUID da agência
+            tenet_id: UUID da agência
             lead_phone: Número de telefone do lead
             new_status: Novo status (iniciada, em_andamento, qualificado, perdido, agendado)
             
@@ -286,7 +286,7 @@ class ConversationService:
             response = self.supabase.table("conversas").update({
                 "lead_status": new_status
             }).eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq(
                 "lead_phone", lead_phone
             ).execute()
@@ -300,7 +300,7 @@ class ConversationService:
     
     async def update_lead_data(
         self,
-        agencia_id: str,
+        tenet_id: str,
         lead_phone: str,
         lead_data: Dict[str, Any]
     ) -> bool:
@@ -308,7 +308,7 @@ class ConversationService:
         Atualiza os dados extraídos do lead (qualificação).
         
         Args:
-            agencia_id: UUID da agência
+            tenet_id: UUID da agência
             lead_phone: Número de telefone do lead
             lead_data: Dados do lead (nome, empresa, desafio, etc.)
             
@@ -317,7 +317,7 @@ class ConversationService:
         """
         try:
             # Buscar dados existentes para merge
-            existing = await self.get_conversation_history(agencia_id, lead_phone)
+            existing = await self.get_conversation_history(tenet_id, lead_phone)
             existing_data = existing.get("lead_data", {})
             
             # Merge dos dados
@@ -328,7 +328,7 @@ class ConversationService:
             response = self.supabase.table("conversas").update({
                 "lead_data": merged_data
             }).eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq(
                 "lead_phone", lead_phone
             ).execute()
@@ -342,7 +342,7 @@ class ConversationService:
     
     async def get_leads_by_status(
         self,
-        agencia_id: str,
+        tenet_id: str,
         status: str,
         limit: int = 50
     ) -> List[Dict[str, Any]]:
@@ -350,7 +350,7 @@ class ConversationService:
         Busca todos os leads de uma agência com um determinado status.
         
         Args:
-            agencia_id: UUID da agência
+            tenet_id: UUID da agência
             status: Status do lead
             limit: Limite de resultados
             
@@ -361,7 +361,7 @@ class ConversationService:
             response = self.supabase.table("conversas").select(
                 "id, lead_phone, lead_status, lead_data, total_mensagens, last_message_at"
             ).eq(
-                "agencia_id", agencia_id
+                "tenet_id", tenet_id
             ).eq(
                 "lead_status", status
             ).order(

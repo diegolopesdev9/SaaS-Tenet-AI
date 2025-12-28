@@ -29,7 +29,7 @@ async def get_general_metrics(
         start_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
         
         # Total de agências
-        agencias_result = supabase.table("agencias").select("id", count="exact").execute()
+        agencias_result = supabase.table("tenets").select("id", count="exact").execute()
         total_agencias = agencias_result.count or 0
         
         # Total de usuários
@@ -38,7 +38,7 @@ async def get_general_metrics(
         
         # Total de conversas no período
         conversas_result = supabase.table("conversas")\
-            .select("id, status, agencia_id", count="exact")\
+            .select("id, status, tenet_id", count="exact")\
             .gte("created_at", start_date)\
             .execute()
         
@@ -57,7 +57,7 @@ async def get_general_metrics(
         # Métricas por agência
         agencias_metrics = {}
         for conv in conversas:
-            ag_id = conv.get("agencia_id")
+            ag_id = conv.get("tenet_id")
             if ag_id not in agencias_metrics:
                 agencias_metrics[ag_id] = {"total": 0, "qualificado": 0}
             agencias_metrics[ag_id]["total"] += 1
@@ -67,7 +67,7 @@ async def get_general_metrics(
         # Buscar nomes das agências
         if agencias_metrics:
             ag_ids = list(agencias_metrics.keys())
-            ag_result = supabase.table("agencias")\
+            ag_result = supabase.table("tenets")\
                 .select("id, nome")\
                 .in_("id", ag_ids)\
                 .execute()
