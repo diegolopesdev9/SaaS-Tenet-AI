@@ -61,20 +61,32 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/auth/callback")
-async def auth_callback(code: str, state: str):
+async def auth_callback(
+    code: str = None, 
+    state: str = None,
+    error: str = None
+):
     """Callback do OAuth2 do Google."""
+    
+    # Se usuário cancelou ou houve erro no Google
+    if error or not code:
+        logger.warning(f"OAuth cancelado ou erro: {error}")
+        return RedirectResponse(url="/integracoes?calendar=cancelled")
+    
+    if not state:
+        return RedirectResponse(url="/integracoes?calendar=error&message=Estado inválido")
+    
     try:
         result = await google_calendar_service.handle_callback(code, state)
         
         if result.get("success"):
-            # Redirecionar para página de sucesso no frontend
-            return RedirectResponse(url="/config?calendar=connected")
+            return RedirectResponse(url="/integracoes?calendar=connected")
         else:
-            return RedirectResponse(url=f"/config?calendar=error&message={result.get('error')}")
+            return RedirectResponse(url=f"/integracoes?calendar=error&message={result.get('error')}")
             
     except Exception as e:
         logger.error(f"Erro no callback: {e}")
-        return RedirectResponse(url=f"/config?calendar=error&message={str(e)}")
+        return RedirectResponse(url=f"/integracoes?calendar=error&message={str(e)}")
 
 
 @router.get("/status")
