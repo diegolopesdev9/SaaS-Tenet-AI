@@ -54,8 +54,8 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # WhatsApp Configuration
-    EVOLUTION_API_URL: str = os.getenv("EVOLUTION_API_URL", "")
-    EVOLUTION_API_KEY: str = os.getenv("EVOLUTION_API_KEY", "")
+    EVOLUTION_API_URL: str = Field(default="", description="URL da Evolution API")
+    EVOLUTION_API_KEY: str = Field(default="", description="API Key da Evolution API")
 
     # Google Calendar
     GOOGLE_CLIENT_ID: str = Field(
