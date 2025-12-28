@@ -10,7 +10,9 @@ from passlib.context import CryptContext
 from app.database import get_supabase_client
 
 # Configurações
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "sua-chave-secreta-muito-segura-mude-em-producao")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY é obrigatória - configure nas variáveis de ambiente")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
 
