@@ -2,7 +2,7 @@
 """Tenet business logic service."""
 from typing import Optional, Dict
 from supabase import Client
-from app.security import encryption_service
+from app.utils.security import encryption_service
 
 
 class TenetService:
