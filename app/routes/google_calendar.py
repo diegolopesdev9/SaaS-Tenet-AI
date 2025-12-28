@@ -38,7 +38,7 @@ class CreateEventRequest(BaseModel):
 @router.get("/auth/url")
 async def get_auth_url(current_user: dict = Depends(get_current_user)):
     """Retorna URL de autorização do Google."""
-    tenet_id = current_user.get("agencia_id")
+    tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
@@ -80,7 +80,7 @@ async def auth_callback(code: str, state: str):
 @router.get("/status")
 async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     """Retorna status da integração com Google Calendar."""
-    tenet_id = current_user.get("agencia_id")
+    tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
@@ -114,7 +114,7 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
 @router.post("/disconnect")
 async def disconnect_calendar(current_user: dict = Depends(get_current_user)):
     """Desconecta integração com Google Calendar."""
-    tenet_id = current_user.get("agencia_id")
+    tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
@@ -139,7 +139,7 @@ async def create_event(
     current_user: dict = Depends(get_current_user)
 ):
     """Cria um evento no Google Calendar."""
-    tenet_id = current_user.get("agencia_id")
+    tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
@@ -173,7 +173,7 @@ async def get_available_slots(
     current_user: dict = Depends(get_current_user)
 ):
     """Retorna horários disponíveis para agendamento."""
-    tenet_id = current_user.get("agencia_id")
+    tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
     
