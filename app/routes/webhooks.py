@@ -140,7 +140,7 @@ async def receive_whatsapp_webhook(request: Request):
     try:
         # Receber payload
         payload = await request.json()
-        logger.info(f"Webhook WhatsApp recebido: {payload}")
+        logger.info(f"Webhook WhatsApp recebido - instance: {payload.get('instance', 'unknown')}, event: {payload.get('event', 'unknown')}")
 
         # Verificar se é evento de mensagem
         event = payload.get("event")
@@ -169,7 +169,7 @@ async def receive_whatsapp_webhook(request: Request):
             logger.info("Mensagem sem texto ignorada")
             return {"status": "ignored", "reason": "no text content"}
 
-        logger.info(f"Mensagem de {sender_name} ({remote_jid}): {message_text}")
+        logger.info(f"Mensagem recebida de {sender_phone[-4:]}*** via {instance_name}")
 
         # Inicializar cliente Supabase
         supabase = get_supabase_client()
