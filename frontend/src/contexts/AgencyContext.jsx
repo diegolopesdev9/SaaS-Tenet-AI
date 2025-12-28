@@ -12,8 +12,8 @@ export function AgencyProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (token && user?.agencia_id) {
-      fetchAgency(user.agencia_id);
+    if (token && user?.tenet_id) {
+      fetchAgency(user.tenet_id);
     }
     if (token && user?.role === 'super_admin') {
       fetchAllAgencies();

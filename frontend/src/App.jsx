@@ -50,8 +50,8 @@ function AuthenticatedApp() {
     if (isSuperAdmin) {
       return saved || 'geral';
     }
-    // Usuário comum: usar agencia_id
-    return user?.agencia_id || null;
+    // Usuário comum: usar tenet_id
+    return user?.tenet_id || null;
   });
 
   const [agencies, setAgencies] = useState([]);
@@ -102,7 +102,7 @@ function AuthenticatedApp() {
     setUser(updatedUser);
   };
 
-  const agencyId = isSuperAdmin ? selectedAgencyId : user?.agencia_id;
+  const agencyId = isSuperAdmin ? selectedAgencyId : user?.tenet_id;
 
   // Verificar se precisa alterar senha
   if (user?.deve_alterar_senha) {
@@ -247,7 +247,7 @@ function useAgencyId() {
   if (isSuperAdmin) {
     return localStorage.getItem('selectedAgencyId');
   }
-  return user?.agencia_id;
+  return user?.tenet_id;
 }
 
 export default App;

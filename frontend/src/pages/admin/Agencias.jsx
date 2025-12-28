@@ -16,6 +16,11 @@ function Agencias() {
     email: '',
     nicho: 'sdr'
   });
+  const [editTenet, setEditTenet] = useState({
+    nome: '',
+    email: '',
+    nicho: 'sdr'
+  });
 
   useEffect(() => {
     loadTenets();

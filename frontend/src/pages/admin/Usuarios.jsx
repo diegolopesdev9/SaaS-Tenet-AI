@@ -16,7 +16,7 @@ export default function Usuarios() {
     nome: '',
     email: '',
     role: '',
-    agencia_id: '',
+    tenet_id: '',
     nova_senha: '',
     forcar_troca_senha: true
   });
@@ -26,7 +26,7 @@ export default function Usuarios() {
     nome: '',
     email: '',
     password: '',
-    agencia_id: '',
+    tenet_id: '',
     role: 'admin'
   });
 
@@ -114,7 +114,7 @@ export default function Usuarios() {
       nome: usuario.nome || '',
       email: usuario.email || '',
       role: usuario.role || 'admin',
-      agencia_id: usuario.agencia_id || '',
+      tenet_id: usuario.tenet_id || '',
       nova_senha: '',
       forcar_troca_senha: true
     });
@@ -130,7 +130,7 @@ export default function Usuarios() {
         nome: editForm.nome,
         email: editForm.email,
         role: editForm.role,
-        agencia_id: editForm.agencia_id || null
+        tenet_id: editForm.tenet_id || null
       };
 
       // Só envia senha se foi preenchida
@@ -225,8 +225,8 @@ export default function Usuarios() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
               <select
-                value={form.agencia_id}
-                onChange={(e) => setForm({ ...form, agencia_id: e.target.value })}
+                value={form.tenet_id}
+                onChange={(e) => setForm({ ...form, tenet_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
@@ -300,7 +300,7 @@ export default function Usuarios() {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-600">{getTenetNome(usuario.agencia_id)}</td>
+                <td className="px-6 py-4 text-gray-600">{getTenetNome(usuario.tenet_id)}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                     usuario.role === 'super_admin' 
@@ -396,8 +396,8 @@ export default function Usuarios() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
                   <select 
-                    value={editForm.agencia_id} 
-                    onChange={(e) => setEditForm({ ...editForm, agencia_id: e.target.value })}
+                    value={editForm.tenet_id} 
+                    onChange={(e) => setEditForm({ ...editForm, tenet_id: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={editingUser.role === 'super_admin'}
                   >
