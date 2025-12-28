@@ -23,7 +23,7 @@ export function AgencyProvider({ children }) {
   const fetchAgency = async (agenciaId) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/agencia/${agenciaId}`, {
+      const response = await fetch(`/api/admin/tenet/${agenciaId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
