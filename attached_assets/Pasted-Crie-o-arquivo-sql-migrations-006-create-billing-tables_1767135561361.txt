@@ -1,0 +1,76 @@
+Crie o arquivo sql/migrations/006_create_billing_tables.sql:
+
+-- Migration: Sistema de Billing e Tracking de Tokens
+-- Versão: 006
+
+-- Tabela de planos
+CREATE TABLE IF NOT EXISTS plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(50) NOT NULL UNIQUE,
+    display_name VARCHAR(100) NOT NULL,
+    monthly_tokens INT NOT NULL,
+    monthly_conversations INT,
+    max_agents INT DEFAULT 1,
+    price_cents INT NOT NULL,
+    overage_price_per_1k DECIMAL(5,3),
+    features JSONB DEFAULT '{}',
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabela de uso de tokens (diário)
+CREATE TABLE IF NOT EXISTS token_usage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenet_id UUID NOT NULL,
+    date DATE NOT NULL,
+    tokens_input INT DEFAULT 0,
+    tokens_output INT DEFAULT 0,
+    tokens_total INT DEFAULT 0,
+    conversations_count INT DEFAULT 0,
+    api_calls_count INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(tenet_id, date)
+);
+
+-- Tabela de assinaturas
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenet_id UUID NOT NULL UNIQUE,
+    plan_id UUID REFERENCES plans(id),
+    status VARCHAR(20) DEFAULT 'trial',
+    current_period_start DATE,
+    current_period_end DATE,
+    tokens_used_this_period INT DEFAULT 0,
+    conversations_used_this_period INT DEFAULT 0,
+    stripe_customer_id VARCHAR(100),
+    stripe_subscription_id VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Tabela de créditos extras (packs comprados)
+CREATE TABLE IF NOT EXISTS token_credits (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenet_id UUID NOT NULL UNIQUE,
+    tokens_remaining INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_token_usage_tenet_date ON token_usage(tenet_id, date);
+CREATE INDEX IF NOT EXISTS idx_token_usage_date ON token_usage(date);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
+
+-- Inserir planos padrão
+INSERT INTO plans (name, display_name, monthly_tokens, monthly_conversations, max_agents, price_cents, overage_price_per_1k, features) VALUES
+('starter', 'Starter', 300000, 300, 1, 11990, 0.050, '{"calendar": true, "google_sheets": true, "crm": false, "rag": false, "ab_testing": false, "api": false, "export": false}'),
+('professional', 'Professional', 1500000, 1500, 3, 34990, 0.030, '{"calendar": true, "google_sheets": true, "crm": true, "crm_per_agent": 1, "rag": false, "ab_testing": false, "api": false, "export": true}'),
+('tenet', 'Tenet', 5000000, 5000, 5, 49990, 0.020, '{"calendar": true, "google_sheets": true, "crm": true, "crm_unlimited": true, "rag": true, "rag_pages": 100, "ab_testing": true, "api": true, "export": true, "whitelabel": true}')
+ON CONFLICT (name) DO UPDATE SET
+  monthly_tokens = EXCLUDED.monthly_tokens,
+  monthly_conversations = EXCLUDED.monthly_conversations,
+  max_agents = EXCLUDED.max_agents,
+  price_cents = EXCLUDED.price_cents,
+  overage_price_per_1k = EXCLUDED.overage_price_per_1k,
+  features = EXCLUDED.features;
