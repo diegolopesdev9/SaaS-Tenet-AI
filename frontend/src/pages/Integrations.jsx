@@ -328,7 +328,7 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_name}
               onChange={(e) => setAdminConfig({...adminConfig, admin_name: e.target.value})}
               placeholder="Ex: João Silva"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
 
@@ -341,7 +341,7 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_whatsapp_number}
               onChange={(e) => setAdminConfig({...adminConfig, admin_whatsapp_number: e.target.value})}
               placeholder="Ex: 5511999999999"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
             <p className="text-xs text-gray-500 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
           </div>
@@ -716,7 +716,7 @@ export default function Integrations({ agencyId }) {
                     type="password"
                     value={formData.api_key}
                     onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
                     placeholder="Cole sua API Key aqui"
                   />
                 </div>
@@ -732,7 +732,7 @@ export default function Integrations({ agencyId }) {
                     type="password"
                     value={formData.api_token}
                     onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
                     placeholder="Cole seu OAuth Token"
                   />
                 </div>
@@ -748,7 +748,7 @@ export default function Integrations({ agencyId }) {
                     type="text"
                     value={formData.database_id}
                     onChange={(e) => setFormData({ ...formData, database_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
                     placeholder="ID do database do Notion"
                   />
                 </div>
@@ -764,7 +764,7 @@ export default function Integrations({ agencyId }) {
                     type="text"
                     value={formData.pipeline_id}
                     onChange={(e) => setFormData({ ...formData, pipeline_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
                     placeholder="ID do pipeline"
                   />
                 </div>

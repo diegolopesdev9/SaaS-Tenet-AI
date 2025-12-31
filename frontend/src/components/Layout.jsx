@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { 
@@ -185,7 +184,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         <span className="text-sm font-medium truncate">Visão Geral</span>
                         <span className="ml-auto text-xs text-gray-400">Todas</span>
                       </button>
-                      
+
                       {/* Lista de Tenets Agrupados por Tipo */}
                       {Object.entries(tenetsByTipo).map(([tipo, tenetsDoTipo]) => (
                         tenetsDoTipo.length > 0 && (
@@ -196,14 +195,14 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                                 {tipoLabels[tipo]}
                               </span>
                             </div>
-                            
+
                             {/* Itens do Grupo */}
                             {tenetsDoTipo.map((agency) => (
                               <button
                                 key={agency.id}
                                 onClick={() => handleSelectAgency(agency)}
                                 className={`w-full flex items-center gap-2 px-3 py-2 pl-6 text-left hover:bg-gray-50 transition-colors ${
-                                  agency.id === selectedAgencyId ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                  agency.id === selectedAgencyId ? 'bg-cyan-50 text-cyan-700' : 'text-gray-700'
                                 }`}
                               >
                                 <Building2 className="w-4 h-4 flex-shrink-0" />
@@ -225,7 +224,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            
+
             {/* Menu do Super Admin - Visão Geral */}
             {isSuperAdmin && isGeneralView && (
               <>
@@ -291,7 +290,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-cyan-50 text-cyan-600 font-medium'
                             : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                         }`
                       }
@@ -346,7 +345,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700'
+                            ? 'bg-cyan-50 text-cyan-600 font-medium'
                             : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                         }`
                       }

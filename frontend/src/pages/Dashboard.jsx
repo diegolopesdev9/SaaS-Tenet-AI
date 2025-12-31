@@ -442,7 +442,19 @@ export default function Dashboard({ agencyId }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    {getStatusBadge(lead.lead_status)}
+                    {lead.lead_status === 'qualificado' ? (
+                      <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                        Qualificado
+                      </span>
+                    ) : lead.lead_status === 'em_andamento' ? (
+                      <span className="px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-medium rounded-full">
+                        Em progresso
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                        {lead.lead_status}
+                      </span>
+                    )}
                     <div className="text-xs text-gray-500">
                       {lead.last_message_at && new Date(lead.last_message_at).toLocaleDateString('pt-BR')}
                     </div>
