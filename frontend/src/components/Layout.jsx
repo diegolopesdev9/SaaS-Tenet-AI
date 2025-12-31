@@ -381,9 +381,11 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
             </button>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-gray-200">
-            <TokenIndicator />
-          </div>
+          {!isGeneralView && (
+            <div className="mt-auto pt-4 border-t border-gray-200">
+              <TokenIndicator />
+            </div>
+          )}
 
           {/* Footer */}
           <div className="px-4 py-3 border-t border-gray-100">
