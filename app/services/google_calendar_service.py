@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 # Escopos necessários
 SCOPES = [
     'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/calendar.events'
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive.file'
 ]
 
 class GoogleCalendarService:
