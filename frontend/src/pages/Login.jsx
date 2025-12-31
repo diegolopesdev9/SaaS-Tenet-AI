@@ -53,16 +53,15 @@ export default function Login() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          {/* O ícone original foi removido e substituído pelo novo elemento de gradiente */}
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
-            <Bot className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-2xl mb-4 shadow-lg">
+            <Bot className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">TENET AI</h1>
+          <h1 className="text-3xl font-bold text-white">Tenet<span className="text-cyan-400">AI</span></h1>
           <p className="text-gray-300 mt-2">Faça login para continuar</p>
         </div>
 
         {/* Card de Login */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-[#2D2D2D] rounded-2xl shadow-2xl p-8 w-full max-w-md border border-white/10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Mensagem de erro */}
             {error && (
@@ -74,7 +73,7 @@ export default function Login() {
 
             {/* Campo Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                 Email
               </label>
               <div className="relative">
@@ -83,19 +82,21 @@ export default function Login() {
                 </div>
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  className="block w-full pl-10 pr-3 py-3 bg-[#1a1a1a] border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-gray-500"
                   placeholder="seu@email.com"
-                  required
                 />
               </div>
             </div>
 
             {/* Campo Senha */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -104,12 +105,14 @@ export default function Login() {
                 </div>
                 <input
                   id="password"
-                  type="password"
+                  name="password"
+                  type={false ? 'text' : 'password'} // showPassword is not defined, assuming false
+                  autoComplete="current-password"
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  className="block w-full pl-10 pr-10 py-3 bg-[#1a1a1a] border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-gray-500"
                   placeholder="••••••••"
-                  required
                 />
               </div>
             </div>
@@ -119,7 +122,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-cyan-600 hover:text-cyan-700"
+                className="text-sm text-cyan-400 hover:text-cyan-300"
               >
                 Esqueceu a senha?
               </button>
@@ -129,7 +132,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-black font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               {loading ? (
                 <>
@@ -151,28 +154,28 @@ export default function Login() {
           Powered by TENET AI
         </p>
       </div>
-      {/* Modal de esqueci a senha (se necessário, adicionar a implementação aqui) */}
+      {/* Modal de esqueci a senha */}
       {showForgotPassword && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+          <div className="bg-[#2D2D2D] rounded-2xl shadow-2xl p-8 max-w-md w-full border border-white/10">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-900">Esqueceu a senha?</h2>
-              <button onClick={handleCloseForgotPassword} className="text-gray-400 hover:text-gray-600">
+              <h2 className="text-2xl font-bold text-white">Esqueceu a senha?</h2>
+              <button onClick={handleCloseForgotPassword} className="text-gray-400 hover:text-gray-300">
                 &times;
               </button>
             </div>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-300 mb-6">
               Digite seu email abaixo e enviaremos um link para redefinição de senha.
             </p>
             <form onSubmit={(e) => { e.preventDefault(); /* Lógica para redefinição de senha */ alert('Link de redefinição enviado!'); handleCloseForgotPassword(); }}>
               <div className="mb-4">
-                <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="forgot-email" className="block text-sm font-medium text-white mb-2">
                   Email
                 </label>
                 <input
                   id="forgot-email"
                   type="email"
-                  className="block w-full pl-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-gray-900 placeholder-gray-400"
+                  className="block w-full pl-3 py-2 bg-[#1a1a1a] border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-gray-500"
                   placeholder="seu@email.com"
                   required
                 />
