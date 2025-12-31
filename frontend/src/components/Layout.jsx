@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
+import TokenIndicator from './TokenIndicator'
 
 export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyChange, isSuperAdmin }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -378,6 +379,10 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
               <LogOut className="w-4 h-4" />
               <span>Sair</span>
             </button>
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-gray-200">
+            <TokenIndicator />
           </div>
 
           {/* Footer */}
