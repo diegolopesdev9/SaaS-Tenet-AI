@@ -347,6 +347,30 @@ async def create_tenet(
 
         logger.info(f"Usuário admin criado: {usuario_response.data[0]['id']}")
 
+        # Criar subscription trial para o novo tenet
+        try:
+            from datetime import datetime, timezone
+            from dateutil.relativedelta import relativedelta
+            
+            # Buscar plano starter como padrão
+            plan = supabase.table("plans").select("id").eq("name", "starter").execute()
+            plan_id = plan.data[0]["id"] if plan.data else None
+            
+            now = datetime.now(timezone.utc)
+            period_end = now + relativedelta(months=1)
+            
+            supabase.table("subscriptions").insert({
+                "tenet_id": str(tenet_id),
+                "plan_id": plan_id,
+                "status": "trial",
+                "current_period_start": now.date().isoformat(),
+                "current_period_end": period_end.date().isoformat(),
+                "tokens_used_this_period": 0,
+                "conversations_used_this_period": 0
+            }).execute()
+        except Exception as sub_error:
+            logger.warning(f"Erro ao criar subscription: {sub_error}")
+
         return {
             "success": True,
             "tenet": tenet_response.data[0],
