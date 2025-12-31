@@ -4,7 +4,6 @@ Rotas para integração com Google Sheets.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional
 from app.routes.auth import get_current_user
 from app.services.google_sheets_service import GoogleSheetsService
 
