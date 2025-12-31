@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Users, MessageSquare, TrendingUp, CheckCircle, Clock, XCircle, Calendar, AlertCircle, BarChart3, Filter, Building2 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../services/api'
+import TokenUsage from '../components/TokenUsage'
 
 export default function Dashboard({ agencyId }) {
   const [metrics, setMetrics] = useState(null)
@@ -81,6 +82,11 @@ export default function Dashboard({ agencyId }) {
 
   return (
     <div className="space-y-6">
+      {/* Uso de Tokens */}
+      <div className="mb-6">
+        <TokenUsage />
+      </div>
+
       {/* Header com Filtro */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
