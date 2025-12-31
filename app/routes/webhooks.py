@@ -249,6 +249,7 @@ async def receive_whatsapp_webhook(request: Request):
 
         # Montar configurações do agente
         agent_config = {
+            "tenet_id": agency_id,
             "agent_name": agency.get("agent_name", "Assistente"),
             "personality": agency.get("personality", "profissional e amigável"),
             "welcome_message": agency.get("welcome_message"),
