@@ -1,0 +1,189 @@
+
+"""
+Serviço de tracking de uso de tokens.
+"""
+import logging
+from datetime import datetime, date, timedelta, timezone
+from typing import Dict
+from supabase import Client
+
+logger = logging.getLogger(__name__)
+
+
+class TokenTrackingService:
+    """Serviço para rastrear uso de tokens por tenant."""
+    
+    def __init__(self, supabase_client: Client):
+        self.supabase = supabase_client
+    
+    async def track_usage(
+        self,
+        tenet_id: str,
+        tokens_input: int,
+        tokens_output: int
+    ) -> Dict:
+        """Registra uso de tokens para um tenant."""
+        try:
+            today = date.today().isoformat()
+            tokens_total = tokens_input + tokens_output
+            
+            # Tentar atualizar registro existente do dia
+            existing = self.supabase.table("token_usage").select("*").eq(
+                "tenet_id", tenet_id
+            ).eq("date", today).execute()
+            
+            if existing.data:
+                current = existing.data[0]
+                self.supabase.table("token_usage").update({
+                    "tokens_input": current["tokens_input"] + tokens_input,
+                    "tokens_output": current["tokens_output"] + tokens_output,
+                    "tokens_total": current["tokens_total"] + tokens_total,
+                    "conversations_count": current["conversations_count"] + 1,
+                    "api_calls_count": current["api_calls_count"] + 1
+                }).eq("id", current["id"]).execute()
+            else:
+                # Criar novo registro do dia
+                self.supabase.table("token_usage").insert({
+                    "tenet_id": tenet_id,
+                    "date": today,
+                    "tokens_input": tokens_input,
+                    "tokens_output": tokens_output,
+                    "tokens_total": tokens_total,
+                    "conversations_count": 1,
+                    "api_calls_count": 1
+                }).execute()
+            
+            # Atualizar contador na subscription
+            await self._update_subscription_usage(tenet_id, tokens_total)
+            
+            logger.debug(f"Tokens rastreados para {tenet_id}: {tokens_total}")
+            return {"success": True, "tokens_tracked": tokens_total}
+            
+        except Exception as e:
+            logger.error(f"Erro ao rastrear tokens: {e}")
+            return {"success": False, "error": str(e)}
+    
+    async def _update_subscription_usage(self, tenet_id: str, tokens: int):
+        """Atualiza contador na subscription."""
+        try:
+            sub = self.supabase.table("subscriptions").select("*").eq(
+                "tenet_id", tenet_id
+            ).execute()
+            
+            if sub.data:
+                current = sub.data[0]
+                self.supabase.table("subscriptions").update({
+                    "tokens_used_this_period": (current.get("tokens_used_this_period") or 0) + tokens,
+                    "conversations_used_this_period": (current.get("conversations_used_this_period") or 0) + 1,
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", current["id"]).execute()
+        except Exception as e:
+            logger.warning(f"Erro ao atualizar subscription: {e}")
+    
+    async def get_usage_summary(self, tenet_id: str, days: int = 30) -> Dict:
+        """Retorna resumo de uso dos últimos N dias."""
+        try:
+            start_date = (date.today() - timedelta(days=days)).isoformat()
+            
+            result = self.supabase.table("token_usage").select("*").eq(
+                "tenet_id", tenet_id
+            ).gte("date", start_date).order("date", desc=True).execute()
+            
+            if not result.data:
+                return {
+                    "total_tokens": 0,
+                    "total_conversations": 0,
+                    "daily_usage": [],
+                    "period_days": days
+                }
+            
+            total_tokens = sum(r["tokens_total"] for r in result.data)
+            total_conversations = sum(r["conversations_count"] for r in result.data)
+            
+            return {
+                "total_tokens": total_tokens,
+                "total_conversations": total_conversations,
+                "daily_usage": result.data,
+                "period_days": days
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar resumo: {e}")
+            return {"error": str(e)}
+    
+    async def get_current_period_usage(self, tenet_id: str) -> Dict:
+        """Retorna uso do período atual da subscription."""
+        try:
+            sub = self.supabase.table("subscriptions").select(
+                "*, plans(*)"
+            ).eq("tenet_id", tenet_id).execute()
+            
+            if not sub.data:
+                return {
+                    "has_subscription": False,
+                    "plan_name": "Trial",
+                    "tokens_used": 0,
+                    "tokens_limit": 50000,
+                    "tokens_remaining": 50000,
+                    "percentage_used": 0,
+                    "conversations_used": 0,
+                    "conversations_limit": 50,
+                    "is_over_limit": False
+                }
+            
+            subscription = sub.data[0]
+            plan = subscription.get("plans") or {}
+            
+            tokens_used = subscription.get("tokens_used_this_period") or 0
+            tokens_limit = plan.get("monthly_tokens") or 50000
+            tokens_remaining = max(0, tokens_limit - tokens_used)
+            percentage_used = (tokens_used / tokens_limit * 100) if tokens_limit > 0 else 0
+            
+            conversations_used = subscription.get("conversations_used_this_period") or 0
+            conversations_limit = plan.get("monthly_conversations") or 50
+            
+            return {
+                "has_subscription": True,
+                "plan_name": plan.get("display_name", "Unknown"),
+                "plan_id": plan.get("name", "unknown"),
+                "tokens_used": tokens_used,
+                "tokens_limit": tokens_limit,
+                "tokens_remaining": tokens_remaining,
+                "percentage_used": round(percentage_used, 1),
+                "conversations_used": conversations_used,
+                "conversations_limit": conversations_limit,
+                "period_start": subscription.get("current_period_start"),
+                "period_end": subscription.get("current_period_end"),
+                "is_over_limit": tokens_used > tokens_limit,
+                "status": subscription.get("status", "unknown")
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao buscar uso do período: {e}")
+            return {"error": str(e)}
+    
+    async def check_can_use(self, tenet_id: str) -> Dict:
+        """Verifica se tenant pode continuar usando (tem limite disponível)."""
+        usage = await self.get_current_period_usage(tenet_id)
+        
+        if "error" in usage:
+            return {"allowed": True, "reason": "error_checking"}
+        
+        # Verificar créditos extras
+        credits = self.supabase.table("token_credits").select("*").eq(
+            "tenet_id", tenet_id
+        ).execute()
+        
+        extra_tokens = credits.data[0]["tokens_remaining"] if credits.data else 0
+        
+        # Permite usar se tem limite ou créditos extras
+        total_available = usage["tokens_remaining"] + extra_tokens
+        
+        return {
+            "allowed": total_available > 0,
+            "tokens_remaining": usage["tokens_remaining"],
+            "extra_credits": extra_tokens,
+            "total_available": total_available,
+            "percentage_used": usage["percentage_used"],
+            "is_over_limit": usage["is_over_limit"]
+        }
