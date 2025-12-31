@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react'
-import { 
-  Link2, CheckCircle, XCircle, Loader2, Settings, Trash2, 
+import {
+  Link2, CheckCircle, XCircle, Loader2, Settings, Trash2,
   ToggleLeft, ToggleRight, TestTube, Plus, AlertCircle, User, Calendar, BarChart3
 } from 'lucide-react'
 import api from '../services/api'
@@ -28,7 +27,7 @@ export default function Integrations({ agencyId }) {
   })
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(null)
-  const [message, setMessage] = useState(null)
+  const [message, setMessage] = useState({ type: '', text: '' })
   const [adminConfig, setAdminConfig] = useState({
     admin_name: '',
     admin_whatsapp_number: ''
@@ -40,19 +39,22 @@ export default function Integrations({ agencyId }) {
     weekly_report_day: 1,
     weekly_report_time: '09:00'
   })
-  const [calendarStatus, setCalendarStatus] = useState({ connected: false })
+  const [calendarStatus, setCalendarStatus] = useState({ connected: false, email: null })
+  const [sheetsStatus, setSheetsStatus] = useState({ connected: false, google_connected: false })
+  const [sheetsLoading, setSheetsLoading] = useState(false)
+
 
   useEffect(() => {
     loadIntegrations()
-    loadLogs()
     loadAdminConfig()
     loadCalendarStatus()
+    loadSheetsStatus()
   }, [agencyId])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const calendarStatusParam = params.get('calendar')
-    
+
     if (calendarStatusParam === 'connected') {
       setMessage({ type: 'success', text: 'Google Calendar conectado com sucesso!' })
       loadCalendarStatus()
@@ -100,10 +102,19 @@ export default function Integrations({ agencyId }) {
 
   const loadCalendarStatus = async () => {
     try {
-      const response = await api.get('/calendar/status')
+      const response = await api.get('/google-calendar/status')
       setCalendarStatus(response.data)
     } catch (error) {
-      console.error('Erro ao carregar status calendar:', error)
+      console.error('Erro ao carregar status do calendar:', error)
+    }
+  }
+
+  const loadSheetsStatus = async () => {
+    try {
+      const response = await api.get('/google-sheets/status')
+      setSheetsStatus(response.data)
+    } catch (error) {
+      console.error('Erro ao carregar status sheets:', error)
     }
   }
 
@@ -142,7 +153,7 @@ export default function Integrations({ agencyId }) {
 
   const handleConnectCalendar = async () => {
     try {
-      const response = await api.get('/calendar/auth/url')
+      const response = await api.get('/google-calendar/auth/url')
       window.location.href = response.data.auth_url
     } catch (error) {
       setMessage({ type: 'error', text: 'Erro ao conectar Google Calendar' })
@@ -151,11 +162,33 @@ export default function Integrations({ agencyId }) {
 
   const handleDisconnectCalendar = async () => {
     if (!confirm('Deseja desconectar o Google Calendar?')) return
-    
     try {
-      await api.post('/calendar/disconnect')
-      setCalendarStatus({ connected: false })
-      setMessage({ type: 'success', text: 'Google Calendar desconectado' })
+      await api.post('/google-calendar/disconnect')
+      setCalendarStatus({ connected: false, email: null })
+      setMessage({ type: 'success', text: 'Google Calendar desconectado com sucesso' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erro ao desconectar Google Calendar' })
+    }
+  }
+
+  const handleCreateSpreadsheet = async () => {
+    setSheetsLoading(true)
+    try {
+      const response = await api.post('/google-sheets/create')
+      setSheetsStatus({ connected: true, spreadsheet_url: response.data.spreadsheet_url })
+      setMessage({ type: 'success', text: 'Planilha criada com sucesso!' })
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao criar planilha' })
+    }
+    setSheetsLoading(false)
+  }
+
+  const handleDisconnectSheets = async () => {
+    if (!confirm('Deseja desconectar o Google Sheets?')) return
+    try {
+      await api.post('/google-sheets/disconnect')
+      setSheetsStatus({ connected: false })
+      setMessage({ type: 'success', text: 'Google Sheets desconectado' })
     } catch (error) {
       setMessage({ type: 'error', text: 'Erro ao desconectar' })
     }
@@ -175,10 +208,10 @@ export default function Integrations({ agencyId }) {
 
   const handleSave = async () => {
     if (!selectedCRM) return
-    
+
     setSaving(true)
     setMessage(null)
-    
+
     try {
       await api.post(`/integrations/${agencyId}`, {
         crm_type: selectedCRM.id,
@@ -188,7 +221,7 @@ export default function Integrations({ agencyId }) {
         pipeline_id: formData.pipeline_id || null,
         is_active: true
       })
-      
+
       setMessage({ type: 'success', text: `${selectedCRM.name} configurado com sucesso!` })
       setShowModal(false)
       loadIntegrations()
@@ -219,9 +252,9 @@ export default function Integrations({ agencyId }) {
     try {
       const response = await api.patch(`/integrations/${agencyId}/${crmType}/toggle`)
       loadIntegrations()
-      setMessage({ 
-        type: 'success', 
-        text: `Integração ${response.data.is_active ? 'ativada' : 'desativada'}` 
+      setMessage({
+        type: 'success',
+        text: `Integração ${response.data.is_active ? 'ativada' : 'desativada'}`
       })
     } catch (error) {
       setMessage({ type: 'error', text: 'Erro ao alternar status' })
@@ -230,7 +263,7 @@ export default function Integrations({ agencyId }) {
 
   const handleDelete = async (crmType) => {
     if (!confirm('Tem certeza que deseja remover esta integração?')) return
-    
+
     try {
       await api.delete(`/integrations/${agencyId}/${crmType}`)
       loadIntegrations()
@@ -263,7 +296,7 @@ export default function Integrations({ agencyId }) {
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
-          message.type === 'success' 
+          message.type === 'success'
             ? 'bg-green-50 border-green-200 text-green-800'
             : 'bg-red-50 border-red-200 text-red-800'
         }`}>
@@ -284,7 +317,7 @@ export default function Integrations({ agencyId }) {
             <p className="text-sm text-gray-500">Configure o administrador que receberá relatórios e poderá enviar comandos</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -298,7 +331,7 @@ export default function Integrations({ agencyId }) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               WhatsApp do Admin
@@ -313,7 +346,7 @@ export default function Integrations({ agencyId }) {
             <p className="text-xs text-gray-500 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
           </div>
         </div>
-        
+
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
           <h4 className="font-medium text-blue-800 mb-2">📱 Comandos disponíveis para o Admin:</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-blue-700">
@@ -327,7 +360,7 @@ export default function Integrations({ agencyId }) {
             <span>• ajuda</span>
           </div>
         </div>
-        
+
         <div className="flex gap-3 mt-4">
           <button
             onClick={handleSaveAdminConfig}
@@ -336,7 +369,7 @@ export default function Integrations({ agencyId }) {
           >
             {loading ? 'Salvando...' : 'Salvar Admin'}
           </button>
-          
+
           <button
             onClick={handleTestReport}
             disabled={loading || !adminConfig.admin_whatsapp_number}
@@ -358,7 +391,7 @@ export default function Integrations({ agencyId }) {
             <p className="text-sm text-gray-500">Configure o envio automático de relatórios para o admin</p>
           </div>
         </div>
-        
+
         <div className="space-y-4">
           {/* Relatório Diário */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -381,7 +414,7 @@ export default function Integrations({ agencyId }) {
               className="px-3 py-1 border border-gray-300 rounded-lg"
             />
           </div>
-          
+
           {/* Relatório Semanal */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3">
@@ -419,7 +452,7 @@ export default function Integrations({ agencyId }) {
             </div>
           </div>
         </div>
-        
+
         <button
           onClick={handleSaveReportsConfig}
           disabled={loading}
@@ -429,66 +462,116 @@ export default function Integrations({ agencyId }) {
         </button>
       </div>
 
-      {/* Seção Google Calendar */}
+      {/* Seção Google (Calendar + Sheets) */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-red-100 rounded-lg">
-            <Calendar className="w-6 h-6 text-red-600" />
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold">Google Calendar</h3>
-            <p className="text-sm text-gray-500">Conecte sua agenda para agendamento automático de reuniões</p>
+            <h3 className="text-lg font-semibold">Google</h3>
+            <p className="text-sm text-gray-500">Conecte sua conta Google para Calendar e Sheets</p>
           </div>
         </div>
-        
-        {calendarStatus.connected ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-green-700 font-medium">Conectado</span>
-              <span className="text-green-600">{calendarStatus.email}</span>
-            </div>
-            
-            <button
-              onClick={handleDisconnectCalendar}
-              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
-            >
-              Desconectar Google Calendar
-            </button>
+
+        {/* Google Calendar */}
+        <div className="border rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png"
+              alt="Google Calendar"
+              className="w-5 h-5"
+            />
+            <span className="font-medium">Google Calendar</span>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 p-4 bg-yellow-50 rounded-lg">
-              <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
-              <span className="text-yellow-700">Não conectado</span>
+
+          {calendarStatus.connected ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-sm text-green-700">Conectado - {calendarStatus.email}</span>
+              </div>
+              <button onClick={handleDisconnectCalendar} className="text-sm text-red-600 hover:underline">
+                Desconectar
+              </button>
             </div>
-            
-            <button
-              onClick={handleConnectCalendar}
-              className="flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition"
-            >
-              <img 
-                src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png" 
-                alt="Google Calendar" 
-                className="w-6 h-6" 
-              />
-              <span className="font-medium text-gray-700">Conectar com Google Calendar</span>
-            </button>
-            
-            <p className="text-xs text-gray-500">
-              Ao conectar, você autoriza o TENET AI a acessar sua agenda para criar e gerenciar eventos de reuniões.
-            </p>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                <span className="text-sm text-yellow-700">Não conectado</span>
+              </div>
+              <button onClick={handleConnectCalendar} className="text-sm text-blue-600 hover:underline">
+                Conectar
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Google Sheets */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <img
+              src="https://www.gstatic.com/images/branding/product/2x/sheets_48dp.png"
+              alt="Google Sheets"
+              className="w-5 h-5"
+            />
+            <span className="font-medium">Google Sheets</span>
           </div>
-        )}
+
+          {sheetsStatus.connected ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="text-sm text-green-700">Conectado</span>
+                {sheetsStatus.spreadsheet_url && (
+                  <a href={sheetsStatus.spreadsheet_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                    Abrir planilha
+                  </a>
+                )}
+              </div>
+              <button onClick={handleDisconnectSheets} className="text-sm text-red-600 hover:underline">
+                Desconectar
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                <span className="text-sm text-yellow-700">Não conectado</span>
+              </div>
+              {sheetsStatus.google_connected || calendarStatus.connected ? (
+                <button
+                  onClick={handleCreateSpreadsheet}
+                  disabled={sheetsLoading}
+                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                >
+                  {sheetsLoading ? 'Criando...' : 'Criar planilha'}
+                </button>
+              ) : (
+                <span className="text-sm text-gray-500">Conecte o Google Calendar primeiro</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <p className="text-xs text-gray-500 mt-3">
+          Ao conectar, você autoriza o TENET AI a acessar sua agenda e planilhas.
+        </p>
       </div>
 
       {/* Grid de CRMs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {CRM_OPTIONS.map((crm) => {
           const status = getIntegrationStatus(crm.id)
-          
+
           return (
-            <div 
+            <div
               key={crm.id}
               className={`bg-white rounded-lg border-2 p-6 transition-all ${
                 status?.is_active ? 'border-green-500' : 'border-gray-200'
@@ -520,7 +603,7 @@ export default function Integrations({ agencyId }) {
                       <><XCircle className="w-4 h-4 text-red-500" /> Credenciais pendentes</>
                     )}
                   </div>
-                  
+
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => handleOpenModal(crm)}
@@ -543,8 +626,8 @@ export default function Integrations({ agencyId }) {
                     <button
                       onClick={() => handleToggle(crm.id)}
                       className={`px-3 py-2 text-sm font-medium rounded-lg ${
-                        status.is_active 
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                        status.is_active
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
@@ -575,7 +658,7 @@ export default function Integrations({ agencyId }) {
       {/* Logs */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Sincronização</h2>
-        
+
         {logs.length === 0 ? (
           <p className="text-gray-500 text-center py-8">Nenhuma sincronização realizada ainda</p>
         ) : (
@@ -596,8 +679,8 @@ export default function Integrations({ agencyId }) {
                     <td className="py-3 px-4 text-sm text-gray-600">{log.lead_phone}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
-                        log.status === 'success' 
-                          ? 'bg-green-100 text-green-700' 
+                        log.status === 'success'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
                       }`}>
                         {log.status === 'success' ? 'Sucesso' : 'Erro'}
@@ -621,7 +704,7 @@ export default function Integrations({ agencyId }) {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Configurar {selectedCRM.name}
             </h3>
-            
+
             <div className="space-y-4">
               {/* API Key */}
               {['rdstation', 'pipedrive', 'notion', 'moskit'].includes(selectedCRM.id) && (
@@ -638,7 +721,7 @@ export default function Integrations({ agencyId }) {
                   />
                 </div>
               )}
-              
+
               {/* API Token para Zoho */}
               {selectedCRM.id === 'zoho' && (
                 <div>
@@ -654,7 +737,7 @@ export default function Integrations({ agencyId }) {
                   />
                 </div>
               )}
-              
+
               {/* Database ID para Notion */}
               {selectedCRM.id === 'notion' && (
                 <div>
@@ -670,7 +753,7 @@ export default function Integrations({ agencyId }) {
                   />
                 </div>
               )}
-              
+
               {/* Pipeline ID para Pipedrive/Moskit */}
               {['pipedrive', 'moskit'].includes(selectedCRM.id) && (
                 <div>
@@ -687,7 +770,7 @@ export default function Integrations({ agencyId }) {
                 </div>
               )}
             </div>
-            
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
