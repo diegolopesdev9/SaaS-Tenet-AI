@@ -16,7 +16,6 @@ from app.services.crm_service import CRMService
 from app.services.notification_service import NotificationService
 from app.services.tenet_service import AgencyService
 from app.services.admin_whatsapp_service import admin_whatsapp_service
-from app.services.google_sheets_service import GoogleSheetsService
 from app.services.token_tracking_service import TokenTrackingService
 from app.database import get_supabase_client
 from app.config import settings
