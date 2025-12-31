@@ -15,7 +15,7 @@ from app.database import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/calendar", tags=["Google Calendar"])
+router = APIRouter(prefix="/api/google-calendar", tags=["Google Calendar"])
 
 
 # ========================================
