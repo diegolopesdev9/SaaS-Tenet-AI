@@ -1,0 +1,83 @@
+Atualize a tela de login para usar o tema dark consistente com a landing page.
+
+=== ARQUIVO: frontend/src/pages/Login.jsx ===
+
+ENCONTRE a div principal do container (primeira div do return):
+
+<div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
+
+SUBSTITUA por:
+
+<div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center p-4">
+
+
+ENCONTRE o ícone/logo container:
+
+<div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+
+SUBSTITUA por:
+
+<div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-2xl mb-4 shadow-lg">
+
+
+ENCONTRE o título:
+
+<h1 className="text-3xl font-bold text-white">TENET AI</h1>
+
+SUBSTITUA por:
+
+<h1 className="text-3xl font-bold text-white">Tenet<span className="text-cyan-400">AI</span></h1>
+
+
+ENCONTRE o card de login (bg-white):
+
+<div className="bg-white rounded-2xl shadow-2xl p-8">
+
+SUBSTITUA por:
+
+<div className="bg-[#2D2D2D] rounded-2xl shadow-2xl p-8 border border-white/10">
+
+
+ENCONTRE os labels (text-gray-700):
+
+className="block text-sm font-medium text-gray-700 mb-2"
+
+SUBSTITUA TODOS por:
+
+className="block text-sm font-medium text-gray-300 mb-2"
+
+
+ENCONTRE os inputs:
+
+className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+
+SUBSTITUA TODOS por:
+
+className="block w-full pl-10 pr-3 py-3 bg-[#1a1a1a] border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-gray-500"
+
+
+ENCONTRE o botão de submit:
+
+className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+
+SUBSTITUA por:
+
+className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-black font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+
+
+ENCONTRE o link "Esqueceu a senha?" (se existir, text-blue-600):
+
+SUBSTITUA text-blue-600 por text-cyan-400
+SUBSTITUA hover:text-blue-800 por hover:text-cyan-300
+
+
+ENCONTRE o footer "Powered by":
+
+<p className="text-center text-gray-400 text-sm mt-6">
+
+SUBSTITUA por:
+
+<p className="text-center text-gray-500 text-sm mt-6">
+
+
+NÃO altere a lógica de autenticação, apenas as classes de estilo.
