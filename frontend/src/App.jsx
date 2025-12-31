@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import ChangePassword from './pages/ChangePassword';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Billing from './pages/Billing';
 import Conversations from './pages/Conversations';
 import ConversationDetail from './pages/ConversationDetail';
 import AgentConfig from './pages/AgentConfig';
@@ -185,6 +186,7 @@ function App() {
         <Route path="admin/ab-tests" element={<ABTests />} />
         <Route path="conhecimento" element={<KnowledgeWrapper />} />
         <Route path="whatsapp" element={<WhatsAppConnectionWrapper />} />
+        <Route path="/billing" element={<Billing />} />
       </Route>
 
       {/* Redirecionar rotas não encontradas */}
