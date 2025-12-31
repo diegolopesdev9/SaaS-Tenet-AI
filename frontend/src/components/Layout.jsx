@@ -25,6 +25,7 @@ import {
 import api from '../services/api'
 import authService from '../services/auth'
 import TokenIndicator from './TokenIndicator'
+import UsageAlert from './UsageAlert'
 
 export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyChange, isSuperAdmin }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -403,6 +404,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
         <main className="p-6">
+          <UsageAlert />
           <Outlet />
         </main>
       </div>
