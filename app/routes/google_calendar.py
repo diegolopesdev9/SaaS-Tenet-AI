@@ -1,4 +1,3 @@
-
 """
 Rotas para integração com Google Calendar.
 """
@@ -41,14 +40,14 @@ async def get_auth_url(current_user: dict = Depends(get_current_user)):
     tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
-    
+
     # Verificar diretamente do ambiente (igual ao serviço)
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-    
+
     if not client_id or not client_secret:
         raise HTTPException(status_code=400, detail="Credenciais do Google não configuradas")
-    
+
     try:
         auth_url = google_calendar_service.get_authorization_url(tenet_id)
         return {"auth_url": auth_url}
@@ -67,23 +66,23 @@ async def auth_callback(
     error: str = None
 ):
     """Callback do OAuth2 do Google."""
-    
+
     # Se usuário cancelou ou houve erro no Google
     if error or not code:
         logger.warning(f"OAuth cancelado ou erro: {error}")
         return RedirectResponse(url="/integracoes?calendar=cancelled")
-    
+
     if not state:
         return RedirectResponse(url="/integracoes?calendar=error&message=Estado inválido")
-    
+
     try:
         result = await google_calendar_service.handle_callback(code, state)
-        
+
         if result.get("success"):
             return RedirectResponse(url="/integracoes?calendar=connected")
         else:
             return RedirectResponse(url=f"/integracoes?calendar=error&message={result.get('error')}")
-            
+
     except Exception as e:
         logger.error(f"Erro no callback: {e}")
         return RedirectResponse(url=f"/integracoes?calendar=error&message={str(e)}")
@@ -95,29 +94,29 @@ async def get_calendar_status(current_user: dict = Depends(get_current_user)):
     tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
-    
+
     # Verificar diretamente do ambiente
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-    
+
     if not client_id or not client_secret:
         return {"connected": False, "reason": "credentials_not_configured"}
-    
+
     try:
         supabase = get_supabase_client()
         result = supabase.table("google_calendar_integrations").select(
             "google_email, is_active, created_at, updated_at"
         ).eq("tenet_id", tenet_id).execute()
-        
+
         if result.data and result.data[0].get("is_active"):
             return {
                 "connected": True,
                 "email": result.data[0].get("google_email"),
                 "connected_at": result.data[0].get("created_at")
             }
-        
+
         return {"connected": False}
-        
+
     except Exception as e:
         logger.error(f"Erro ao verificar status: {e}")
         return {"connected": False, "error": str(e)}
@@ -129,15 +128,15 @@ async def disconnect_calendar(current_user: dict = Depends(get_current_user)):
     tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
-    
+
     try:
         result = await google_calendar_service.disconnect(tenet_id)
-        
+
         if result.get("success"):
             return {"success": True, "message": "Google Calendar desconectado"}
         else:
             raise HTTPException(status_code=400, detail=result.get("error"))
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -154,7 +153,7 @@ async def create_event(
     tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
-    
+
     try:
         result = await google_calendar_service.create_event(
             tenet_id=tenet_id,
@@ -165,12 +164,12 @@ async def create_event(
             attendees=request.attendees,
             location=request.location
         )
-        
+
         if result.get("success"):
             return result
         else:
             raise HTTPException(status_code=400, detail=result.get("error"))
-            
+
     except HTTPException:
         raise
     except Exception as e:
@@ -188,7 +187,7 @@ async def get_available_slots(
     tenet_id = current_user.get("tenet_id")
     if not tenet_id:
         raise HTTPException(status_code=400, detail="Usuário não vinculado a um Tenet")
-    
+
     try:
         date_obj = datetime.strptime(date, "%Y-%m-%d")
         slots = await google_calendar_service.get_available_slots(
@@ -196,9 +195,9 @@ async def get_available_slots(
             date=date_obj,
             duration_minutes=duration
         )
-        
+
         return {"date": date, "slots": slots}
-        
+
     except ValueError:
         raise HTTPException(status_code=400, detail="Data inválida. Use formato YYYY-MM-DD")
     except Exception as e:
