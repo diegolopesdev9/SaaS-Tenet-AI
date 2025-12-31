@@ -82,10 +82,12 @@ export default function Dashboard({ agencyId }) {
 
   return (
     <div className="space-y-6">
-      {/* Uso de Tokens */}
-      <div className="mb-6">
-        <TokenUsage />
-      </div>
+      {/* Uso de Tokens - Oculto na visão geral do Super Admin */}
+      {!isGeneralView && (
+        <div className="mb-6">
+          <TokenUsage />
+        </div>
+      )}
 
       {/* Header com Filtro */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
