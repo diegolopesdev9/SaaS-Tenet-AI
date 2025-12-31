@@ -17,6 +17,7 @@ from app.services.notification_service import NotificationService
 from app.services.tenet_service import AgencyService
 from app.services.admin_whatsapp_service import admin_whatsapp_service
 from app.services.google_sheets_service import GoogleSheetsService
+from app.services.token_tracking_service import TokenTrackingService
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -243,6 +244,25 @@ async def receive_whatsapp_webhook(request: Request):
 
         # Inicializar serviços
         ai_service = AIService()
+
+        # ============================================
+        # VERIFICAÇÃO DE TOKENS
+        # ============================================
+
+        # Verificar se tem tokens disponíveis
+        tracking_service = TokenTrackingService(supabase)
+        can_use = await tracking_service.check_can_use(agency_id)
+        
+        if not can_use.get("allowed", True):
+            logger.warning(f"Tenet {agency_id} sem tokens disponíveis")
+            # Enviar mensagem informando que acabou o limite
+            limit_message = "Olá! No momento estamos com nossa capacidade de atendimento no limite. Por favor, tente novamente mais tarde ou entre em contato por outro canal. Obrigado pela compreensão! 🙏"
+            await whatsapp_service.send_text_message(
+                phone_number=sender_phone,
+                message=limit_message,
+                instance_name=instance_name
+            )
+            return {"status": "limit_reached"}
 
         # ============================================
         # GERAÇÃO DE RESPOSTA COM IA
