@@ -8,6 +8,8 @@ import re
 from typing import Optional, Dict, Any, List
 import google.generativeai as genai
 from app.config import settings
+from app.services.token_tracking_service import TokenTrackingService
+from app.database import get_supabase_client
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -124,6 +126,21 @@ Responda de forma natural e profissional:"""
 
             # Gerar resposta
             response = self.model.generate_content(full_prompt)
+
+            # Rastrear uso de tokens
+            try:
+                tokens_input = len(full_prompt) // 4
+                tokens_output = len(response.text) // 4
+                
+                if agent_config and agent_config.get("tenet_id"):
+                    tracking = TokenTrackingService(get_supabase_client())
+                    await tracking.track_usage(
+                        tenet_id=agent_config["tenet_id"],
+                        tokens_input=tokens_input,
+                        tokens_output=tokens_output
+                    )
+            except Exception as track_error:
+                logger.warning(f"Erro ao rastrear tokens: {track_error}")
 
             logger.info("Resposta da IA recebida")
 
