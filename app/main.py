@@ -21,6 +21,7 @@ from app.routes.templates import router as templates_router
 from app.routes.ab_tests import router as ab_tests_router
 from app.routes.whatsapp_connection import router as whatsapp_connection_router
 from app.routes.google_calendar import router as calendar_router
+from app.routes.google_sheets import router as google_sheets_router
 from app.routes.admin_config import router as admin_config_router
 from app.routes.billing import router as billing_router
 from app.database import health_check
@@ -74,6 +75,7 @@ app.include_router(export.router)
 app.include_router(admin_metrics.router)
 app.include_router(whatsapp_connection_router)
 app.include_router(calendar_router)
+app.include_router(google_sheets_router)
 app.include_router(admin_config_router)
 app.include_router(billing_router)
 
