@@ -16,6 +16,7 @@ from app.services.crm_service import CRMService
 from app.services.notification_service import NotificationService
 from app.services.tenet_service import AgencyService
 from app.services.admin_whatsapp_service import admin_whatsapp_service
+from app.services.google_sheets_service import GoogleSheetsService
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -347,6 +348,23 @@ async def receive_whatsapp_webhook(request: Request):
             except Exception as crm_error:
                 logger.error(f"Erro ao enviar para CRMs: {crm_error}")
                 # Não interrompe o fluxo principal
+
+            # Enviar para Google Sheets
+            try:
+                sheets_service = GoogleSheetsService()
+                sheets_data = {
+                    "nome": extracted_data.get("nome", ""),
+                    "telefone": sender_phone,
+                    "email": extracted_data.get("email", ""),
+                    "empresa": extracted_data.get("empresa", ""),
+                    "status": "Qualificado" if extracted_data.get("qualificado") else "Novo",
+                    "score": str(extracted_data.get("score", "")),
+                    "origem": "WhatsApp",
+                    "observacoes": extracted_data.get("interesse", "")
+                }
+                await sheets_service.add_lead(agency_id, sheets_data)
+            except Exception as sheets_error:
+                logger.warning(f"Erro ao enviar para Sheets: {sheets_error}")
 
         # ============================================
         # NOTIFICAÇÕES POR EMAIL
