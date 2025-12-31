@@ -151,8 +151,8 @@ export default function Dashboard({ agencyId }) {
                 <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_agencias || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">cadastrados</p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Building2 className="w-6 h-6 text-purple-600" />
+              <div className="p-3 bg-cyan-100/50 rounded-lg">
+                <Building2 className="w-6 h-6 text-cyan-600" />
               </div>
             </div>
           </div>
@@ -164,8 +164,8 @@ export default function Dashboard({ agencyId }) {
                 <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_usuarios || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">ativos</p>
               </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-cyan-100/50 rounded-lg">
+                <Users className="w-6 h-6 text-cyan-600" />
               </div>
             </div>
           </div>
@@ -208,8 +208,8 @@ export default function Dashboard({ agencyId }) {
                 <p className="mt-2 text-3xl font-bold text-gray-900">{advancedMetrics?.total_leads || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">no período</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-cyan-100/50 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-cyan-600" />
               </div>
             </div>
           </div>
@@ -231,11 +231,11 @@ export default function Dashboard({ agencyId }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Tempo Médio</p>
-                <p className="mt-2 text-3xl font-bold text-purple-600">{advancedMetrics?.avg_conversation_hours || 0}h</p>
+                <p className="mt-2 text-3xl font-bold text-cyan-600">{advancedMetrics?.avg_conversation_hours || 0}h</p>
                 <p className="text-xs text-gray-500 mt-1">por conversa</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-cyan-100/50 rounded-lg flex items-center justify-center">
+                <Clock className="w-6 h-6 text-cyan-600" />
               </div>
             </div>
           </div>
