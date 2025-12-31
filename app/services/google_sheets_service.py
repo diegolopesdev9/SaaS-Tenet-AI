@@ -5,7 +5,7 @@ Serviço de integração com Google Sheets.
 import os
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 import gspread
 from google.oauth2.credentials import Credentials
 from app.database import get_supabase_client
