@@ -150,6 +150,13 @@ export default function Usuarios() {
     }
   };
 
+  // Mock function for formatDate if it's not defined elsewhere
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -160,15 +167,15 @@ export default function Usuarios() {
   }
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex justify-between items-center mb-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h1>
-          <p className="text-gray-600">Crie e gerencie os usuários do sistema</p>
+          <h1 className="text-2xl font-bold text-white">Usuários</h1>
+          <p className="mt-1 text-sm text-gray-400">Gerencie os usuários do tenet</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-lg hover:from-cyan-600 hover:to-cyan-700 font-medium shadow-lg"
         >
           <Plus className="w-5 h-5" />
           Novo Usuário
@@ -268,20 +275,20 @@ export default function Usuarios() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <div className="bg-[#2D2D2D] rounded-lg shadow-sm border border-white/10 overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[#1A1A1A] border-b border-white/10">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuário</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tenet</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Usuário</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tenet</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="bg-[#2D2D2D] divide-y divide-white/10">
             {usuarios.map((usuario) => (
-              <tr key={usuario.id} className="hover:bg-gray-50">
+              <tr key={usuario.id} className="hover:bg-white/5">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
@@ -300,16 +307,16 @@ export default function Usuarios() {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-600">{getTenetNome(usuario.tenet_id)}</td>
+                <td className="px-6 py-4 text-gray-300">{getTenetNome(usuario.tenet_id)}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                     usuario.role === 'super_admin' 
-                      ? 'bg-red-100 text-red-700'
+                      ? 'bg-red-500/20 text-red-400'
                       : usuario.role === 'admin'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-700'
+                      ? 'bg-cyan-500/20 text-cyan-400'
+                      : 'bg-gray-500/20 text-gray-400'
                   }`}>
-                    {usuario.role}
+                    {usuario.role === 'super_admin' ? 'Super Admin' : usuario.role === 'admin' ? 'Admin do Tenet' : 'Usuário'}
                   </span>
                 </td>
                 <td className="px-6 py-4">
@@ -319,9 +326,9 @@ export default function Usuarios() {
                     className="disabled:opacity-50"
                   >
                     {usuario.ativo ? (
-                      <ToggleRight className="w-8 h-8 text-green-600" />
+                      <ToggleRight className="w-8 h-8 text-green-500" />
                     ) : (
-                      <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      <ToggleLeft className="w-8 h-8 text-gray-500" />
                     )}
                   </button>
                 </td>
@@ -329,7 +336,7 @@ export default function Usuarios() {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => openEditModal(usuario)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      className="p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg"
                       title="Editar usuário"
                     >
                       <Settings className="w-4 h-4" />
@@ -337,7 +344,7 @@ export default function Usuarios() {
                     <button
                       onClick={() => handleDelete(usuario.id, usuario.nome)}
                       disabled={usuario.role === 'super_admin'}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-50"
                       title="Deletar usuário"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -359,46 +366,46 @@ export default function Usuarios() {
 
       {/* Modal Editar Usuário */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2D2D2D] rounded-xl shadow-xl max-w-lg w-full p-6 border border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold">Editar Usuário</h2>
-                <p className="text-sm text-gray-500">{editingUser.email}</p>
+                <h2 className="text-xl font-semibold text-white">Editar Usuário</h2>
+                <p className="text-sm text-gray-400">{editingUser.email}</p>
               </div>
-              <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
                 <input 
                   type="text" 
                   value={editForm.nome} 
                   onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
                 <input 
                   type="email" 
                   value={editForm.email} 
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Tenet</label>
                   <select 
                     value={editForm.tenet_id} 
                     onChange={(e) => setEditForm({ ...editForm, tenet_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                     disabled={editingUser.role === 'super_admin'}
                   >
                     <option value="">Sem Tenet</option>
@@ -409,11 +416,11 @@ export default function Usuarios() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Acesso</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nível de Acesso</label>
                   <select 
                     value={editForm.role} 
                     onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                     disabled={editingUser.role === 'super_admin'}
                   >
                     <option value="admin">Admin do Tenet</option>
@@ -423,11 +430,11 @@ export default function Usuarios() {
               </div>
 
               {/* Seção de Reset de Senha */}
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t border-white/10">
                 <div className="flex items-center gap-2 mb-3">
-                  <Key className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Resetar Senha</span>
-                  <span className="text-xs text-gray-400">(deixe em branco para manter a atual)</span>
+                  <Key className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-300">Resetar Senha</span>
+                  <span className="text-xs text-gray-500">(deixe em branco para manter a atual)</span>
                 </div>
 
                 <div className="flex gap-2">
@@ -436,14 +443,14 @@ export default function Usuarios() {
                       type={showPassword ? 'text' : 'password'}
                       value={editForm.nova_senha} 
                       onChange={(e) => setEditForm({ ...editForm, nova_senha: e.target.value })}
-                      className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                       placeholder="Nova senha (mín. 6 caracteres)"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -451,19 +458,19 @@ export default function Usuarios() {
                   <button
                     type="button"
                     onClick={() => setEditForm({ ...editForm, nova_senha: generatePassword() })}
-                    className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm whitespace-nowrap"
+                    className="px-3 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 text-sm whitespace-nowrap text-white"
                   >
                     Gerar
                   </button>
                 </div>
 
                 {editForm.nova_senha && (
-                  <label className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                  <label className="flex items-center gap-2 mt-2 text-sm text-gray-300">
                     <input
                       type="checkbox"
                       checked={editForm.forcar_troca_senha}
                       onChange={(e) => setEditForm({ ...editForm, forcar_troca_senha: e.target.checked })}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-600 text-cyan-500 focus:ring-cyan-500"
                     />
                     Forçar troca de senha no próximo login
                   </label>
@@ -471,17 +478,17 @@ export default function Usuarios() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
               <button 
                 onClick={() => setEditingUser(null)} 
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-700 text-white"
               >
                 Cancelar
               </button>
               <button 
                 onClick={handleUpdateUser} 
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-lg hover:from-cyan-600 hover:to-cyan-700 disabled:opacity-50 font-medium shadow-lg"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Salvar Alterações

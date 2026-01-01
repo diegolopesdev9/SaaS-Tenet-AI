@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   Link2, CheckCircle, XCircle, Loader2, Settings, Trash2,
-  ToggleLeft, ToggleRight, TestTube, Plus, AlertCircle, User, Calendar, BarChart3
+  ToggleLeft, ToggleRight, TestTube, Plus, AlertCircle, User, Calendar, BarChart3, FileSpreadsheet
 } from 'lucide-react'
 import api from '../services/api'
 
@@ -42,6 +42,7 @@ export default function Integrations({ agencyId }) {
   const [calendarStatus, setCalendarStatus] = useState({ connected: false, email: null })
   const [sheetsStatus, setSheetsStatus] = useState({ connected: false, google_connected: false })
   const [sheetsLoading, setSheetsLoading] = useState(false)
+  const [connecting, setConnecting] = useState(false); // State for connection status
 
 
   useEffect(() => {
@@ -152,11 +153,14 @@ export default function Integrations({ agencyId }) {
   }
 
   const handleConnectCalendar = async () => {
+    setConnecting(true)
     try {
       const response = await api.get('/google-calendar/auth/url')
       window.location.href = response.data.auth_url
     } catch (error) {
       setMessage({ type: 'error', text: 'Erro ao conectar Google Calendar' })
+    } finally {
+      setConnecting(false)
     }
   }
 
@@ -277,10 +281,15 @@ export default function Integrations({ agencyId }) {
     return integrations.find(i => i.crm_type === crmId)
   }
 
+  const calendarConnected = calendarStatus.connected;
+  const sheetsConnected = sheetsStatus.connected;
+  const sheetsGoogleConnected = sheetsStatus.google_connected;
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
       </div>
     )
   }
@@ -288,8 +297,8 @@ export default function Integrations({ agencyId }) {
   return (
     <div className="max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Integrações CRM</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-2xl font-bold text-white">Integrações</h1>
+        <p className="mt-2 text-sm text-gray-400">
           Conecte seus CRMs para enviar leads qualificados automaticamente
         </p>
       </div>
@@ -297,30 +306,30 @@ export default function Integrations({ agencyId }) {
       {message && (
         <div className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
           message.type === 'success'
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-red-50 border-red-200 text-red-800'
+            ? 'bg-green-500/10 border-green-500/30 text-green-300'
+            : 'bg-red-500/10 border-red-500/30 text-red-300'
         }`}>
-          {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          {message.type === 'success' ? <CheckCircle className="w-5 h-5 text-green-400" /> : <AlertCircle className="w-5 h-5 text-red-400" />}
           <span>{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto">×</button>
+          <button onClick={() => setMessage(null)} className="ml-auto text-gray-400 hover:text-white">×</button>
         </div>
       )}
 
       {/* Seção Admin WhatsApp */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <User className="w-6 h-6 text-green-600" />
+          <div className="p-2 bg-green-500/20 rounded-lg">
+            <User className="w-6 h-6 text-green-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold">Admin do Tenet</h3>
-            <p className="text-sm text-gray-500">Configure o administrador que receberá relatórios e poderá enviar comandos</p>
+            <h3 className="text-lg font-semibold text-white">Admin do Tenet</h3>
+            <p className="text-sm text-gray-400">Configure o administrador que receberá relatórios e poderá enviar comandos</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Nome do Admin
             </label>
             <input
@@ -328,12 +337,12 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_name}
               onChange={(e) => setAdminConfig({...adminConfig, admin_name: e.target.value})}
               placeholder="Ex: João Silva"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               WhatsApp do Admin
             </label>
             <input
@@ -341,15 +350,15 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_whatsapp_number}
               onChange={(e) => setAdminConfig({...adminConfig, admin_whatsapp_number: e.target.value})}
               placeholder="Ex: 5511999999999"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
             />
-            <p className="text-xs text-gray-500 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
+            <p className="text-xs text-gray-400 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
           </div>
         </div>
 
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-800 mb-2">📱 Comandos disponíveis para o Admin:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-blue-700">
+        <div className="mt-4 p-4 bg-cyan-500/10 rounded-lg">
+          <h4 className="font-medium text-cyan-400 mb-2">📱 Comandos disponíveis para o Admin:</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-cyan-300">
             <span>• relatorio</span>
             <span>• leads</span>
             <span>• leads semana</span>
@@ -365,7 +374,7 @@ export default function Integrations({ agencyId }) {
           <button
             onClick={handleSaveAdminConfig}
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 disabled:opacity-50 font-medium"
           >
             {loading ? 'Salvando...' : 'Salvar Admin'}
           </button>
@@ -373,67 +382,68 @@ export default function Integrations({ agencyId }) {
           <button
             onClick={handleTestReport}
             disabled={loading || !adminConfig.admin_whatsapp_number}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 disabled:opacity-50 flex items-center gap-1"
           >
+            <BarChart3 className="w-4 h-4" />
             📊 Enviar Relatório Teste
           </button>
         </div>
       </div>
 
       {/* Seção Relatórios Automáticos */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <BarChart3 className="w-6 h-6 text-purple-600" />
+          <div className="p-2 bg-purple-500/20 rounded-lg">
+            <BarChart3 className="w-6 h-6 text-purple-400" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold">Relatórios Automáticos</h3>
-            <p className="text-sm text-gray-500">Configure o envio automático de relatórios para o admin</p>
+            <h3 className="text-lg font-semibold text-white">Relatórios Automáticos</h3>
+            <p className="text-sm text-gray-400">Configure o envio automático de relatórios para o admin</p>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Relatório Diário */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={reportsConfig.daily_report_enabled}
                 onChange={(e) => setReportsConfig({...reportsConfig, daily_report_enabled: e.target.checked})}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 text-cyan-500 rounded bg-white/10 border-white/20 focus:ring-cyan-500"
               />
               <div>
-                <span className="font-medium">Relatório Diário</span>
-                <p className="text-sm text-gray-500">Enviado todos os dias</p>
+                <span className="font-medium text-white">Relatório Diário</span>
+                <p className="text-sm text-gray-400">Enviado todos os dias</p>
               </div>
             </div>
             <input
               type="time"
               value={reportsConfig.daily_report_time}
               onChange={(e) => setReportsConfig({...reportsConfig, daily_report_time: e.target.value})}
-              className="px-3 py-1 border border-gray-300 rounded-lg"
+              className="px-3 py-1 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-cyan-500"
             />
           </div>
 
           {/* Relatório Semanal */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={reportsConfig.weekly_report_enabled}
                 onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_enabled: e.target.checked})}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 text-cyan-500 rounded bg-white/10 border-white/20 focus:ring-cyan-500"
               />
               <div>
-                <span className="font-medium">Relatório Semanal</span>
-                <p className="text-sm text-gray-500">Enviado uma vez por semana</p>
+                <span className="font-medium text-white">Relatório Semanal</span>
+                <p className="text-sm text-gray-400">Enviado uma vez por semana</p>
               </div>
             </div>
             <div className="flex gap-2">
               <select
                 value={reportsConfig.weekly_report_day}
                 onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_day: parseInt(e.target.value)})}
-                className="px-3 py-1 border border-gray-300 rounded-lg"
+                className="px-3 py-1 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-cyan-500"
               >
                 <option value={0}>Domingo</option>
                 <option value={1}>Segunda</option>
@@ -447,7 +457,7 @@ export default function Integrations({ agencyId }) {
                 type="time"
                 value={reportsConfig.weekly_report_time}
                 onChange={(e) => setReportsConfig({...reportsConfig, weekly_report_time: e.target.value})}
-                className="px-3 py-1 border border-gray-300 rounded-lg"
+                className="px-3 py-1 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-cyan-500"
               />
             </div>
           </div>
@@ -456,17 +466,17 @@ export default function Integrations({ agencyId }) {
         <button
           onClick={handleSaveReportsConfig}
           disabled={loading}
-          className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+          className="mt-4 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
         >
           Salvar Configuração de Relatórios
         </button>
       </div>
 
       {/* Seção Google (Calendar + Sheets) */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <svg className="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -474,39 +484,46 @@ export default function Integrations({ agencyId }) {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold">Google</h3>
-            <p className="text-sm text-gray-500">Conecte sua conta Google para Calendar e Sheets</p>
+            <h3 className="text-lg font-semibold text-white">Google</h3>
+            <p className="text-sm text-gray-400">Conecte sua conta Google para Calendar e Sheets</p>
           </div>
         </div>
 
         {/* Google Calendar */}
-        <div className="border rounded-lg p-4 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <img
-              src="https://www.gstatic.com/images/branding/product/2x/calendar_48dp.png"
-              alt="Google Calendar"
-              className="w-5 h-5"
-            />
-            <span className="font-medium">Google Calendar</span>
-          </div>
-
-          {calendarStatus.connected ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="text-sm text-green-700">Conectado - {calendarStatus.email}</span>
+        <div className="border rounded-lg p-4 mb-4 border-white/10 bg-[#2D2D2D]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-8 h-8 text-cyan-400" />
+              <div>
+                <h3 className="font-semibold text-white">Google Calendar</h3>
+                <p className="text-sm text-gray-400">Agende reuniões automaticamente</p>
               </div>
-              <button onClick={handleDisconnectCalendar} className="text-sm text-red-600 hover:underline">
+            </div>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              calendarConnected
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-gray-500/20 text-gray-400'
+            }`}>
+              {calendarConnected ? 'Conectado' : 'Não conectado'}
+            </span>
+          </div>
+          {calendarConnected ? (
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-gray-300">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>{calendarStatus.email}</span>
+              </div>
+              <button onClick={handleDisconnectCalendar} className="text-red-500 hover:underline">
                 Desconectar
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between text-sm">
+               <div className="flex items-center gap-2 text-gray-400">
                 <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                <span className="text-sm text-yellow-700">Não conectado</span>
+                <span>Não conectado</span>
               </div>
-              <button onClick={handleConnectCalendar} className="text-sm text-blue-600 hover:underline">
+              <button onClick={handleConnectCalendar} disabled={connecting} className="text-cyan-500 hover:underline">
                 Conectar
               </button>
             </div>
@@ -514,53 +531,61 @@ export default function Integrations({ agencyId }) {
         </div>
 
         {/* Google Sheets */}
-        <div className="border rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <img
-              src="https://www.gstatic.com/images/branding/product/2x/sheets_48dp.png"
-              alt="Google Sheets"
-              className="w-5 h-5"
-            />
-            <span className="font-medium">Google Sheets</span>
+        <div className="border rounded-lg p-4 border-white/10 bg-[#2D2D2D]">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <FileSpreadsheet className="w-8 h-8 text-cyan-400" />
+              <div>
+                <h3 className="font-semibold text-white">Google Sheets</h3>
+                <p className="text-sm text-gray-400">Exporte conversas automaticamente</p>
+              </div>
+            </div>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              sheetsConnected
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-gray-500/20 text-gray-400'
+            }`}>
+              {sheetsConnected ? 'Conectado' : 'Não conectado'}
+            </span>
           </div>
 
-          {sheetsStatus.connected ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          {sheetsConnected ? (
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-gray-300">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span className="text-sm text-green-700">Conectado</span>
+                <span>Conectado</span>
                 {sheetsStatus.spreadsheet_url && (
-                  <a href={sheetsStatus.spreadsheet_url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                  <a href={sheetsStatus.spreadsheet_url} target="_blank" rel="noopener noreferrer" className="text-cyan-500 hover:underline">
                     Abrir planilha
                   </a>
                 )}
               </div>
-              <button onClick={handleDisconnectSheets} className="text-sm text-red-600 hover:underline">
+              <button onClick={handleDisconnectSheets} className="text-red-500 hover:underline">
                 Desconectar
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-gray-400">
                 <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                <span className="text-sm text-yellow-700">Não conectado</span>
+                <span>Não conectado</span>
               </div>
-              {sheetsStatus.google_connected || calendarStatus.connected ? (
+              {sheetsGoogleConnected || calendarConnected ? (
                 <button
                   onClick={handleCreateSpreadsheet}
                   disabled={sheetsLoading}
-                  className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+                  className="text-cyan-500 hover:underline disabled:opacity-50"
                 >
                   {sheetsLoading ? 'Criando...' : 'Criar planilha'}
                 </button>
               ) : (
-                <span className="text-sm text-gray-500">Conecte o Google Calendar primeiro</span>
+                <span className="text-gray-500">Conecte o Google Calendar primeiro</span>
               )}
             </div>
           )}
         </div>
 
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-gray-400 mt-3">
           Ao conectar, você autoriza o TENET AI a acessar sua agenda e planilhas.
         </p>
       </div>
@@ -573,8 +598,8 @@ export default function Integrations({ agencyId }) {
           return (
             <div
               key={crm.id}
-              className={`bg-white rounded-lg border-2 p-6 transition-all ${
-                status?.is_active ? 'border-green-500' : 'border-gray-200'
+              className={`bg-[#2D2D2D] rounded-lg border-2 p-6 transition-all ${
+                status?.is_active ? 'border-green-500' : 'border-white/10'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
@@ -583,12 +608,12 @@ export default function Integrations({ agencyId }) {
                     <Link2 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{crm.name}</h3>
-                    <p className="text-sm text-gray-500">{crm.description}</p>
+                    <h3 className="font-semibold text-white">{crm.name}</h3>
+                    <p className="text-sm text-gray-400">{crm.description}</p>
                   </div>
                 </div>
                 {status?.is_active && (
-                  <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
+                  <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
                     Ativo
                   </span>
                 )}
@@ -596,7 +621,7 @@ export default function Integrations({ agencyId }) {
 
               {status ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
                     {status.has_api_key || status.has_api_token ? (
                       <><CheckCircle className="w-4 h-4 text-green-500" /> Credenciais configuradas</>
                     ) : (
@@ -607,15 +632,15 @@ export default function Integrations({ agencyId }) {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => handleOpenModal(crm)}
-                      className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200"
+                      className="flex-1 px-3 py-2 bg-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/20 flex items-center justify-center gap-1"
                     >
-                      <Settings className="w-4 h-4 inline mr-1" />
+                      <Settings className="w-4 h-4" />
                       Configurar
                     </button>
                     <button
                       onClick={() => handleTest(crm.id)}
                       disabled={testing === crm.id}
-                      className="px-3 py-2 bg-blue-100 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-200 disabled:opacity-50"
+                      className="px-3 py-2 bg-cyan-500/20 text-cyan-400 text-sm font-medium rounded-lg hover:bg-cyan-500/30 disabled:opacity-50 flex items-center justify-center"
                     >
                       {testing === crm.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -627,15 +652,15 @@ export default function Integrations({ agencyId }) {
                       onClick={() => handleToggle(crm.id)}
                       className={`px-3 py-2 text-sm font-medium rounded-lg ${
                         status.is_active
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
                       }`}
                     >
                       {status.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={() => handleDelete(crm.id)}
-                      className="px-3 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-lg hover:bg-red-200"
+                      className="px-3 py-2 bg-red-500/20 text-red-400 text-sm font-medium rounded-lg hover:bg-red-500/30"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -644,7 +669,7 @@ export default function Integrations({ agencyId }) {
               ) : (
                 <button
                   onClick={() => handleOpenModal(crm)}
-                  className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2 bg-cyan-500 text-black text-sm font-medium rounded-lg hover:bg-cyan-600 flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Conectar
@@ -656,37 +681,37 @@ export default function Integrations({ agencyId }) {
       </div>
 
       {/* Logs */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Sincronização</h2>
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Histórico de Sincronização</h2>
 
         {logs.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Nenhuma sincronização realizada ainda</p>
+          <p className="text-gray-400 text-center py-8">Nenhuma sincronização realizada ainda</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">CRM</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Telefone</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Data</th>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">CRM</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Telefone</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-300">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900 capitalize">{log.crm_type}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{log.lead_phone}</td>
+                  <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-3 px-4 text-sm font-medium text-white capitalize">{log.crm_type}</td>
+                    <td className="py-3 px-4 text-sm text-gray-300">{log.lead_phone}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
                         log.status === 'success'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
                       }`}>
                         {log.status === 'success' ? 'Sucesso' : 'Erro'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-500">
+                    <td className="py-3 px-4 text-sm text-gray-400">
                       {new Date(log.created_at).toLocaleString('pt-BR')}
                     </td>
                   </tr>
@@ -699,9 +724,9 @@ export default function Integrations({ agencyId }) {
 
       {/* Modal de Configuração */}
       {showModal && selectedCRM && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-[#2D2D2D] rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
               Configurar {selectedCRM.name}
             </h3>
 
@@ -709,14 +734,14 @@ export default function Integrations({ agencyId }) {
               {/* API Key */}
               {['rdstation', 'pipedrive', 'notion', 'moskit'].includes(selectedCRM.id) && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     API Key / Token
                   </label>
                   <input
                     type="password"
                     value={formData.api_key}
                     onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="Cole sua API Key aqui"
                   />
                 </div>
@@ -725,14 +750,14 @@ export default function Integrations({ agencyId }) {
               {/* API Token para Zoho */}
               {selectedCRM.id === 'zoho' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     OAuth Token
                   </label>
                   <input
                     type="password"
                     value={formData.api_token}
                     onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="Cole seu OAuth Token"
                   />
                 </div>
@@ -741,14 +766,14 @@ export default function Integrations({ agencyId }) {
               {/* Database ID para Notion */}
               {selectedCRM.id === 'notion' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Database ID
                   </label>
                   <input
                     type="text"
                     value={formData.database_id}
                     onChange={(e) => setFormData({ ...formData, database_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="ID do database do Notion"
                   />
                 </div>
@@ -757,14 +782,14 @@ export default function Integrations({ agencyId }) {
               {/* Pipeline ID para Pipedrive/Moskit */}
               {['pipedrive', 'moskit'].includes(selectedCRM.id) && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     Pipeline ID (opcional)
                   </label>
                   <input
                     type="text"
                     value={formData.pipeline_id}
                     onChange={(e) => setFormData({ ...formData, pipeline_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="ID do pipeline"
                   />
                 </div>
@@ -774,14 +799,14 @@ export default function Integrations({ agencyId }) {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200"
+                className="flex-1 px-4 py-2 bg-white/10 text-gray-300 font-medium rounded-lg hover:bg-white/20"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-cyan-500 text-black font-medium rounded-lg hover:bg-cyan-600 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Salvar
