@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { 
-  LayoutDashboard, 
-  Settings, 
-  MessageSquare, 
-  Menu, 
-  X, 
-  Bot, 
-  ChevronRight, 
-  LogOut, 
-  Shield, 
-  Building2, 
-  Users, 
-  Link2, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Settings,
+  MessageSquare,
+  Menu,
+  X,
+  Bot,
+  ChevronRight,
+  LogOut,
+  Shield,
+  Building2,
+  Users,
+  Link2,
+  Bell,
   ChevronDown,
   BookOpen,
   FlaskConical,
   FileText,
   Globe,
-  Cog
+  Cog,
+  Sparkles
 } from 'lucide-react'
 import api from '../services/api'
 import authService from '../services/auth'
@@ -121,25 +122,26 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-[#1A1A1A] flex">
       {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-gray-200 transition-all duration-300 ${
+      <div className={`fixed inset-y-0 left-0 z-50 bg-[#0F0F0F] border-r border-white/10 transition-all duration-300 ${
           sidebarOpen ? 'w-64' : 'w-0'
         } overflow-hidden`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="px-4 py-4 border-b border-gray-200">
+          <div className="p-6 border-b border-white/10">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-bold text-gray-900 truncate">{getHeaderTitle()}</h1>
-                {isSuperAdmin && (
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded">
-                    <Shield className="w-3 h-3" />
+                <h1 className="text-xl font-bold">
+                  <span className="font-bold text-white">TENET</span>
+                  <span className="font-bold text-cyan-400">AI</span>
+                </h1>
+                {user?.role === 'super_admin' && (
+                  <span className="text-xs text-cyan-400 px-2 py-1 rounded-full font-medium bg-cyan-500/10">
                     Super Admin
                   </span>
                 )}
@@ -151,15 +153,15 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
               <div className="relative">
                 <button
                   onClick={() => setShowAgencyDropdown(!showAgencyDropdown)}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-left transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-left transition-colors"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {isGeneralView ? (
-                      <Globe className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                      <Globe className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                     ) : (
-                      <Building2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     )}
-                    <span className="text-sm font-medium text-gray-700 truncate">
+                    <span className="text-sm font-medium text-white truncate">
                       {isGeneralView ? 'Visão Geral' : agencyName}
                     </span>
                   </div>
@@ -168,21 +170,21 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
                 {showAgencyDropdown && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-10" 
+                    <div
+                      className="fixed inset-0 z-10"
                       onClick={() => setShowAgencyDropdown(false)}
                     />
-                    <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto">
+                    <div className="absolute left-0 right-0 mt-1 bg-[#0F0F0F] border border-white/10 rounded-lg shadow-lg z-20 max-h-96 overflow-y-auto">
                       {/* Opção Visão Geral */}
                       <button
                         onClick={() => handleSelectAgency({ id: 'geral', nome: 'Visão Geral' })}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-                          isGeneralView ? 'bg-purple-50 text-purple-700' : 'text-gray-700'
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/5 transition-colors border-b border-white/5 ${
+                          isGeneralView ? 'bg-cyan-500/10 text-cyan-400' : 'text-gray-400'
                         }`}
                       >
                         <Globe className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm font-medium truncate">Visão Geral</span>
-                        <span className="ml-auto text-xs text-gray-400">Todas</span>
+                        <span className="ml-auto text-xs text-gray-500">Todas</span>
                       </button>
 
                       {/* Lista de Tenets Agrupados por Tipo */}
@@ -190,7 +192,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         tenetsDoTipo.length > 0 && (
                           <div key={tipo}>
                             {/* Cabeçalho do Grupo */}
-                            <div className="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                            <div className="px-3 py-2 bg-white/5 border-b border-white/5">
                               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 {tipoLabels[tipo]}
                               </span>
@@ -201,8 +203,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                               <button
                                 key={agency.id}
                                 onClick={() => handleSelectAgency(agency)}
-                                className={`w-full flex items-center gap-2 px-3 py-2 pl-6 text-left hover:bg-gray-50 transition-colors ${
-                                  agency.id === selectedAgencyId ? 'bg-cyan-50 text-cyan-700' : 'text-gray-700'
+                                className={`w-full flex items-center gap-2 px-3 py-2 pl-6 text-left hover:bg-white/5 transition-colors ${
+                                  agency.id === selectedAgencyId ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400' : 'text-gray-400'
                                 }`}
                               >
                                 <Building2 className="w-4 h-4 flex-shrink-0" />
@@ -228,8 +230,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
             {/* Menu do Super Admin - Visão Geral */}
             {isSuperAdmin && isGeneralView && (
               <>
-                <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Visão Geral</p>
+                <div className="px-4 py-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Visão Geral</p>
                 </div>
                 <NavLink
                   to="/"
@@ -237,8 +239,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive && location.pathname === '/'
-                        ? 'bg-purple-50 text-purple-700'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
                     }`
                   }
                 >
@@ -248,8 +250,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
                 {user?.role === 'super_admin' && (
                   <>
-                    <div className="px-3 py-2 mt-4">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
+                    <div className="px-4 py-2 mt-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administração</p>
                     </div>
                     {superAdminNavigation.map((item) => {
                       const Icon = item.icon
@@ -260,8 +262,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                           className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                               isActive
-                                ? 'bg-cyan-50 text-cyan-700'
-                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                             }`
                           }
                         >
@@ -278,8 +280,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
             {/* Menu do Super Admin - Tenet Selecionado */}
             {isSuperAdmin && !isGeneralView && (
               <>
-                <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tenet: {agencyName}</p>
+                <div className="px-4 py-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tenet: {agencyName}</p>
                 </div>
                 {agencyNavigation.map((item) => {
                   const Icon = item.icon
@@ -290,8 +292,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-cyan-50 text-cyan-600 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400'
+                            : 'text-gray-400 hover:bg-white/5 hover:text-white'
                         }`
                       }
                     >
@@ -303,8 +305,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
 
                 {user?.role === 'super_admin' && (
                   <>
-                    <div className="px-3 py-2 mt-4">
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Administração</p>
+                    <div className="px-4 py-2 mt-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Administração</p>
                     </div>
                     {superAdminNavigation.map((item) => {
                       const Icon = item.icon
@@ -315,8 +317,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                           className={({ isActive }) =>
                             `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                               isActive
-                                ? 'bg-cyan-50 text-cyan-700'
-                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400'
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
                             }`
                           }
                         >
@@ -333,8 +335,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
             {/* Menu do Usuário Normal */}
             {!isSuperAdmin && (
               <>
-                <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Menu</p>
+                <div className="px-4 py-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Menu</p>
                 </div>
                 {agencyNavigation.map((item) => {
                   const Icon = item.icon
@@ -345,8 +347,8 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           isActive
-                            ? 'bg-cyan-50 text-cyan-600 font-medium'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            ? 'bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400'
+                            : 'text-gray-400 hover:bg-white/5 hover:text-white'
                         }`
                       }
                     >
@@ -360,21 +362,19 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
           </nav>
 
           {/* User Info */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="mt-auto p-4 border-t border-white/10">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-600">
-                  {user?.nome?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
+              <div className="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-full flex items-center justify-center font-semibold">
+                {user?.nome?.[0]?.toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user?.nome || 'Usuário'}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-sm font-medium text-white truncate">{user?.nome || 'Usuário'}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span>Sair</span>
@@ -382,14 +382,14 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
           </div>
 
           {!isGeneralView && (
-            <div className="mt-auto pt-4 border-t border-gray-200">
+            <div className="pt-4 border-t border-white/10">
               <TokenIndicator />
             </div>
           )}
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400 text-center">TENET AI © 2024</p>
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-xs text-gray-600 text-center">TENET AI © 2024</p>
           </div>
         </div>
       </div>
@@ -397,14 +397,14 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
       {/* Toggle Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-white/5 border border-white/10 rounded-lg shadow-sm hover:bg-white/10 transition-colors lg:hidden"
       >
-        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        {sidebarOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
       </button>
 
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-        <main className="p-6">
+        <main className="flex-1 p-6 bg-[#1A1A1A] min-h-screen">
           <UsageAlert />
           <Outlet />
         </main>
