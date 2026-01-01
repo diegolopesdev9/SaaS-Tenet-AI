@@ -241,24 +241,24 @@ export default function Knowledge({ agencyId }) {
 
       {/* Modal Adicionar Documento */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Adicionar Documento</h2>
-              <button onClick={resetModal} className="p-1 hover:bg-gray-100 rounded-lg">
-                <X className="w-5 h-5 text-gray-500" />
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2D2D2D] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Adicionar Documento</h2>
+              <button onClick={resetModal} className="p-1 hover:bg-white/10 rounded-lg">
+                <X className="w-5 h-5 text-gray-400" />
               </button>
             </div>
             
             {/* Tabs */}
             <div className="px-6 pt-4">
-              <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <div className="flex gap-2 p-1 bg-[#1A1A1A] rounded-lg">
                 <button
                   onClick={() => setUploadMode('text')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     uploadMode === 'text'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-[#2D2D2D] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   <FileText className="w-4 h-4" />
@@ -268,8 +268,8 @@ export default function Knowledge({ agencyId }) {
                   onClick={() => setUploadMode('file')}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     uploadMode === 'file'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-[#2D2D2D] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   <Upload className="w-4 h-4" />
@@ -282,7 +282,7 @@ export default function Knowledge({ agencyId }) {
               {/* Upload de Arquivo */}
               {uploadMode === 'file' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Arquivo (.txt, .md)
                   </label>
                   <input
@@ -294,7 +294,7 @@ export default function Knowledge({ agencyId }) {
                   />
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500 hover:bg-cyan-500/10 transition-colors"
                   >
                     {selectedFile ? (
                       <div className="flex items-center justify-center gap-3">
@@ -309,8 +309,8 @@ export default function Knowledge({ agencyId }) {
                     ) : (
                       <>
                         <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600">Clique para selecionar um arquivo</p>
-                        <p className="text-sm text-gray-400 mt-1">Suporta .txt e .md</p>
+                        <p className="text-gray-300">Clique para selecionar um arquivo</p>
+                        <p className="text-sm text-gray-500 mt-1">Suporta .txt e .md</p>
                       </>
                     )}
                   </div>
@@ -318,7 +318,7 @@ export default function Knowledge({ agencyId }) {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Título *
                 </label>
                 <input
@@ -326,17 +326,17 @@ export default function Knowledge({ agencyId }) {
                   value={newDoc.titulo}
                   onChange={(e) => setNewDoc({ ...newDoc, titulo: e.target.value })}
                   placeholder="Ex: Política de preços"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Categoria
                 </label>
                 <select
                   value={newDoc.categoria}
                   onChange={(e) => setNewDoc({ ...newDoc, categoria: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                   <option value="">Selecione uma categoria</option>
                   <option value="produtos">Produtos</option>
@@ -349,7 +349,7 @@ export default function Knowledge({ agencyId }) {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Conteúdo *
                 </label>
                 <textarea
@@ -357,24 +357,24 @@ export default function Knowledge({ agencyId }) {
                   onChange={(e) => setNewDoc({ ...newDoc, conteudo: e.target.value })}
                   placeholder="Cole aqui o conteúdo do documento..."
                   rows={10}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 font-mono text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {newDoc.conteudo.length} caracteres
                 </p>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+            <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
               <button
                 onClick={resetModal}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 bg-white/10 text-gray-300 hover:bg-white/20 rounded-lg transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddDocument}
                 disabled={adding || !newDoc.titulo || !newDoc.conteudo}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 disabled:opacity-50 transition-colors"
               >
                 {adding ? 'Adicionando...' : 'Adicionar Documento'}
               </button>

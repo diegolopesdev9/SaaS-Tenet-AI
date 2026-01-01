@@ -222,20 +222,20 @@ export default function Notifications({ agencyId }) {
       </div>
 
       {/* Emails Destinatários */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Emails Destinatários</h3>
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Emails Destinatários</h3>
         <div className="flex gap-2 mb-4">
           <input
             type="email"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="email@exemplo.com"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             onKeyPress={(e) => e.key === 'Enter' && addEmail()}
           />
           <button
             onClick={addEmail}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Adicionar
@@ -258,66 +258,66 @@ export default function Notifications({ agencyId }) {
       </div>
 
       {/* Configuração SMTP */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuração SMTP</h3>
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Configuração SMTP</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Servidor SMTP</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Servidor SMTP</label>
             <input
               type="text"
               value={config.smtp_host}
               onChange={(e) => setConfig({ ...config, smtp_host: e.target.value })}
               placeholder="smtp.gmail.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Porta</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Porta</label>
             <input
               type="number"
               value={config.smtp_port}
               onChange={(e) => setConfig({ ...config, smtp_port: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Usuário</label>
             <input
               type="text"
               value={config.smtp_user}
               onChange={(e) => setConfig({ ...config, smtp_user: e.target.value })}
               placeholder="seu-email@gmail.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha / App Password</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Senha / App Password</label>
             <input
               type="password"
               value={config.smtp_password}
               onChange={(e) => setConfig({ ...config, smtp_password: e.target.value })}
               placeholder={config.has_smtp_password ? '••••••••' : 'Senha do SMTP'}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Remetente</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Email Remetente</label>
             <input
               type="email"
               value={config.smtp_from_email}
               onChange={(e) => setConfig({ ...config, smtp_from_email: e.target.value })}
               placeholder="noreply@suaempresa.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome Remetente</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Nome Remetente</label>
             <input
               type="text"
               value={config.smtp_from_name}
               onChange={(e) => setConfig({ ...config, smtp_from_name: e.target.value })}
               placeholder="SDR Agent"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500"
             />
           </div>
         </div>

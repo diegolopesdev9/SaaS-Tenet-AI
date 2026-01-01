@@ -152,13 +152,13 @@ function Agencias() {
     <div className="max-w-7xl mx-auto">
       {/* Modal de Edição */}
       {showEditModal && selectedTenet && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#2D2D2D] rounded-lg p-6 max-w-md w-full mx-4 border border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Editar Tenet</h2>
+              <h2 className="text-xl font-bold text-white">Editar Tenet</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-300"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -166,37 +166,37 @@ function Agencias() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Nome do Tenet
                 </label>
                 <input
                   type="text"
                   value={editTenet.nome}
                   onChange={(e) => setEditTenet({ ...editTenet, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Email
                 </label>
                 <input
                   type="email"
                   value={editTenet.email}
                   onChange={(e) => setEditTenet({ ...editTenet, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Nicho
                 </label>
                 <select
                   value={editTenet.nicho}
                   onChange={(e) => setEditTenet({ ...editTenet, nicho: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 >
                   <option value="sdr">SDR</option>
                   <option value="suporte">Suporte</option>
@@ -210,13 +210,13 @@ function Agencias() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 transition-colors"
               >
                 Salvar
               </button>
@@ -227,13 +227,13 @@ function Agencias() {
 
       {/* Modal de Criação */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#2D2D2D] rounded-lg p-6 max-w-md w-full mx-4 border border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Novo Tenet</h2>
+              <h2 className="text-xl font-bold text-white">Novo Tenet</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-300"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -241,7 +241,7 @@ function Agencias() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Nome do Tenet *
                 </label>
                 <input
@@ -249,12 +249,12 @@ function Agencias() {
                   value={newTenet.nome}
                   onChange={(e) => setNewTenet({ ...newTenet, nome: e.target.value })}
                   placeholder="Ex: Empresa XYZ"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Email *
                 </label>
                 <input
@@ -262,18 +262,18 @@ function Agencias() {
                   value={newTenet.email}
                   onChange={(e) => setNewTenet({ ...newTenet, email: e.target.value })}
                   placeholder="contato@empresa.com"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Nicho
                 </label>
                 <select
                   value={newTenet.nicho}
                   onChange={(e) => setNewTenet({ ...newTenet, nicho: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                 >
                   <option value="sdr">SDR</option>
                   <option value="suporte">Suporte</option>
@@ -287,13 +287,13 @@ function Agencias() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateTenet}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 transition-colors"
               >
                 Criar Tenet
               </button>
