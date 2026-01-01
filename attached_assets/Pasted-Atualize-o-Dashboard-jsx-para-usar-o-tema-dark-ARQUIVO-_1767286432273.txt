@@ -1,0 +1,110 @@
+Atualize o Dashboard.jsx para usar o tema dark.
+
+=== ARQUIVO: frontend/src/pages/Dashboard.jsx ===
+
+FAÇA AS SEGUINTES SUBSTITUIÇÕES:
+
+1. TÍTULO "Dashboard" ou "Dashboard Geral" - ENCONTRE:
+text-gray-900
+
+SUBSTITUA por:
+text-white
+
+
+2. SUBTÍTULO/DESCRIÇÃO - ENCONTRE:
+text-gray-500 ou text-gray-600
+
+SUBSTITUA por:
+text-gray-400
+
+
+3. BADGE "Todas as Agências" - ENCONTRE:
+bg-purple-100 text-purple-700
+
+SUBSTITUA por:
+bg-cyan-500/20 text-cyan-400
+
+
+4. CARDS DE MÉTRICAS (Total de Leads, Taxa de Conversão, etc.) - ENCONTRE:
+bg-white border-gray-100 ou bg-white shadow
+
+SUBSTITUA por:
+bg-[#2D2D2D] border-white/10
+
+
+5. TÍTULOS DOS CARDS - ENCONTRE:
+text-gray-600 ou text-gray-500
+
+SUBSTITUA por:
+text-gray-400
+
+
+6. VALORES DOS CARDS (números grandes) - ENCONTRE:
+text-gray-900
+
+SUBSTITUA por:
+text-white
+
+
+7. SUBTEXTOS DOS CARDS ("no período", "cadastrados", etc.) - ENCONTRE:
+text-gray-500
+
+SUBSTITUA por:
+text-gray-500
+
+
+8. ÍCONES DOS CARDS - ENCONTRE as cores dos backgrounds dos ícones:
+- bg-blue-100 text-blue-600 → bg-cyan-500/20 text-cyan-400
+- bg-purple-100 text-purple-600 → bg-cyan-500/20 text-cyan-400
+- bg-green-100 text-green-600 → bg-green-500/20 text-green-400 (manter verde para conversão)
+- bg-yellow-100 text-yellow-600 → bg-yellow-500/20 text-yellow-400
+
+
+9. SEÇÃO DE GRÁFICOS - ENCONTRE:
+bg-white (container dos gráficos)
+
+SUBSTITUA por:
+bg-[#2D2D2D] border border-white/10
+
+
+10. TÍTULOS DAS SEÇÕES ("Leads por Dia", "Funil de Conversão") - ENCONTRE:
+text-gray-800 ou text-gray-900
+
+SUBSTITUA por:
+text-white
+
+
+11. SELECT/DROPDOWN DE PERÍODO - ENCONTRE:
+bg-white border-gray-300
+
+SUBSTITUA por:
+bg-[#1A1A1A] border-white/20 text-white
+
+
+12. TEXTO "Sem dados no período" - ENCONTRE:
+text-gray-500
+
+SUBSTITUA por:
+text-gray-500
+
+
+13. LOADING SPINNER - ENCONTRE:
+border-blue-600
+
+SUBSTITUA por:
+border-cyan-500
+
+
+14. TABELA DE LEADS RECENTES (se existir) - ENCONTRE:
+bg-white (container)
+text-gray-900 (texto)
+border-gray-200 (bordas)
+
+SUBSTITUA por:
+bg-[#2D2D2D] (container)
+text-white (texto principal)
+text-gray-400 (texto secundário)
+border-white/10 (bordas)
+
+
+NÃO altere a lógica de dados ou gráficos, apenas as classes de estilo.
