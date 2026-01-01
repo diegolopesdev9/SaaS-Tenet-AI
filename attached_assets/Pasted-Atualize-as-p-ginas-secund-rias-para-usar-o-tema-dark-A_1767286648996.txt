@@ -1,0 +1,63 @@
+Atualize as páginas secundárias para usar o tema dark. Aplique as mesmas substituições em TODOS estes arquivos:
+
+- frontend/src/pages/Tenets.jsx
+- frontend/src/pages/Users.jsx (se existir)
+- frontend/src/pages/Integrations.jsx
+- frontend/src/pages/Conversations.jsx
+- frontend/src/pages/Templates.jsx (se existir)
+- frontend/src/pages/Agents.jsx (se existir)
+- frontend/src/pages/Settings.jsx (se existir)
+- frontend/src/pages/KnowledgeBase.jsx (se existir)
+
+SUBSTITUIÇÕES PADRÃO PARA TODAS AS PÁGINAS:
+
+1. TÍTULOS DE PÁGINA:
+text-gray-900 → text-white
+
+2. SUBTÍTULOS/DESCRIÇÕES:
+text-gray-500 ou text-gray-600 → text-gray-400
+
+3. CARDS/CONTAINERS:
+bg-white → bg-[#2D2D2D]
+border-gray-100 ou border-gray-200 → border-white/10
+shadow-sm → shadow-sm (manter)
+
+4. TABELAS:
+- Header: bg-gray-50 → bg-[#1A1A1A]
+- Header text: text-gray-500 → text-gray-400
+- Body: bg-white → bg-[#2D2D2D]
+- Body text: text-gray-900 → text-white
+- Secondary text: text-gray-500 → text-gray-400
+- Borders: border-gray-200 → border-white/10
+- Hover: hover:bg-gray-50 → hover:bg-white/5
+
+5. BOTÕES PRIMÁRIOS:
+bg-blue-600 hover:bg-blue-700 → bg-cyan-500 hover:bg-cyan-600 text-black
+from-blue-600 to-purple-600 → from-cyan-500 to-cyan-600
+
+6. BOTÕES SECUNDÁRIOS:
+bg-gray-100 text-gray-700 → bg-white/10 text-gray-300 hover:bg-white/20
+
+7. BADGES DE STATUS:
+- Ativo/Online: bg-green-100 text-green-700 → bg-green-500/20 text-green-400
+- Inativo/Offline: bg-gray-100 text-gray-700 → bg-gray-500/20 text-gray-400
+- Pendente: bg-yellow-100 text-yellow-700 → bg-yellow-500/20 text-yellow-400
+- Erro: bg-red-100 text-red-700 → bg-red-500/20 text-red-400
+
+8. INPUTS/SELECTS:
+bg-white border-gray-300 → bg-[#1A1A1A] border-white/20 text-white
+focus:ring-blue-500 → focus:ring-cyan-500
+focus:border-blue-500 → focus:border-cyan-500
+
+9. LINKS:
+text-blue-600 hover:text-blue-800 → text-cyan-400 hover:text-cyan-300
+
+10. EMPTY STATES:
+text-gray-500 → text-gray-400
+
+11. MODAIS (se existirem):
+bg-white → bg-[#2D2D2D]
+border-gray-200 → border-white/10
+
+
+NÃO altere lógica de negócio, apenas classes de estilo.
