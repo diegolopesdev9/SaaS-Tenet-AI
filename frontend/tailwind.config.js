@@ -1,10 +1,10 @@
 
-module.exports = {
+/** @type {import('tailwindcss').Config} */
+export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Cores principais do Tenet AI
         cyan: {
           DEFAULT: "#00FFFF",
           50: "#E5FFFF",
@@ -30,7 +30,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
         heading: ['Space Grotesk', 'sans-serif'],
       },
     },
