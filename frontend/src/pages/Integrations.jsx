@@ -316,7 +316,7 @@ export default function Integrations({ agencyId }) {
       )}
 
       {/* Seção Admin WhatsApp */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6 border border-white/10">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-green-500/20 rounded-lg">
             <User className="w-6 h-6 text-green-400" />
@@ -337,7 +337,7 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_name}
               onChange={(e) => setAdminConfig({...adminConfig, admin_name: e.target.value})}
               placeholder="Ex: João Silva"
-              className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
             />
           </div>
 
@@ -350,7 +350,7 @@ export default function Integrations({ agencyId }) {
               value={adminConfig.admin_whatsapp_number}
               onChange={(e) => setAdminConfig({...adminConfig, admin_whatsapp_number: e.target.value})}
               placeholder="Ex: 5511999999999"
-              className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+              className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
             />
             <p className="text-xs text-gray-400 mt-1">Formato: DDI + DDD + Número (ex: 5511999999999)</p>
           </div>
@@ -391,7 +391,7 @@ export default function Integrations({ agencyId }) {
       </div>
 
       {/* Seção Relatórios Automáticos */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6 border border-white/10">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-purple-500/20 rounded-lg">
             <BarChart3 className="w-6 h-6 text-purple-400" />
@@ -473,10 +473,10 @@ export default function Integrations({ agencyId }) {
       </div>
 
       {/* Seção Google (Calendar + Sheets) */}
-      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg shadow p-6 mb-6 border border-white/10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <svg className="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
+          <div className="p-2 bg-white/10 rounded-lg">
+            <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -598,14 +598,14 @@ export default function Integrations({ agencyId }) {
           return (
             <div
               key={crm.id}
-              className={`bg-[#2D2D2D] rounded-lg border-2 p-6 transition-all ${
+              className={`bg-[#2D2D2D] rounded-lg border p-6 transition-all ${
                 status?.is_active ? 'border-green-500' : 'border-white/10'
               }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 ${crm.color} rounded-lg flex items-center justify-center`}>
-                    <Link2 className="w-5 h-5 text-white" />
+                  <div className={`w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center`}>
+                    <Link2 className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">{crm.name}</h3>
@@ -725,7 +725,7 @@ export default function Integrations({ agencyId }) {
       {/* Modal de Configuração */}
       {showModal && selectedCRM && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-          <div className="bg-[#2D2D2D] rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-[#2D2D2D] rounded-lg p-6 w-full max-w-md mx-4 border border-white/10">
             <h3 className="text-lg font-semibold text-white mb-4">
               Configurar {selectedCRM.name}
             </h3>
@@ -741,7 +741,7 @@ export default function Integrations({ agencyId }) {
                     type="password"
                     value={formData.api_key}
                     onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+                    className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="Cole sua API Key aqui"
                   />
                 </div>
@@ -757,7 +757,7 @@ export default function Integrations({ agencyId }) {
                     type="password"
                     value={formData.api_token}
                     onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+                    className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="Cole seu OAuth Token"
                   />
                 </div>
@@ -773,7 +773,7 @@ export default function Integrations({ agencyId }) {
                     type="text"
                     value={formData.database_id}
                     onChange={(e) => setFormData({ ...formData, database_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+                    className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="ID do database do Notion"
                   />
                 </div>
@@ -789,7 +789,7 @@ export default function Integrations({ agencyId }) {
                     type="text"
                     value={formData.pipeline_id}
                     onChange={(e) => setFormData({ ...formData, pipeline_id: e.target.value })}
-                    className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
+                    className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/10 rounded-lg focus:ring-2 focus:ring-cyan-500 text-white"
                     placeholder="ID do pipeline"
                   />
                 </div>
