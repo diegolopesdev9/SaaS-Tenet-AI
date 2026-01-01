@@ -1,0 +1,117 @@
+Atualize a configuração do Tailwind e CSS global para suportar o tema dark.
+
+=== ARQUIVO: frontend/tailwind.config.js ===
+
+SUBSTITUA TODO o conteúdo por:
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        cyan: {
+          DEFAULT: "#00FFFF",
+          50: "#E5FFFF",
+          100: "#CCFFFF",
+          200: "#99FFFF",
+          300: "#66FFFF",
+          400: "#33FFFF",
+          500: "#00FFFF",
+          600: "#00CCCC",
+          700: "#009999",
+          800: "#006666",
+          900: "#003333",
+        },
+        anthracite: {
+          DEFAULT: "#1A1A1A",
+          light: "#2D2D2D",
+          dark: "#0F0F0F",
+        },
+        silver: {
+          DEFAULT: "#C0C0C0",
+          light: "#E8E8E8",
+          dark: "#A0A0A0",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Space Grotesk', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}
+
+
+=== ARQUIVO: frontend/src/index.css ===
+
+ADICIONE ao final do arquivo (após o conteúdo existente):
+
+/* ========================================
+   TENET AI - TEMA DARK
+   ======================================== */
+
+/* Fontes */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #1A1A1A;
+  color: #C0C0C0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Scrollbar Dark */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3D3D3D;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4D4D4D;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3D3D3D #1A1A1A;
+}
+
+/* Inputs Dark Theme */
+input, select, textarea {
+  background-color: #1A1A1A !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6B7280 !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #00CCCC !important;
+  ring-color: #00CCCC !important;
+}
+
+
+=== ARQUIVO: frontend/index.html ===
+
+No <head>, ADICIONE as fontes do Google (se ainda não tiver):
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+
+NÃO altere outros arquivos neste prompt.
