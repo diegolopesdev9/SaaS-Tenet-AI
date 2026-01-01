@@ -23,9 +23,9 @@ export default function TokenUsage() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl p-6 shadow-sm animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="h-8 bg-gray-200 rounded w-full"></div>
+      <div className="bg-[#2D2D2D] rounded-xl p-6 shadow-sm animate-pulse">
+        <div className="h-4 bg-white/10 rounded w-1/2 mb-4"></div>
+        <div className="h-8 bg-white/10 rounded w-full"></div>
       </div>
     );
   }
@@ -59,13 +59,13 @@ export default function TokenUsage() {
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+    <div className="bg-[#2D2D2D] rounded-xl p-6 shadow-sm border border-white/10">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+        <h3 className="font-semibold text-white flex items-center gap-2">
           <span className="text-xl">⚡</span>
           Uso de Tokens
         </h3>
-        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        <span className="text-sm text-cyan-400 bg-cyan-500/20 px-2 py-1 rounded">
           {usage.plan_name}
         </span>
       </div>
@@ -73,14 +73,14 @@ export default function TokenUsage() {
       {/* Barra de progresso */}
       <div className="mb-4">
         <div className="flex justify-between text-sm mb-2">
-          <span className="text-gray-600 font-medium">
+          <span className="text-gray-300 font-medium">
             {formatNumber(usage.tokens_used)} usados
           </span>
-          <span className="text-gray-400">
+          <span className="text-gray-500">
             {formatNumber(usage.tokens_limit)} limite
           </span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-3">
+        <div className="w-full bg-white/10 rounded-full h-3">
           <div 
             className={`h-3 rounded-full transition-all duration-500 ${colorClasses[color]}`}
             style={{ width: `${Math.min(usage.percentage_used, 100)}%` }}
@@ -102,15 +102,15 @@ export default function TokenUsage() {
       </div>
 
       {/* Conversas */}
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <div className="flex justify-between text-sm text-gray-600">
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <div className="flex justify-between text-sm text-gray-400">
           <span>💬 Conversas</span>
-          <span>{usage.conversations_used} / {usage.conversations_limit}</span>
+          <span className="text-white">{usage.conversations_used}/{usage.conversations_limit} conversas</span>
         </div>
       </div>
 
       {/* Tokens restantes */}
-      <div className="mt-3 text-sm text-gray-500">
+      <div className="mt-3 text-sm text-gray-400">
         {usage.tokens_remaining > 0 
           ? `📈 ${formatNumber(usage.tokens_remaining)} tokens restantes`
           : '⚠️ Usando tokens excedentes'
