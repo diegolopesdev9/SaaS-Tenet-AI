@@ -1,0 +1,93 @@
+Atualize o Layout.jsx para usar o tema dark consistente com a landing page.
+
+=== ARQUIVO: frontend/src/components/Layout.jsx ===
+
+FAÇA AS SEGUINTES SUBSTITUIÇÕES:
+
+1. SIDEBAR CONTAINER - ENCONTRE:
+<div className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col">
+
+SUBSTITUA por:
+<div className="fixed inset-y-0 left-0 w-64 bg-[#0F0F0F] border-r border-white/10 flex flex-col">
+
+
+2. LOGO/HEADER DA SIDEBAR - ENCONTRE o container do logo (geralmente tem "TENET AI"):
+Procure por classes como: bg-gradient-to-r from-blue-600 to-purple-600 ou similar
+
+SUBSTITUA as cores do gradiente por:
+bg-gradient-to-br from-cyan-400 to-cyan-600
+
+E o texto "TENET AI" deve ter:
+<span className="font-bold text-white">TENET</span>
+<span className="font-bold text-cyan-400">AI</span>
+
+
+3. BADGE "Super Admin" - ENCONTRE:
+className="... text-purple-700 ..." ou "text-blue-700"
+
+SUBSTITUA por:
+className="text-xs text-cyan-400"
+
+
+4. MENU ITEMS - ENCONTRE os links de navegação com cores como:
+text-gray-700 hover:bg-gray-50
+ou
+bg-blue-50 text-blue-700 (para item ativo)
+
+SUBSTITUA por:
+- Item normal: text-gray-400 hover:bg-white/5 hover:text-white
+- Item ativo: bg-cyan-500/10 text-cyan-400 border-r-2 border-cyan-400
+
+
+5. SEÇÃO HEADERS (VISÃO GERAL, ADMINISTRAÇÃO, etc.) - ENCONTRE:
+className="... text-gray-500 ..." ou "text-gray-400"
+
+SUBSTITUA por:
+className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+
+
+6. USER INFO (parte inferior) - ENCONTRE:
+border-t border-gray-200
+
+SUBSTITUA por:
+border-t border-white/10
+
+
+7. USER AVATAR - ENCONTRE:
+bg-gray-200 text-gray-600
+
+SUBSTITUA por:
+bg-cyan-500/20 text-cyan-400
+
+
+8. USER NAME E EMAIL - ENCONTRE:
+text-gray-900 (nome)
+text-gray-500 (email)
+
+SUBSTITUA por:
+text-white (nome)
+text-gray-400 (email)
+
+
+9. BOTÃO SAIR - ENCONTRE:
+text-gray-700 hover:bg-gray-100
+
+SUBSTITUA por:
+text-gray-400 hover:bg-white/5 hover:text-white
+
+
+10. FOOTER (TENET AI © 2024) - ENCONTRE:
+text-gray-400 ou text-gray-500
+
+SUBSTITUA por:
+text-gray-600
+
+
+11. MAIN CONTENT AREA - ENCONTRE:
+<main className="... bg-gray-50 ..." ou "bg-gray-100"
+
+SUBSTITUA por:
+<main className="flex-1 p-6 bg-[#1A1A1A] min-h-screen"
+
+
+NÃO altere a lógica de navegação ou autenticação, apenas as classes de estilo.
