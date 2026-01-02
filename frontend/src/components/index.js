@@ -7,3 +7,4 @@ export {
   LoadingCard,
   LoadingTable 
 } from './Loading';
+export { default as Modal, ModalButton } from './Modal';
