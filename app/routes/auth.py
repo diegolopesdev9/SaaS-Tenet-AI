@@ -1,17 +1,9 @@
 """
 Rotas de autenticação.
 """
-import logging
-from datetime import timedelta, datetime, timezone
-from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, EmailStr, Field
-from passlib.context import CryptContext
-from app.utils.rate_limit import limiter, RATE_LIMITS
-from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.database import get_supabase_client
+from app.utils.logger import get_logger, masker
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 security = HTTPBearer()
@@ -68,13 +60,13 @@ async def login(request: Request, credentials: LoginRequest):
     """
     Realiza login e retorna token JWT.
     """
-    logger.info(f"Tentativa de login: {credentials.email}")
+    logger.info(f"Tentativa de login: {masker.mask_email(credentials.email)}")
 
     auth_service = AuthService()
     user = await auth_service.authenticate_user(credentials.email, credentials.password)
 
     if not user:
-        logger.warning(f"Login falhou: {credentials.email}")
+        logger.warning(f"Login falhou: {masker.mask_email(credentials.email)}")
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
 
     # Criar token
@@ -88,7 +80,7 @@ async def login(request: Request, credentials: LoginRequest):
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    logger.info(f"Login bem-sucedido: {credentials.email}")
+    logger.info(f"Login bem-sucedido: user_id={user['id']}")
 
     return LoginResponse(
         access_token=access_token,
@@ -124,7 +116,7 @@ async def register(request: Request, user_data: UserCreate):
     """
     Registra novo usuário (usar apenas para setup inicial).
     """
-    logger.info(f"Registro de usuário: {user_data.email}")
+    logger.info(f"Registro de usuário: {masker.mask_email(user_data.email)}")
 
     auth_service = AuthService()
     user = await auth_service.create_user(
@@ -166,7 +158,7 @@ async def change_password(
         }).eq("id", current_user["id"]).execute()
 
         if response.data:
-            logger.info(f"Senha alterada para usuário: {current_user['email']}")
+            logger.info(f"Senha alterada para usuário ID: {current_user['id']}")
             return {"success": True, "message": "Senha alterada com sucesso"}
 
         raise HTTPException(status_code=500, detail="Erro ao alterar senha")
