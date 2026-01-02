@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
-from app.utils.rate_limit import limiter
+from app.utils.rate_limit import limiter, RATE_LIMITS
 from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.database import get_supabase_client
 
@@ -61,8 +61,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 
 @router.post("/login", response_model=LoginResponse)
-@limiter.limit("5/minute")
+@limiter.limit(RATE_LIMITS["auth"])
 async def login(request: Request, credentials: LoginRequest):
+    # Armazenar email no state para rate limit mais preciso
+    request.state.login_email = credentials.email
     """
     Realiza login e retorna token JWT.
     """
@@ -117,18 +119,19 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/register")
-async def register(request: UserCreate):
+@limiter.limit(RATE_LIMITS["auth"])
+async def register(request: Request, user_data: UserCreate):
     """
     Registra novo usuário (usar apenas para setup inicial).
     """
-    logger.info(f"Registro de usuário: {request.email}")
+    logger.info(f"Registro de usuário: {user_data.email}")
 
     auth_service = AuthService()
     user = await auth_service.create_user(
-        email=request.email,
-        password=request.password,
-        nome=request.nome,
-        tenet_id=request.tenet_id
+        email=user_data.email,
+        password=user_data.password,
+        nome=user_data.nome,
+        tenet_id=user_data.tenet_id
     )
 
     if not user:
