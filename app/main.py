@@ -12,6 +12,7 @@ from slowapi.errors import RateLimitExceeded
 from app.utils.rate_limit import limiter
 from app.middleware.request_id import RequestIDMiddleware
 from app.routes import health, webhooks, knowledge, templates, ab_tests, export, admin_metrics, lgpd
+from app.routes.lgpd import router as lgpd_router
 from app.routes.auth import router as auth_router
 from app.routes.admin import router as admin_router
 from app.routes.super_admin import router as super_admin_router
