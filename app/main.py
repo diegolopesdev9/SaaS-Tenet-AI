@@ -24,6 +24,7 @@ from app.routes.google_calendar import router as calendar_router
 from app.routes.google_sheets import router as google_sheets_router
 from app.routes.admin_config import router as admin_config_router
 from app.routes.billing import router as billing_router
+from app.routes.register import router as register_router
 from app.database import health_check
 from app.config import settings
 
@@ -78,6 +79,7 @@ app.include_router(calendar_router)
 app.include_router(google_sheets_router)
 app.include_router(admin_config_router)
 app.include_router(billing_router)
+app.include_router(register_router)
 
 # Servir frontend em produção
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
