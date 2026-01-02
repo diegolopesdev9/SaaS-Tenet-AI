@@ -267,7 +267,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                             }`
                           }
                         >
-                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <Icon className={`w-5 h-5 flex-shrink-0`} />
                           <span className="flex-1">{item.name}</span>
                         </NavLink>
                       )
@@ -297,7 +297,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         }`
                       }
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <Icon className={`w-5 h-5 flex-shrink-0`} />
                       <span className="flex-1">{item.name}</span>
                     </NavLink>
                   )
@@ -322,7 +322,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                             }`
                           }
                         >
-                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <Icon className={`w-5 h-5 flex-shrink-0`} />
                           <span className="flex-1">{item.name}</span>
                         </NavLink>
                       )
@@ -352,7 +352,7 @@ export default function Layout({ agencyId, agencies, selectedAgencyId, onAgencyC
                         }`
                       }
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      <Icon className={`w-5 h-5 flex-shrink-0`} />
                       <span className="flex-1">{item.name}</span>
                     </NavLink>
                   )
