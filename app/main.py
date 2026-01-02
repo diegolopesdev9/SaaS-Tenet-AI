@@ -50,14 +50,44 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Enable CORS
+# ========== CORS CONFIGURATION (SEGURO) ==========
+# Determinar origins permitidas baseado no ambiente
+def get_cors_origins():
+    """Retorna lista de origins permitidas baseado no ambiente."""
+    if settings.ENVIRONMENT == "development":
+        # Em desenvolvimento, permitir localhost
+        return [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5173",
+        ] + settings.cors_origins_list
+    else:
+        # Em produção, apenas origins configuradas explicitamente
+        origins = settings.cors_origins_list
+        if not origins:
+            raise ValueError(
+                "CORS_ORIGINS deve ser configurado em produção! "
+                "Ex: CORS_ORIGINS=https://app.tenetai.com.br"
+            )
+        return origins
+
+cors_origins = get_cors_origins()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=cors_origins,  # Lista específica, nunca ["*"]
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # Removido OPTIONS (automático)
+    allow_headers=["Authorization", "Content-Type"],  # Headers específicos
+    expose_headers=["X-Request-ID"],  # Headers expostos ao client
+    max_age=600,  # Cache preflight por 10 minutos
 )
+
+# Log das origins configuradas (apenas em startup)
+import logging
+logger = logging.getLogger(__name__)
+logger.info(f"CORS configurado para origins: {cors_origins}")
 
 app.add_middleware(RequestIDMiddleware)
 
