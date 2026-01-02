@@ -1,0 +1,193 @@
+Crie o arquivo app/routes/register.py com a rota de registro público:
+
+"""
+Rotas de registro público de novos tenets.
+"""
+import logging
+from datetime import datetime, timezone
+from typing import Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, EmailStr, Field
+from passlib.context import CryptContext
+from app.database import get_supabase_client
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/register", tags=["Register"])
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class RegisterRequest(BaseModel):
+    # Dados do Tenet
+    nome_empresa: str = Field(..., min_length=2, max_length=100)
+    email_empresa: EmailStr
+    telefone: Optional[str] = None
+    
+    # Dados do Admin
+    nome_admin: str = Field(..., min_length=2, max_length=100)
+    email_admin: EmailStr
+    senha: str = Field(..., min_length=6)
+    confirmar_senha: str = Field(..., min_length=6)
+    
+    # Plano e Tipo
+    plano: str = Field(..., pattern="^(trial|starter|professional|tenet)$")
+    tipo_tenet: str = Field(..., pattern="^(sdr|suporte|rh|vendas)$")
+    
+    # Termos
+    aceita_termos: bool = Field(...)
+
+
+@router.post("/")
+async def register_new_tenet(data: RegisterRequest):
+    """Registra um novo tenet e usuário admin."""
+    
+    # Validações
+    if data.senha != data.confirmar_senha:
+        raise HTTPException(status_code=400, detail="As senhas não coincidem")
+    
+    if not data.aceita_termos:
+        raise HTTPException(status_code=400, detail="Você deve aceitar os termos de uso")
+    
+    supabase = get_supabase_client()
+    
+    try:
+        # Verificar se email já existe
+        existing_email = supabase.table("usuarios").select("id").eq(
+            "email", data.email_admin
+        ).execute()
+        
+        if existing_email.data:
+            raise HTTPException(status_code=400, detail="Este email já está cadastrado")
+        
+        # Verificar se empresa já existe
+        existing_empresa = supabase.table("tenets").select("id").eq(
+            "email", data.email_empresa
+        ).execute()
+        
+        if existing_empresa.data:
+            raise HTTPException(status_code=400, detail="Esta empresa já está cadastrada")
+        
+        # Buscar plano selecionado
+        plan_result = supabase.table("plans").select("*").eq("name", data.plano).execute()
+        if not plan_result.data:
+            raise HTTPException(status_code=400, detail="Plano inválido")
+        
+        plan = plan_result.data[0]
+        
+        # Gerar instance_name único
+        instance_name = data.nome_empresa.lower().replace(" ", "_")[:30] + "_" + str(int(datetime.now().timestamp()))[-6:]
+        
+        # Criar Tenet
+        tenet_data = {
+            "nome": data.nome_empresa,
+            "email": data.email_empresa,
+            "telefone": data.telefone,
+            "instance_name": instance_name,
+            "nicho": data.tipo_tenet,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        tenet_response = supabase.table("tenets").insert(tenet_data).execute()
+        
+        if not tenet_response.data:
+            raise HTTPException(status_code=500, detail="Erro ao criar conta")
+        
+        tenet_id = tenet_response.data[0]["id"]
+        
+        # Criar usuário admin
+        senha_hash = pwd_context.hash(data.senha)
+        
+        usuario_data = {
+            "email": data.email_admin,
+            "senha_hash": senha_hash,
+            "nome": data.nome_admin,
+            "tenet_id": tenet_id,
+            "role": "admin",
+            "ativo": True,
+            "deve_alterar_senha": False,  # Usuário definiu própria senha
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        usuario_response = supabase.table("usuarios").insert(usuario_data).execute()
+        
+        if not usuario_response.data:
+            # Rollback - deletar tenet criado
+            supabase.table("tenets").delete().eq("id", tenet_id).execute()
+            raise HTTPException(status_code=500, detail="Erro ao criar usuário")
+        
+        # Criar subscription
+        try:
+            from dateutil.relativedelta import relativedelta
+            
+            now = datetime.now(timezone.utc)
+            
+            # Trial tem 14 dias, outros planos 30 dias
+            if data.plano == "trial":
+                period_end = now + relativedelta(days=14)
+                status = "trial"
+            else:
+                period_end = now + relativedelta(months=1)
+                status = "active"
+            
+            supabase.table("subscriptions").insert({
+                "tenet_id": str(tenet_id),
+                "plan_id": plan["id"],
+                "status": status,
+                "current_period_start": now.date().isoformat(),
+                "current_period_end": period_end.date().isoformat(),
+                "tokens_used_this_period": 0,
+                "conversations_used_this_period": 0
+            }).execute()
+            
+        except Exception as sub_error:
+            logger.warning(f"Erro ao criar subscription: {sub_error}")
+        
+        logger.info(f"Novo tenet registrado: {data.nome_empresa} ({data.email_empresa})")
+        
+        return {
+            "success": True,
+            "message": "Conta criada com sucesso! Faça login para continuar.",
+            "tenet_id": tenet_id,
+            "plano": plan["display_name"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro no registro: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao criar conta")
+
+
+@router.get("/plans")
+async def get_available_plans():
+    """Retorna planos disponíveis para registro."""
+    supabase = get_supabase_client()
+    
+    try:
+        plans = supabase.table("plans").select(
+            "name, display_name, monthly_tokens, monthly_conversations, price_cents, max_agents, features"
+        ).eq("is_active", True).order("price_cents").execute()
+        
+        # Formatar para exibição
+        formatted_plans = []
+        for plan in plans.data:
+            formatted_plans.append({
+                "id": plan["name"],
+                "nome": plan["display_name"],
+                "preco": plan["price_cents"] / 100,  # Converter centavos para reais
+                "preco_formatado": f"R$ {plan['price_cents'] / 100:.2f}".replace(".", ","),
+                "conversas": plan["monthly_conversations"],
+                "tokens": plan["monthly_tokens"],
+                "agentes": plan["max_agents"],
+                "features": plan.get("features", {})
+            })
+        
+        return formatted_plans
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar planos: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao carregar planos")
+
+
+NÃO altere outros arquivos neste prompt.
