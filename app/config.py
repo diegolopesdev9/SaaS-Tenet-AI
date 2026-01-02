@@ -19,11 +19,29 @@ class Settings(BaseSettings):
         description="DSN do Sentry para error tracking"
     )
 
-    # JWT Configuration
+    # JWT Configuration - SEM DEFAULT INSEGURO
     JWT_SECRET: str = Field(
-        default="change-me-in-production",
-        description="Secret key for JWT tokens"
+        ...,  # Campo obrigatório, sem default
+        min_length=32,
+        description="Secret key for JWT tokens (min 32 chars)"
     )
+    JWT_SECRET_KEY: str = Field(
+        default="",
+        description="Alias for JWT_SECRET (deprecated)"
+    )
+
+    @property
+    def jwt_secret_validated(self) -> str:
+        """Retorna JWT secret validado."""
+        secret = self.JWT_SECRET or self.JWT_SECRET_KEY
+        if not secret or len(secret) < 32:
+            raise ValueError(
+                "JWT_SECRET deve ter no mínimo 32 caracteres. "
+                "Gere com: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if secret in ["change-me-in-production", "sua-chave-secreta-muito-segura-mude-em-producao"]:
+            raise ValueError("JWT_SECRET ainda está com valor de exemplo! Configure uma chave segura.")
+        return secret
     JWT_ALGORITHM: str = Field(
         default="HS256",
         description="Algorithm for JWT"
