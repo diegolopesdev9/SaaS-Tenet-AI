@@ -324,7 +324,9 @@ async def create_tenet(
         logger.info(f"Tenet criado: {tenet_id}")
 
         # Criar usuário admin para o tenet
-        senha_hash = pwd_context.hash(tenet.admin_senha)
+        # Usar senha padrão para novos tenets (será obrigado a trocar no primeiro acesso)
+        senha_padrao = "Admin@123"
+        senha_hash = pwd_context.hash(senha_padrao)
 
         usuario_data = {
             "email": tenet.admin_email,
@@ -376,7 +378,9 @@ async def create_tenet(
             "usuario": {
                 "id": usuario_response.data[0]["id"],
                 "email": usuario_response.data[0]["email"],
-                "nome": usuario_response.data[0]["nome"]
+                "nome": usuario_response.data[0]["nome"],
+                "senha_temporaria": "Admin@123",
+                "aviso": "O usuário deverá trocar a senha no primeiro acesso"
             }
         }
 
