@@ -1,0 +1,331 @@
+Crie o arquivo app/routes/lgpd.py:
+
+"""
+Endpoints para conformidade com LGPD - Direitos do Titular.
+Art. 18 da Lei Geral de Proteção de Dados.
+"""
+import logging
+from datetime import datetime, timezone
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, Request, BackgroundTasks
+from pydantic import BaseModel, EmailStr
+from app.routes.auth import get_current_user
+from app.database import get_supabase_client
+from app.services.audit_service import audit_service, AuditAction
+from app.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+router = APIRouter(prefix="/api/lgpd", tags=["LGPD"])
+
+
+# ========== SCHEMAS ==========
+
+class DataAccessRequest(BaseModel):
+    """Requisição de acesso aos dados (Art. 18, II)."""
+    email: EmailStr
+    reason: Optional[str] = None
+
+
+class DataAccessResponse(BaseModel):
+    """Resposta com dados do titular."""
+    user_data: dict
+    leads_data: list
+    conversations_count: int
+    data_sources: list
+    export_date: str
+
+
+class DataDeletionRequest(BaseModel):
+    """Requisição de eliminação de dados (Art. 18, VI)."""
+    confirm: bool
+    reason: Optional[str] = None
+
+
+class DataCorrectionRequest(BaseModel):
+    """Requisição de correção de dados (Art. 18, III)."""
+    field: str
+    old_value: str
+    new_value: str
+    reason: Optional[str] = None
+
+
+class ConsentRevocationRequest(BaseModel):
+    """Requisição de revogação de consentimento (Art. 18, IX)."""
+    consent_type: str  # "marketing", "data_processing", "all"
+    confirm: bool
+
+
+# ========== ENDPOINTS ==========
+
+@router.get("/my-data", response_model=DataAccessResponse)
+async def get_my_data(
+    request: Request,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Art. 18, II - Acesso aos dados pessoais.
+    Retorna todos os dados do titular armazenados no sistema.
+    """
+    supabase = get_supabase_client()
+    user_id = current_user["id"]
+    tenet_id = current_user.get("tenet_id")
+    
+    try:
+        # Dados do usuário (sem senha)
+        user_response = supabase.table("usuarios").select(
+            "id, email, nome, role, created_at, updated_at"
+        ).eq("id", user_id).execute()
+        
+        user_data = user_response.data[0] if user_response.data else {}
+        
+        # Leads associados ao usuário/tenant
+        leads_response = supabase.table("leads").select(
+            "id, nome, email, telefone, status, created_at"
+        ).eq("tenet_id", tenet_id).execute()
+        
+        leads_data = leads_response.data or []
+        
+        # Contagem de conversas
+        conversations_response = supabase.table("conversas").select(
+            "id", count="exact"
+        ).eq("tenet_id", tenet_id).execute()
+        
+        conversations_count = conversations_response.count or 0
+        
+        # Log de auditoria
+        await audit_service.log(
+            action=AuditAction.LEAD_EXPORT,
+            user_id=user_id,
+            tenet_id=tenet_id,
+            details={"type": "lgpd_access_request"},
+            ip_address=request.client.host if request.client else None
+        )
+        
+        return DataAccessResponse(
+            user_data=user_data,
+            leads_data=leads_data,
+            conversations_count=conversations_count,
+            data_sources=["usuarios", "leads", "conversas", "mensagens"],
+            export_date=datetime.now(timezone.utc).isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar dados LGPD: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar solicitação")
+
+
+@router.post("/request-deletion")
+async def request_data_deletion(
+    request: Request,
+    deletion_request: DataDeletionRequest,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Art. 18, VI - Eliminação dos dados pessoais.
+    Solicita a eliminação de todos os dados do titular.
+    """
+    if not deletion_request.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Você deve confirmar a solicitação de exclusão"
+        )
+    
+    supabase = get_supabase_client()
+    user_id = current_user["id"]
+    tenet_id = current_user.get("tenet_id")
+    
+    try:
+        # Criar solicitação de exclusão (processada em background)
+        deletion_record = {
+            "user_id": user_id,
+            "tenet_id": tenet_id,
+            "status": "pending",
+            "reason": deletion_request.reason,
+            "requested_at": datetime.now(timezone.utc).isoformat(),
+            "scheduled_deletion": None  # Será preenchido pelo admin
+        }
+        
+        response = supabase.table("lgpd_deletion_requests").insert(
+            deletion_record
+        ).execute()
+        
+        # Log de auditoria
+        await audit_service.log(
+            action=AuditAction.USER_DELETE,
+            user_id=user_id,
+            tenet_id=tenet_id,
+            details={"type": "lgpd_deletion_request", "status": "pending"},
+            ip_address=request.client.host if request.client else None
+        )
+        
+        return {
+            "status": "pending",
+            "message": "Sua solicitação de exclusão foi registrada. "
+                      "Você receberá uma confirmação em até 15 dias úteis.",
+            "request_id": response.data[0]["id"] if response.data else None
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar solicitação de exclusão: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar solicitação")
+
+
+@router.post("/correct-data")
+async def correct_personal_data(
+    request: Request,
+    correction: DataCorrectionRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Art. 18, III - Correção de dados incompletos, inexatos ou desatualizados.
+    """
+    supabase = get_supabase_client()
+    user_id = current_user["id"]
+    
+    # Campos permitidos para correção
+    allowed_fields = ["nome", "email"]
+    
+    if correction.field not in allowed_fields:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Campo '{correction.field}' não pode ser corrigido via este endpoint"
+        )
+    
+    try:
+        # Atualizar dado
+        response = supabase.table("usuarios").update({
+            correction.field: correction.new_value,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+        # Log de auditoria
+        await audit_service.log(
+            action=AuditAction.USER_UPDATE,
+            user_id=user_id,
+            details={
+                "type": "lgpd_correction",
+                "field": correction.field,
+                "reason": correction.reason
+            },
+            ip_address=request.client.host if request.client else None
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Campo '{correction.field}' atualizado com sucesso",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao corrigir dados: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar correção")
+
+
+@router.post("/revoke-consent")
+async def revoke_consent(
+    request: Request,
+    revocation: ConsentRevocationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Art. 18, IX - Revogação do consentimento.
+    """
+    if not revocation.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Você deve confirmar a revogação de consentimento"
+        )
+    
+    supabase = get_supabase_client()
+    user_id = current_user["id"]
+    tenet_id = current_user.get("tenet_id")
+    
+    try:
+        # Registrar revogação
+        consent_record = {
+            "user_id": user_id,
+            "tenet_id": tenet_id,
+            "consent_type": revocation.consent_type,
+            "status": "revoked",
+            "revoked_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        response = supabase.table("lgpd_consents").upsert(
+            consent_record,
+            on_conflict="user_id,consent_type"
+        ).execute()
+        
+        # Log de auditoria
+        await audit_service.log(
+            action=AuditAction.CONFIG_UPDATE,
+            user_id=user_id,
+            tenet_id=tenet_id,
+            details={
+                "type": "lgpd_consent_revocation",
+                "consent_type": revocation.consent_type
+            },
+            ip_address=request.client.host if request.client else None
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Consentimento '{revocation.consent_type}' revogado com sucesso",
+            "effective_date": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao revogar consentimento: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao processar revogação")
+
+
+@router.get("/data-processing-info")
+async def get_data_processing_info():
+    """
+    Art. 18, I - Confirmação da existência de tratamento.
+    Retorna informações sobre como os dados são processados.
+    """
+    return {
+        "controller": "TENET AI",
+        "purposes": [
+            {
+                "purpose": "Qualificação de leads",
+                "legal_basis": "Execução de contrato",
+                "retention": "Enquanto durar o contrato + 5 anos"
+            },
+            {
+                "purpose": "Conversas via WhatsApp",
+                "legal_basis": "Execução de contrato",
+                "retention": "90 dias após última interação"
+            },
+            {
+                "purpose": "Análise e métricas",
+                "legal_basis": "Legítimo interesse",
+                "retention": "Dados anonimizados por tempo indeterminado"
+            }
+        ],
+        "data_sharing": [
+            "Google (Gemini AI) - Processamento de linguagem natural",
+            "Evolution API/Meta - Envio de mensagens WhatsApp",
+            "Supabase - Armazenamento de dados"
+        ],
+        "rights": [
+            "Acesso aos dados (GET /api/lgpd/my-data)",
+            "Correção de dados (POST /api/lgpd/correct-data)",
+            "Eliminação de dados (POST /api/lgpd/request-deletion)",
+            "Revogação de consentimento (POST /api/lgpd/revoke-consent)",
+            "Portabilidade (GET /api/export/leads)"
+        ],
+        "contact": {
+            "dpo_email": "dpo@tenetai.com.br",
+            "support": "suporte@tenetai.com.br"
+        }
+    }
+
+NÃO altere nenhum outro arquivo.
