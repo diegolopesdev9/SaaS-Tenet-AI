@@ -349,11 +349,10 @@ async def create_tenet(
 
         # Criar subscription trial para o novo tenet
         try:
-            from datetime import datetime, timezone
             from dateutil.relativedelta import relativedelta
             
-            # Buscar plano starter como padrão
-            plan = supabase.table("plans").select("id").eq("name", "starter").execute()
+            # Buscar plano trial como padrão
+            plan = supabase.table("plans").select("id").eq("name", "trial").execute()
             plan_id = plan.data[0]["id"] if plan.data else None
             
             now = datetime.now(timezone.utc)
