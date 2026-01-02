@@ -5,6 +5,7 @@ import api from './services/api';
 
 // Pages
 import Login from './pages/Login';
+import Register from './pages/Register';
 import ChangePassword from './pages/ChangePassword';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -160,6 +161,15 @@ function App() {
         element={
           <PublicRoute>
             <Login />
+          </PublicRoute>
+        } 
+      />
+
+      <Route 
+        path="/register" 
+        element={
+          <PublicRoute>
+            <Register />
           </PublicRoute>
         } 
       />
