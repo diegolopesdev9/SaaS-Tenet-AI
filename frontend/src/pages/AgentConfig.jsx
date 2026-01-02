@@ -312,9 +312,12 @@ export default function AgentConfig({ agencyId }) {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Configurações do Agente</h1>
-        <p className="mt-2 text-gray-600">Configure a personalidade e integrações do seu agente SDR</p>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">Configuração do Agente</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Personalize o comportamento e a personalidade do seu agente SDR
+        </p>
       </div>
 
       {message && (
@@ -621,9 +624,9 @@ export default function AgentConfig({ agencyId }) {
                     WhatsApp Phone ID
                     <Lock className="w-3.5 h-3.5 text-gray-400" />
                   </label>
-                  <input 
-                    type="text" 
-                    value={whatsappStatus?.phone_number || config.whatsapp_phone_id || 'Será preenchido ao conectar'} 
+                  <input
+                    type="text"
+                    value={whatsappStatus?.phone_number || config.whatsapp_phone_id || 'Será preenchido ao conectar'}
                     readOnly
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none"
                   />
@@ -637,27 +640,27 @@ export default function AgentConfig({ agencyId }) {
                     <Lock className="w-3.5 h-3.5 text-gray-400" />
                   </label>
                   <div className="relative">
-                    <input 
-                      type={showTokens.whatsapp ? 'text' : 'password'} 
-                      value={instanceToken || ''} 
+                    <input
+                      type={showTokens.whatsapp ? 'text' : 'password'}
+                      value={instanceToken || ''}
                       readOnly
-                      className="w-full px-4 py-2 pr-24 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none" 
-                      placeholder="Token gerado automaticamente" 
+                      className="w-full px-4 py-2 pr-24 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed outline-none"
+                      placeholder="Token gerado automaticamente"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       {instanceToken && (
-                        <button 
-                          type="button" 
-                          onClick={() => copyToClipboard(instanceToken)} 
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(instanceToken)}
                           className="text-gray-400 hover:text-gray-600"
                           title="Copiar token"
                         >
                           <Copy className="w-5 h-5" />
                         </button>
                       )}
-                      <button 
-                        type="button" 
-                        onClick={() => toggleTokenVisibility('whatsapp')} 
+                      <button
+                        type="button"
+                        onClick={() => toggleTokenVisibility('whatsapp')}
                         className="text-gray-400 hover:text-gray-600"
                       >
                         {showTokens.whatsapp ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
