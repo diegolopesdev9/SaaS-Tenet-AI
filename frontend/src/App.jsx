@@ -7,6 +7,7 @@ import api from './services/api';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ChangePassword from './pages/ChangePassword';
+import ForceChangePassword from './components/ForceChangePassword';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Billing from './pages/Billing';
@@ -43,6 +44,7 @@ function PublicRoute({ children }) {
 
 // Componente que gerencia o estado de agência (só para usuários logados)
 function AuthenticatedApp() {
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [user, setUser] = useState(() => authService.getUser());
   const isSuperAdmin = user?.role === 'super_admin';
 
@@ -58,6 +60,12 @@ function AuthenticatedApp() {
 
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(isSuperAdmin);
+
+  useEffect(() => {
+    if (user?.deve_alterar_senha) {
+      setMustChangePassword(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -98,17 +106,16 @@ function AuthenticatedApp() {
     localStorage.setItem('selectedAgencyId', agencyId);
   };
 
-  const handlePasswordChanged = () => {
-    // Recarregar usuário do localStorage
-    const updatedUser = authService.getUser();
-    setUser(updatedUser);
-  };
-
   const agencyId = isSuperAdmin ? selectedAgencyId : user?.tenet_id;
 
-  // Verificar se precisa alterar senha
-  if (user?.deve_alterar_senha) {
-    return <ChangePassword onPasswordChanged={handlePasswordChanged} />;
+  // Se precisa trocar senha, mostra tela de troca
+  if (mustChangePassword) {
+    return (
+      <ForceChangePassword 
+        user={user} 
+        onPasswordChanged={() => setMustChangePassword(false)} 
+      />
+    );
   }
 
   // Loading para super admin
