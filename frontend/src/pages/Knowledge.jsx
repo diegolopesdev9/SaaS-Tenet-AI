@@ -1,20 +1,14 @@
-
-import React, { useState, useEffect, useRef } from 'react'
-import { BookOpen, Plus, Upload, Search, Trash2, FileText, Tag, Calendar, File, X } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Upload, FileText, Trash2, Eye, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react'
 import api from '../services/api'
 
 export default function Knowledge({ agencyId }) {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState([])
-  const [searching, setSearching] = useState(false)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newDoc, setNewDoc] = useState({ titulo: '', conteudo: '', categoria: '' })
-  const [adding, setAdding] = useState(false)
-  const [uploadMode, setUploadMode] = useState('text') // 'text' ou 'file'
-  const [selectedFile, setSelectedFile] = useState(null)
-  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [message, setMessage] = useState(null)
+  const [previewDocument, setPreviewDocument] = useState(null)
 
   useEffect(() => {
     loadDocuments()
@@ -23,215 +17,246 @@ export default function Knowledge({ agencyId }) {
   const loadDocuments = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/knowledge/documents')
-      const data = response.data?.documents || response.data || []
-      setDocuments(Array.isArray(data) ? data : [])
+      const response = await api.get(`/knowledge/documents?agencia_id=${agencyId}`)
+      setDocuments(response.data)
     } catch (error) {
       console.error('Erro ao carregar documentos:', error)
-      setDocuments([])
+      setMessage({ type: 'error', text: 'Erro ao carregar documentos' })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSearch = async () => {
-    if (!searchTerm.trim()) return
-    
-    try {
-      setSearching(true)
-      const response = await api.post('/knowledge/search', {
-        query: searchTerm,
-        limit: 5
-      })
-      setSearchResults(response.data?.results || [])
-    } catch (error) {
-      console.error('Erro na busca:', error)
-    } finally {
-      setSearching(false)
-    }
-  }
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
 
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setSelectedFile(file)
-      setNewDoc({ ...newDoc, titulo: file.name.replace(/\.[^/.]+$/, '') })
-      
-      // Ler conteúdo se for arquivo de texto
-      if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          setNewDoc(prev => ({ ...prev, conteudo: e.target.result }))
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('agencia_id', agencyId)
+
+    try {
+      setUploading(true)
+      setUploadProgress(0)
+
+      const response = await api.post('/knowledge/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          setUploadProgress(progress)
         }
-        reader.readAsText(file)
-      }
-    }
-  }
-
-  const handleAddDocument = async () => {
-    if (!newDoc.titulo || !newDoc.conteudo) return
-    
-    try {
-      setAdding(true)
-      await api.post('/knowledge/documents', {
-        titulo: newDoc.titulo,
-        conteudo: newDoc.conteudo,
-        categoria: newDoc.categoria || 'geral'
       })
-      setNewDoc({ titulo: '', conteudo: '', categoria: '' })
-      setSelectedFile(null)
-      setUploadMode('text')
-      setShowAddModal(false)
-      loadDocuments()
+
+      setMessage({ type: 'success', text: 'Documento enviado com sucesso!' })
+      await loadDocuments()
     } catch (error) {
-      console.error('Erro ao adicionar documento:', error)
-      alert('Erro ao adicionar documento. Tente novamente.')
+      console.error('Erro ao fazer upload:', error)
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Erro ao fazer upload' })
     } finally {
-      setAdding(false)
+      setUploading(false)
+      setUploadProgress(0)
+      event.target.value = ''
     }
   }
 
-  const handleDeleteDocument = async (docId) => {
-    if (!confirm('Tem certeza que deseja excluir este documento?')) return
-    
+  const handleDelete = async (documentId) => {
+    if (!confirm('Tem certeza que deseja deletar este documento?')) return
+
     try {
-      await api.delete(`/knowledge/documents/${docId}`)
-      loadDocuments()
+      await api.delete(`/knowledge/documents/${documentId}`)
+      setMessage({ type: 'success', text: 'Documento deletado com sucesso!' })
+      await loadDocuments()
     } catch (error) {
-      console.error('Erro ao excluir documento:', error)
+      console.error('Erro ao deletar documento:', error)
+      setMessage({ type: 'error', text: 'Erro ao deletar documento' })
     }
   }
 
-  const resetModal = () => {
-    setShowAddModal(false)
-    setNewDoc({ titulo: '', conteudo: '', categoria: '' })
-    setSelectedFile(null)
-    setUploadMode('text')
+  const handlePreview = (document) => {
+    setPreviewDocument(document)
+  }
+
+  const getFileIcon = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase()
+    return <FileText className="w-5 h-5 text-gray-500" />
+  }
+
+  const getFileTypeBadge = (filename) => {
+    const ext = filename.split('.').pop().toLowerCase()
+    const types = {
+      pdf: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'PDF' },
+      doc: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'DOC' },
+      docx: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'DOCX' },
+      txt: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'TXT' },
+      csv: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'CSV' },
+      xlsx: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'XLSX' },
+      xls: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'XLS' }
+    }
+    const type = types[ext] || { bg: 'bg-gray-500/20', text: 'text-gray-400', label: ext.toUpperCase() }
+    return (
+      <span className={`px-2 py-1 text-xs font-medium rounded ${type.bg} ${type.text}`}>
+        {type.label}
+      </span>
+    )
+  }
+
+  const getStatusBadge = (status) => {
+    const statuses = {
+      processing: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Processando', icon: Loader2 },
+      processed: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Processado', icon: CheckCircle },
+      error: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Erro', icon: AlertCircle }
+    }
+    const statusInfo = statuses[status] || statuses.processed
+    const Icon = statusInfo.icon
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${statusInfo.bg} ${statusInfo.text}`}>
+        <Icon className="w-3 h-3" />
+        {statusInfo.label}
+      </span>
+    )
+  }
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  const formatDate = (dateString) => {
+    if (!dateString) return ''
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Carregando documentos...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Base de Conhecimento</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Adicione documentos para enriquecer as respostas da IA
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">Base de Conhecimento</h1>
+        <p className="mt-1 text-sm text-gray-400">
+          Faça upload de documentos para treinar o agente com conhecimento específico
+        </p>
+      </div>
+
+      {message && (
+        <div className={`mb-6 p-4 rounded-lg border flex items-start gap-3 ${message.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          {message.type === 'success' ? <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" /> : <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />}
+          <p className="text-sm font-medium">{message.text}</p>
+        </div>
+      )}
+
+      {/* Upload Area */}
+      <div className="mb-8">
+        <label className="block">
+          <div className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all bg-[#2D2D2D] border-white/30 hover:border-cyan-500 hover:bg-cyan-500/5 ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
+            />
+            <Upload className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+            <p className="text-gray-300 font-medium mb-1">
+              {uploading ? 'Fazendo upload...' : 'Clique para fazer upload ou arraste arquivos'}
+            </p>
+            <p className="text-sm text-gray-500">
+              PDF, DOC, DOCX, TXT, CSV, XLSX (máx. 10MB)
+            </p>
+            {uploading && (
+              <div className="mt-4 max-w-xs mx-auto">
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-cyan-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-400 mt-2">{uploadProgress}%</p>
+              </div>
+            )}
+          </div>
+        </label>
+      </div>
+
+      {/* Documents List */}
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10">
+        <div className="p-4 border-b border-white/10">
+          <h2 className="text-lg font-semibold text-white">Documentos</h2>
+          <p className="text-sm text-gray-400 mt-1">
+            {documents.length} {documents.length === 1 ? 'documento' : 'documentos'}
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Adicionar Documento
-        </button>
-      </div>
 
-      {/* Busca Semântica */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">🔍 Busca Semântica</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Teste a busca por similaridade. Digite uma pergunta e veja quais documentos serão usados como contexto.
-        </p>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Ex: Qual é a política de preços?"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            disabled={searching || !searchTerm.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {searching ? 'Buscando...' : 'Buscar'}
-          </button>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="mt-4 space-y-3">
-            <p className="text-sm font-medium text-gray-700">Resultados encontrados:</p>
-            {searchResults.map((result, index) => (
-              <div key={index} className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-blue-900">{result.titulo}</span>
-                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
-                    {(result.similarity * 100).toFixed(0)}% similar
-                  </span>
-                </div>
-                <p className="text-sm text-blue-700 line-clamp-2">{result.conteudo}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Lista de Documentos */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">
-            📚 Documentos ({documents.length})
-          </h2>
-        </div>
-        
         {documents.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum documento adicionado</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Adicione documentos para a IA usar como contexto nas conversas
-            </p>
+          <div className="p-12 text-center">
+            <FileText className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+            <p className="text-gray-400">Nenhum documento enviado ainda</p>
+            <p className="text-sm text-gray-500 mt-1">Faça upload do primeiro documento acima</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-white/10">
             {documents.map((doc) => (
-              <div key={doc.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                    </div>
+              <div key={doc.id} className="p-4 hover:bg-white/5 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    {getFileIcon(doc.filename)}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900">{doc.titulo}</h3>
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                        {doc.conteudo}
-                      </p>
-                      <div className="flex items-center gap-4 mt-2">
-                        {doc.categoria && (
-                          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                            <Tag className="w-3 h-3" />
-                            {doc.categoria}
-                          </span>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-white truncate">
+                          {doc.filename}
+                        </p>
+                        {getFileTypeBadge(doc.filename)}
+                        {getStatusBadge(doc.status || 'processed')}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-gray-400">
+                          {formatFileSize(doc.file_size)}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {formatDate(doc.created_at)}
+                        </p>
+                        {doc.chunks_count && (
+                          <p className="text-xs text-gray-400">
+                            {doc.chunks_count} fragmentos
+                          </p>
                         )}
-                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(doc.created_at).toLocaleDateString('pt-BR')}
-                        </span>
                       </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleDeleteDocument(doc.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Excluir documento"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => handlePreview(doc)}
+                      className="p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                      title="Visualizar"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Deletar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -239,145 +264,56 @@ export default function Knowledge({ agencyId }) {
         )}
       </div>
 
-      {/* Modal Adicionar Documento */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#2D2D2D] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10">
-            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Adicionar Documento</h2>
-              <button onClick={resetModal} className="p-1 hover:bg-white/10 rounded-lg">
-                <X className="w-5 h-5 text-gray-400" />
+      {/* Preview Modal */}
+      {previewDocument && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2D2D2D] rounded-lg border border-white/10 max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">{previewDocument.filename}</h3>
+              <button
+                onClick={() => setPreviewDocument(null)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
-            
-            {/* Tabs */}
-            <div className="px-6 pt-4">
-              <div className="flex gap-2 p-1 bg-[#1A1A1A] rounded-lg">
-                <button
-                  onClick={() => setUploadMode('text')}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    uploadMode === 'text'
-                      ? 'bg-[#2D2D2D] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <FileText className="w-4 h-4" />
-                  Digitar texto
-                </button>
-                <button
-                  onClick={() => setUploadMode('file')}
-                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    uploadMode === 'file'
-                      ? 'bg-[#2D2D2D] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload de arquivo
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Upload de Arquivo */}
-              {uploadMode === 'file' && (
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Arquivo (.txt, .md)
-                  </label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".txt,.md,.text"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500 hover:bg-cyan-500/10 transition-colors"
-                  >
-                    {selectedFile ? (
-                      <div className="flex items-center justify-center gap-3">
-                        <File className="w-8 h-8 text-blue-600" />
-                        <div className="text-left">
-                          <p className="font-medium text-gray-900">{selectedFile.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {(selectedFile.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
+                  <p className="text-sm font-medium text-gray-400 mb-1">Informações</p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Tamanho:</span>
+                      <span className="ml-2 text-gray-300">{formatFileSize(previewDocument.file_size)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Data:</span>
+                      <span className="ml-2 text-gray-300">{formatDate(previewDocument.created_at)}</span>
+                    </div>
+                    {previewDocument.chunks_count && (
+                      <div>
+                        <span className="text-gray-500">Fragmentos:</span>
+                        <span className="ml-2 text-gray-300">{previewDocument.chunks_count}</span>
                       </div>
-                    ) : (
-                      <>
-                        <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-300">Clique para selecionar um arquivo</p>
-                        <p className="text-sm text-gray-500 mt-1">Suporta .txt e .md</p>
-                      </>
                     )}
+                    <div>
+                      <span className="text-gray-500">Status:</span>
+                      <span className="ml-2">{getStatusBadge(previewDocument.status || 'processed')}</span>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Título *
-                </label>
-                <input
-                  type="text"
-                  value={newDoc.titulo}
-                  onChange={(e) => setNewDoc({ ...newDoc, titulo: e.target.value })}
-                  placeholder="Ex: Política de preços"
-                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                />
+                {previewDocument.content && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-400 mb-2">Conteúdo</p>
+                    <div className="bg-[#1A1A1A] rounded-lg p-4 border border-white/10">
+                      <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                        {previewDocument.content.substring(0, 1000)}
+                        {previewDocument.content.length > 1000 && '...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Categoria
-                </label>
-                <select
-                  value={newDoc.categoria}
-                  onChange={(e) => setNewDoc({ ...newDoc, categoria: e.target.value })}
-                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  <option value="produtos">Produtos</option>
-                  <option value="servicos">Serviços</option>
-                  <option value="precos">Preços</option>
-                  <option value="faq">FAQ</option>
-                  <option value="politicas">Políticas</option>
-                  <option value="processos">Processos</option>
-                  <option value="geral">Geral</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Conteúdo *
-                </label>
-                <textarea
-                  value={newDoc.conteudo}
-                  onChange={(e) => setNewDoc({ ...newDoc, conteudo: e.target.value })}
-                  placeholder="Cole aqui o conteúdo do documento..."
-                  rows={10}
-                  className="w-full px-4 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 font-mono text-sm"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {newDoc.conteudo.length} caracteres
-                </p>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-white/10 flex justify-end gap-3">
-              <button
-                onClick={resetModal}
-                className="px-4 py-2 bg-white/10 text-gray-300 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddDocument}
-                disabled={adding || !newDoc.titulo || !newDoc.conteudo}
-                className="px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 disabled:opacity-50 transition-colors"
-              >
-                {adding ? 'Adicionando...' : 'Adicionar Documento'}
-              </button>
             </div>
           </div>
         </div>
