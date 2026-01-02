@@ -137,7 +137,7 @@ export default function Notifications({ agencyId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
       </div>
     )
   }
@@ -145,8 +145,8 @@ export default function Notifications({ agencyId }) {
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Notificações por Email</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="text-2xl font-bold text-white">Notificações por Email</h1>
+        <p className="mt-2 text-gray-400">
           Receba alertas quando leads forem qualificados ou agendarem reuniões
         </p>
       </div>
@@ -154,8 +154,8 @@ export default function Notifications({ agencyId }) {
       {message && (
         <div className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
           message.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-red-50 border-red-200 text-red-800'
+            ? 'bg-green-500/20 border-green-500/50 text-green-400'
+            : 'bg-red-500/20 border-red-500/50 text-red-400'
         }`}>
           {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           <span>{message.text}</span>
@@ -164,15 +164,15 @@ export default function Notifications({ agencyId }) {
       )}
 
       {/* Ativar/Desativar */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${config.email_ativo ? 'bg-green-100' : 'bg-gray-100'}`}>
-              <Bell className={`w-6 h-6 ${config.email_ativo ? 'text-green-600' : 'text-gray-400'}`} />
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${config.email_ativo ? 'bg-green-500/20' : 'bg-gray-700'}`}>
+              <Bell className={`w-6 h-6 ${config.email_ativo ? 'text-green-400' : 'text-gray-400'}`} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Notificações por Email</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-white">Notificações por Email</h2>
+              <p className="text-sm text-gray-400">
                 {config.email_ativo ? 'Ativadas - você receberá alertas' : 'Desativadas'}
               </p>
             </div>
@@ -180,7 +180,7 @@ export default function Notifications({ agencyId }) {
           <button
             onClick={() => setConfig({ ...config, email_ativo: !config.email_ativo })}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              config.email_ativo ? 'bg-green-600' : 'bg-gray-200'
+              config.email_ativo ? 'bg-cyan-500' : 'bg-gray-600'
             }`}
           >
             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -191,19 +191,19 @@ export default function Notifications({ agencyId }) {
       </div>
 
       {/* Tipos de Notificação */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quando Notificar</h3>
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6 mb-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Quando Notificar</h3>
         <div className="space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={config.notificar_lead_qualificado}
               onChange={(e) => setConfig({ ...config, notificar_lead_qualificado: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded"
+              className="w-4 h-4 text-cyan-500 rounded"
             />
             <div>
-              <p className="font-medium text-gray-900">Lead Qualificado</p>
-              <p className="text-sm text-gray-500">Quando um lead for marcado como qualificado</p>
+              <p className="font-medium text-white">Lead Qualificado</p>
+              <p className="text-sm text-gray-400">Quando um lead for marcado como qualificado</p>
             </div>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
@@ -211,11 +211,11 @@ export default function Notifications({ agencyId }) {
               type="checkbox"
               checked={config.notificar_lead_agendado}
               onChange={(e) => setConfig({ ...config, notificar_lead_agendado: e.target.checked })}
-              className="w-4 h-4 text-blue-600 rounded"
+              className="w-4 h-4 text-cyan-500 rounded"
             />
             <div>
-              <p className="font-medium text-gray-900">Reunião Agendada</p>
-              <p className="text-sm text-gray-500">Quando um lead agendar uma reunião</p>
+              <p className="font-medium text-white">Reunião Agendada</p>
+              <p className="text-sm text-gray-400">Quando um lead agendar uma reunião</p>
             </div>
           </label>
         </div>
@@ -243,16 +243,16 @@ export default function Notifications({ agencyId }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {config.emails_destinatarios.map((email) => (
-            <span key={email} className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+            <span key={email} className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-sm">
               <Mail className="w-3 h-3" />
               {email}
-              <button onClick={() => removeEmail(email)} className="hover:text-red-600">
+              <button onClick={() => removeEmail(email)} className="hover:text-red-400">
                 <Trash2 className="w-3 h-3" />
               </button>
             </span>
           ))}
           {config.emails_destinatarios.length === 0 && (
-            <p className="text-gray-500 text-sm">Nenhum email adicionado</p>
+            <p className="text-gray-400 text-sm">Nenhum email adicionado</p>
           )}
         </div>
       </div>
@@ -326,7 +326,7 @@ export default function Notifications({ agencyId }) {
           <button
             onClick={handleTestSMTP}
             disabled={testing}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-[#2D2D2D] border border-white/20 text-gray-300 rounded-lg hover:bg-white/5 flex items-center gap-2 disabled:opacity-50"
           >
             {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TestTube className="w-4 h-4" />}
             Testar Conexão
@@ -339,7 +339,7 @@ export default function Notifications({ agencyId }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+          className="px-6 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 flex items-center gap-2 disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Salvar Configurações
@@ -347,7 +347,7 @@ export default function Notifications({ agencyId }) {
         <button
           onClick={handleSendTestEmail}
           disabled={sendingTest || !config.email_ativo}
-          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50"
+          className="px-6 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600 flex items-center gap-2 disabled:opacity-50"
         >
           {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Enviar Email de Teste
@@ -355,31 +355,31 @@ export default function Notifications({ agencyId }) {
       </div>
 
       {/* Logs */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Histórico de Envios</h3>
+      <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Histórico de Envios</h3>
         {logs.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Nenhuma notificação enviada ainda</p>
+          <p className="text-gray-400 text-center py-8">Nenhuma notificação enviada ainda</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Tipo</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Destinatário</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Data</th>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Tipo</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Destinatário</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900 capitalize">{log.tipo}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{log.destinatario}</td>
+                  <tr key={log.id} className="border-b border-white/10 hover:bg-white/5">
+                    <td className="py-3 px-4 text-sm font-medium text-white capitalize">{log.tipo}</td>
+                    <td className="py-3 px-4 text-sm text-gray-400">{log.destinatario}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded ${
                         log.status === 'success' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-red-500/20 text-red-400'
                       }`}>
                         {log.status === 'success' ? 'Enviado' : 'Erro'}
                       </span>
