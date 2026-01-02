@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import { FlaskConical, Plus, Play, Pause, Trophy, BarChart3, AlertCircle } from 'lucide-react'
 import api from '../../services/api'
@@ -18,7 +17,27 @@ export default function ABTests() {
     try {
       setLoading(true)
       setError(null)
-      const response = await api.get('/ab-tests')
+
+      // Se for super admin, busca todos os testes
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const isSuperAdmin = user?.role === 'super_admin';
+
+      let response;
+      if (isSuperAdmin) {
+        // Super admin vê todos os testes ou lista vazia se não houver tenet selecionado
+        const selectedTenetId = localStorage.getItem('selectedAgencyId');
+        if (selectedTenetId && selectedTenetId !== 'geral') {
+          response = await api.get(`/ab-tests?tenet_id=${selectedTenetId}`);
+        } else {
+          // Sem tenet selecionado, mostrar lista vazia com mensagem
+          setTests([]);
+          setLoading(false);
+          return;
+        }
+      } else {
+        response = await api.get('/ab-tests');
+      }
+
       // Garantir que é array
       const data = response.data
       if (Array.isArray(data)) {
@@ -30,7 +49,10 @@ export default function ABTests() {
       }
     } catch (err) {
       console.error('Erro ao carregar testes:', err)
-      setError('Erro ao carregar testes A/B')
+      // Não mostrar erro se for 400 para super admin sem tenet
+      if (err.response?.status !== 400) {
+        setError('Erro ao carregar testes A/B')
+      }
       setTests([])
     } finally {
       setLoading(false)
@@ -118,8 +140,8 @@ export default function ABTests() {
           <div>
             <h3 className="font-medium text-blue-900">Como funciona?</h3>
             <p className="text-sm text-blue-700 mt-1">
-              Crie duas variantes de prompt (A e B) e o sistema distribuirá automaticamente 
-              as conversas entre elas. Após coletar dados suficientes, você poderá ver qual 
+              Crie duas variantes de prompt (A e B) e o sistema distribuirá automaticamente
+              as conversas entre elas. Após coletar dados suficientes, você poderá ver qual
               variante tem melhor taxa de conversão.
             </p>
           </div>
