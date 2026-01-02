@@ -8,6 +8,7 @@ from typing import Optional
 import os
 
 from app.utils.rate_limit import limiter
+from app.utils.input_sanitizer import sanitize_for_ai, input_sanitizer
 from app.services.whatsapp_service import WhatsAppService
 from app.services.ai_service import AIService
 from app.services.tenet_service import TenetService
@@ -278,9 +279,23 @@ async def receive_whatsapp_webhook(request: Request):
             "closing_message": agency.get("closing_message")
         }
 
+        # ============================================
+        # SANITIZAÇÃO ANTI-PROMPT INJECTION
+        # ============================================
+        
+        # Detectar tentativa de injection
+        is_suspicious, pattern = input_sanitizer.detect_injection(message_text)
+        
+        if is_suspicious:
+            logger.warning(f"Possível prompt injection de {sender_phone[:6]}***: {pattern}")
+            # Opcional: registrar em tabela de segurança para análise
+        
+        # Sanitizar mensagem para uso seguro com IA
+        sanitized_message, _ = sanitize_for_ai(message_text)
+
         # Gerar resposta com histórico, contexto e configurações personalizadas
         ai_result = await ai_service.generate_response(
-            message=message_text,
+            message=sanitized_message,
             agency_name=agency.get("nome", "Agência"),
             agency_prompt=agency.get("prompt_config"),
             conversation_history=history_formatted,
