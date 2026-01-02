@@ -11,10 +11,14 @@ function Agencias() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTenet, setSelectedTenet] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTenet, setNewTenet] = useState({
-    nome: '',
-    email: '',
-    nicho: 'sdr'
+  const [newTenet, setNewTenet] = useState({ 
+    nome: '', 
+    email: '', 
+    nicho: 'sdr',
+    instance_name: '',
+    admin_nome: '',
+    admin_email: '',
+    admin_senha: ''
   });
   const [editTenet, setEditTenet] = useState({
     nome: '',
@@ -123,18 +127,41 @@ function Agencias() {
 
   const handleCreateTenet = async () => {
     try {
+      // Validação de campos obrigatórios
       if (!newTenet.nome || !newTenet.email) {
         alert('Nome e email são obrigatórios');
         return;
       }
 
-      await api.post('/admin/tenets', newTenet);
-      alert('Tenet criado com sucesso!');
+      // Criar dados completos para o backend
+      const tenetData = {
+        nome: newTenet.nome,
+        email: newTenet.email,
+        nicho: newTenet.nicho || 'custom',
+        // Gerar instance_name automaticamente se não informado
+        instance_name: newTenet.instance_name || newTenet.nome.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 50),
+        // Usar email do tenet como admin se não informado
+        admin_nome: newTenet.admin_nome || newTenet.nome + ' Admin',
+        admin_email: newTenet.admin_email || newTenet.email,
+        // Gerar senha aleatória se não informada
+        admin_senha: newTenet.admin_senha || Math.random().toString(36).slice(-8) + 'A1!'
+      };
+
+      const response = await api.post('/admin/tenets', tenetData);
+      
+      // Mostrar credenciais do admin criado
+      if (response.data?.usuario) {
+        alert(`Tenet criado com sucesso!\n\nCredenciais do Admin:\nEmail: ${tenetData.admin_email}\nSenha: ${tenetData.admin_senha}\n\nGuarde essas informações!`);
+      } else {
+        alert('Tenet criado com sucesso!');
+      }
+      
       setShowCreateModal(false);
-      setNewTenet({ nome: '', email: '', nicho: 'sdr' });
+      setNewTenet({ nome: '', email: '', nicho: 'sdr', instance_name: '', admin_nome: '', admin_email: '', admin_senha: '' });
       loadTenets();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Erro ao criar tenet');
+      const errorMessage = err.response?.data?.detail || err.message || 'Erro ao criar tenet';
+      alert('Erro ao criar tenet: ' + errorMessage);
       console.error('Erro ao criar tenet:', err);
     }
   };
@@ -228,7 +255,7 @@ function Agencias() {
       {/* Modal de Criação */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#2D2D2D] rounded-lg p-6 max-w-md w-full mx-4 border border-white/10">
+          <div className="bg-[#2D2D2D] rounded-lg p-6 max-w-lg w-full mx-4 border border-white/10 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Novo Tenet</h2>
               <button
@@ -240,47 +267,101 @@ function Agencias() {
             </div>
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Nome do Tenet *
-                </label>
-                <input
-                  type="text"
-                  value={newTenet.nome}
-                  onChange={(e) => setNewTenet({ ...newTenet, nome: e.target.value })}
-                  placeholder="Ex: Empresa XYZ"
-                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
+              {/* Dados do Tenet */}
+              <div className="border-b border-white/10 pb-4">
+                <h3 className="text-sm font-semibold text-cyan-400 mb-3">Dados do Tenet</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Nome do Tenet *
+                    </label>
+                    <input
+                      type="text"
+                      value={newTenet.nome}
+                      onChange={(e) => setNewTenet({ ...newTenet, nome: e.target.value })}
+                      placeholder="Ex: Empresa XYZ"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Email do Tenet *
+                    </label>
+                    <input
+                      type="email"
+                      value={newTenet.email}
+                      onChange={(e) => setNewTenet({ ...newTenet, email: e.target.value })}
+                      placeholder="contato@empresa.com"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Nicho
+                    </label>
+                    <select
+                      value={newTenet.nicho}
+                      onChange={(e) => setNewTenet({ ...newTenet, nicho: e.target.value })}
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    >
+                      <option value="sdr">SDR</option>
+                      <option value="suporte">Suporte</option>
+                      <option value="vendas">Vendas</option>
+                      <option value="rh">RH</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
+              {/* Dados do Admin */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={newTenet.email}
-                  onChange={(e) => setNewTenet({ ...newTenet, email: e.target.value })}
-                  placeholder="contato@empresa.com"
-                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                />
-              </div>
+                <h3 className="text-sm font-semibold text-cyan-400 mb-3">Admin do Tenet (opcional)</h3>
+                <p className="text-xs text-gray-500 mb-3">Se não preencher, serão gerados automaticamente</p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Nome do Admin
+                    </label>
+                    <input
+                      type="text"
+                      value={newTenet.admin_nome}
+                      onChange={(e) => setNewTenet({ ...newTenet, admin_nome: e.target.value })}
+                      placeholder="Será gerado automaticamente"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Nicho
-                </label>
-                <select
-                  value={newTenet.nicho}
-                  onChange={(e) => setNewTenet({ ...newTenet, nicho: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                >
-                  <option value="sdr">SDR</option>
-                  <option value="suporte">Suporte</option>
-                  <option value="vendas">Vendas</option>
-                  <option value="rh">RH</option>
-                  <option value="custom">Custom</option>
-                </select>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Email do Admin
+                    </label>
+                    <input
+                      type="email"
+                      value={newTenet.admin_email}
+                      onChange={(e) => setNewTenet({ ...newTenet, admin_email: e.target.value })}
+                      placeholder="Usará o email do tenet se vazio"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Senha do Admin
+                    </label>
+                    <input
+                      type="text"
+                      value={newTenet.admin_senha}
+                      onChange={(e) => setNewTenet({ ...newTenet, admin_senha: e.target.value })}
+                      placeholder="Será gerada automaticamente"
+                      className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -293,7 +374,7 @@ function Agencias() {
               </button>
               <button
                 onClick={handleCreateTenet}
-                className="flex-1 px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-cyan-500 text-black font-medium rounded-lg hover:bg-cyan-600 transition-colors"
               >
                 Criar Tenet
               </button>
