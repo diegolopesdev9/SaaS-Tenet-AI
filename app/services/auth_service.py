@@ -1,20 +1,20 @@
-
 """
 Serviço de autenticação com JWT.
 """
-import os
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.database import get_supabase_client
+from app.config import settings
 
-# Configurações
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
-if not SECRET_KEY:
-    raise ValueError("JWT_SECRET_KEY é obrigatória - configure nas variáveis de ambiente")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
+logger = logging.getLogger(__name__)
+
+# Configurações - Usando config validado
+SECRET_KEY = settings.jwt_secret_validated
+ALGORITHM = settings.JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Contexto de criptografia para senhas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -43,6 +43,10 @@ class AuthService:
             expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        
+        # Log de auditoria (sem expor o token)
+        logger.info(f"Token JWT criado para user_id={data.get('sub', 'unknown')}")
+        
         return encoded_jwt
     
     def verify_token(self, token: str) -> Optional[dict]:
