@@ -33,10 +33,10 @@ export function LoadingSpinner({ size = 'md', className = '' }) {
 
 export function LoadingOverlay({ message = 'Carregando...' }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex flex-col items-center gap-4">
-        <LoadingSpinner size="lg" className="text-blue-600" />
-        <p className="text-gray-700">{message}</p>
+    <div className="fixed inset-0 bg-[#1A1A1A]/90 flex items-center justify-center z-50">
+      <div className="bg-[#2D2D2D] rounded-lg p-6 flex flex-col items-center gap-4 border border-white/10">
+        <LoadingSpinner size="lg" className="text-cyan-500" />
+        <p className="text-gray-400">{message}</p>
       </div>
     </div>
   );
@@ -44,10 +44,10 @@ export function LoadingOverlay({ message = 'Carregando...' }) {
 
 export function LoadingCard() {
   return (
-    <div className="animate-pulse bg-white rounded-lg p-4 shadow">
-      <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-      <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+    <div className="animate-pulse bg-[#2D2D2D] rounded-lg p-4 shadow border border-white/10">
+      <div className="h-4 bg-gray-700 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-700 rounded w-1/2 mb-2"></div>
+      <div className="h-4 bg-gray-700 rounded w-5/6"></div>
     </div>
   );
 }
@@ -55,11 +55,11 @@ export function LoadingCard() {
 export function LoadingTable({ rows = 5, cols = 4 }) {
   return (
     <div className="animate-pulse">
-      <div className="h-10 bg-gray-200 rounded mb-2"></div>
+      <div className="h-10 bg-gray-700 rounded mb-2"></div>
       {[...Array(rows)].map((_, i) => (
         <div key={i} className="flex gap-4 mb-2">
           {[...Array(cols)].map((_, j) => (
-            <div key={j} className="h-8 bg-gray-100 rounded flex-1"></div>
+            <div key={j} className="h-8 bg-gray-700 rounded flex-1"></div>
           ))}
         </div>
       ))}
