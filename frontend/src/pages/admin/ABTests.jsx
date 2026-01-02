@@ -89,10 +89,10 @@ export default function ABTests() {
 
   const getStatusBadge = (status) => {
     const configs = {
-      draft: { color: 'bg-gray-100 text-gray-800', label: 'Rascunho' },
-      running: { color: 'bg-green-100 text-green-800', label: 'Executando' },
-      paused: { color: 'bg-yellow-100 text-yellow-800', label: 'Pausado' },
-      completed: { color: 'bg-blue-100 text-blue-800', label: 'Concluído' }
+      draft: { color: 'bg-gray-500/20 text-gray-400', label: 'Rascunho' },
+      running: { color: 'bg-green-500/20 text-green-400', label: 'Executando' },
+      paused: { color: 'bg-yellow-500/20 text-yellow-400', label: 'Pausado' },
+      completed: { color: 'bg-cyan-500/20 text-cyan-400', label: 'Concluído' }
     }
     const config = configs[status] || configs.draft
     return (
@@ -105,7 +105,7 @@ export default function ABTests() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
       </div>
     )
   }
@@ -115,12 +115,12 @@ export default function ABTests() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Testes A/B</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-white">Testes A/B</h1>
+          <p className="mt-1 text-sm text-gray-400">
             Otimize seus prompts com testes A/B
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-600 transition-colors font-medium">
           <Plus className="w-4 h-4" />
           Novo Teste
         </button>
@@ -134,12 +134,12 @@ export default function ABTests() {
       )}
 
       {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
         <div className="flex gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-medium text-blue-900">Como funciona?</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="font-medium text-white">Como funciona?</h3>
+            <p className="text-sm text-cyan-300 mt-1">
               Crie duas variantes de prompt (A e B) e o sistema distribuirá automaticamente
               as conversas entre elas. Após coletar dados suficientes, você poderá ver qual
               variante tem melhor taxa de conversão.
@@ -151,30 +151,30 @@ export default function ABTests() {
       {/* Lista de Testes */}
       <div className="grid gap-4">
         {!tests || tests.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <FlaskConical className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum teste A/B criado</p>
+          <div className="text-center py-12 bg-[#2D2D2D] rounded-lg border border-white/10">
+            <FlaskConical className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">Nenhum teste A/B criado</p>
             <p className="text-sm text-gray-400 mt-1">Crie seu primeiro teste para otimizar seus prompts</p>
           </div>
         ) : (
           tests.map((test) => (
             <div
               key={test.id}
-              className="bg-white rounded-lg border border-gray-200 p-6"
+              className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-gray-900">{test.nome}</h3>
+                    <h3 className="font-semibold text-white">{test.nome}</h3>
                     {getStatusBadge(test.status)}
                     {test.vencedor && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-medium rounded-full">
                         <Trophy className="w-3 h-3" />
                         Variante {test.vencedor.toUpperCase()} venceu
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-400 mt-1">
                     Distribuição: {100 - (test.percentual_b || 50)}% A / {test.percentual_b || 50}% B
                   </p>
                 </div>
@@ -182,7 +182,7 @@ export default function ABTests() {
                   {test.status === 'running' ? (
                     <button
                       onClick={() => handleStopTest(test.id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-yellow-700 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-black bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors font-medium"
                     >
                       <Pause className="w-4 h-4" />
                       Pausar
@@ -190,7 +190,7 @@ export default function ABTests() {
                   ) : test.status !== 'completed' && (
                     <button
                       onClick={() => handleStartTest(test.id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors font-medium"
                     >
                       <Play className="w-4 h-4" />
                       Iniciar
@@ -198,7 +198,7 @@ export default function ABTests() {
                   )}
                   <button
                     onClick={() => loadMetrics(test.id)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-black bg-cyan-500 hover:bg-cyan-600 rounded-lg transition-colors font-medium"
                   >
                     <BarChart3 className="w-4 h-4" />
                     Métricas
@@ -208,25 +208,25 @@ export default function ABTests() {
 
               {/* Variantes */}
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-blue-500/20 rounded-lg border border-blue-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700">Variante A</span>
+                    <span className="font-medium text-blue-400">Variante A</span>
                     {test.vencedor === 'a' && (
-                      <Trophy className="w-4 h-4 text-yellow-500" />
+                      <Trophy className="w-4 h-4 text-yellow-400" />
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-3">
+                  <p className="text-sm text-gray-400 line-clamp-3">
                     {test.variante_a_prompt}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-purple-500/20 rounded-lg border border-purple-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-700">Variante B</span>
+                    <span className="font-medium text-purple-400">Variante B</span>
                     {test.vencedor === 'b' && (
-                      <Trophy className="w-4 h-4 text-yellow-500" />
+                      <Trophy className="w-4 h-4 text-yellow-400" />
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 line-clamp-3">
+                  <p className="text-sm text-gray-400 line-clamp-3">
                     {test.variante_b_prompt}
                   </p>
                 </div>
@@ -234,36 +234,36 @@ export default function ABTests() {
 
               {/* Métricas inline */}
               {selectedTest === test.id && metrics && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="font-medium text-gray-900 mb-3">Resultados</h4>
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <h4 className="font-medium text-white mb-3">Resultados</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-700">
+                    <div className="text-center p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                      <p className="text-2xl font-bold text-white">
                         {metrics.variante_a?.total_conversas || 0}
                       </p>
-                      <p className="text-xs text-blue-600">Conversas A</p>
+                      <p className="text-xs text-gray-400">Conversas A</p>
                     </div>
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-700">
+                    <div className="text-center p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                      <p className="text-2xl font-bold text-white">
                         {metrics.variante_a?.taxa_conversao?.toFixed(1) || 0}%
                       </p>
-                      <p className="text-xs text-blue-600">Conversão A</p>
+                      <p className="text-xs text-gray-400">Conversão A</p>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-700">
+                    <div className="text-center p-3 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                      <p className="text-2xl font-bold text-white">
                         {metrics.variante_b?.total_conversas || 0}
                       </p>
-                      <p className="text-xs text-purple-600">Conversas B</p>
+                      <p className="text-xs text-gray-400">Conversas B</p>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <p className="text-2xl font-bold text-purple-700">
+                    <div className="text-center p-3 bg-purple-500/20 rounded-lg border border-purple-500/30">
+                      <p className="text-2xl font-bold text-white">
                         {metrics.variante_b?.taxa_conversao?.toFixed(1) || 0}%
                       </p>
-                      <p className="text-xs text-purple-600">Conversão B</p>
+                      <p className="text-xs text-gray-400">Conversão B</p>
                     </div>
                   </div>
                   {metrics.sugestao_vencedor && (
-                    <p className="mt-3 text-sm text-gray-600">
+                    <p className="mt-3 text-sm text-gray-400">
                       💡 {metrics.sugestao_vencedor}
                     </p>
                   )}
