@@ -1,0 +1,76 @@
+No arquivo frontend/src/pages/admin/ABTests.jsx, corrija para funcionar com Super Admin (que não tem tenet_id).
+
+=== ENCONTRE a função de carregamento dos testes (provavelmente loadTests ou fetchTests): ===
+
+Procure por algo como:
+const response = await api.get('/api/ab-tests');
+
+
+=== SUBSTITUA toda a função de carregamento por: ===
+
+const loadTests = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    // Se for super admin, busca todos os testes
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isSuperAdmin = user?.role === 'super_admin';
+    
+    let response;
+    if (isSuperAdmin) {
+      // Super admin vê todos os testes ou lista vazia se não houver tenet selecionado
+      const selectedTenetId = localStorage.getItem('selectedAgencyId');
+      if (selectedTenetId) {
+        response = await api.get(`/api/ab-tests?tenet_id=${selectedTenetId}`);
+      } else {
+        // Sem tenet selecionado, mostrar lista vazia com mensagem
+        setTests([]);
+        setLoading(false);
+        return;
+      }
+    } else {
+      response = await api.get('/api/ab-tests');
+    }
+    
+    setTests(response.data || []);
+  } catch (err) {
+    console.error('Erro ao carregar testes:', err);
+    // Não mostrar erro se for 400 para super admin sem tenet
+    if (err.response?.status !== 400) {
+      setError('Erro ao carregar testes A/B');
+    }
+    setTests([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+=== Se houver um bloco de erro sendo exibido, ENCONTRE: ===
+
+{error && (
+  <div className="...">
+    {error}
+  </div>
+)}
+
+
+=== SUBSTITUA por (ou adicione verificação): ===
+
+{error && (
+  <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-4">
+    {error}
+  </div>
+)}
+
+{!error && tests.length === 0 && !loading && (
+  <div className="bg-[#2D2D2D] rounded-lg p-8 text-center border border-white/10">
+    <div className="text-6xl mb-4">🧪</div>
+    <h3 className="text-xl font-semibold text-white mb-2">Nenhum teste A/B criado</h3>
+    <p className="text-gray-400">Crie seu primeiro teste para otimizar seus prompts</p>
+  </div>
+)}
+
+
+NÃO altere outras partes do arquivo.
