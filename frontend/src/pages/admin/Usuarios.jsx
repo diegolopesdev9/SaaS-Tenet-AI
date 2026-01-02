@@ -184,7 +184,7 @@ export default function Usuarios() {
 
       {message && (
         <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+          message.type === 'success' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
         }`}>
           {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
           {message.text}
@@ -192,80 +192,80 @@ export default function Usuarios() {
       )}
 
       {showForm && (
-        <div className="bg-white rounded-lg border p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Novo Usuário</h2>
+        <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Novo Usuário</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Nome</label>
               <input
                 type="text"
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 placeholder="Nome completo"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 placeholder="email@exemplo.com"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Senha</label>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 placeholder="Mínimo 6 caracteres"
                 minLength={6}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tenet</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Tenet</label>
               <select
                 value={form.tenet_id}
                 onChange={(e) => setForm({ ...form, tenet_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 required
               >
-                <option value="">Selecione um Tenet</option>
+                <option value="" className="bg-[#1A1A1A] text-white">Selecione um Tenet</option>
                 {tenets.map((tenet) => (
-                  <option key={tenet.id} value={tenet.id}>{tenet.nome}</option>
+                  <option key={tenet.id} value={tenet.id} className="bg-[#1A1A1A] text-white">{tenet.nome}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Acesso</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Nível de Acesso</label>
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
-                <option value="admin">Admin do Tenet</option>
-                <option value="user">Usuário</option>
+                <option value="admin" className="bg-[#1A1A1A] text-white">Admin do Tenet</option>
+                <option value="user" className="bg-[#1A1A1A] text-white">Usuário</option>
               </select>
             </div>
             <div className="md:col-span-2 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-700 rounded-lg hover:bg-gray-700 text-white"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 text-black rounded-lg hover:from-cyan-600 hover:to-cyan-700 disabled:opacity-50 font-medium shadow-lg"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Criar Usuário
@@ -291,17 +291,17 @@ export default function Usuarios() {
               <tr key={usuario.id} className="hover:bg-white/5">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-purple-600 font-medium">
+                    <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-purple-400 font-medium">
                         {usuario.nome?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">{usuario.nome}</div>
-                      <div className="text-sm text-gray-500">{usuario.email}</div>
+                      <div className="font-medium text-white">{usuario.nome}</div>
+                      <div className="text-sm text-gray-400">{usuario.email}</div>
                     </div>
                     {usuario.deve_alterar_senha && (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">
+                      <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-full">
                         Senha temp.
                       </span>
                     )}
@@ -336,7 +336,7 @@ export default function Usuarios() {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => openEditModal(usuario)}
-                      className="p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg"
+                      className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
                       title="Editar usuário"
                     >
                       <Settings className="w-4 h-4" />
@@ -344,7 +344,7 @@ export default function Usuarios() {
                     <button
                       onClick={() => handleDelete(usuario.id, usuario.nome)}
                       disabled={usuario.role === 'super_admin'}
-                      className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-50"
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-50 transition-colors"
                       title="Deletar usuário"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -355,7 +355,7 @@ export default function Usuarios() {
             ))}
             {usuarios.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
                   Nenhum usuário cadastrado
                 </td>
               </tr>
@@ -385,7 +385,7 @@ export default function Usuarios() {
                   type="text" 
                   value={editForm.nome} 
                   onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
+                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
                 />
               </div>
 
@@ -395,7 +395,7 @@ export default function Usuarios() {
                   type="email" 
                   value={editForm.email} 
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
+                  className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white" 
                 />
               </div>
 
@@ -405,12 +405,12 @@ export default function Usuarios() {
                   <select 
                     value={editForm.tenet_id} 
                     onChange={(e) => setEditForm({ ...editForm, tenet_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-700 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
+                    className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                     disabled={editingUser.role === 'super_admin'}
                   >
-                    <option value="">Sem Tenet</option>
+                    <option value="" className="bg-[#1A1A1A] text-white">Sem Tenet</option>
                     {tenets.map((tenet) => (
-                      <option key={tenet.id} value={tenet.id}>{tenet.nome}</option>
+                      <option key={tenet.id} value={tenet.id} className="bg-[#1A1A1A] text-white">{tenet.nome}</option>
                     ))}
                   </select>
                 </div>
@@ -420,11 +420,11 @@ export default function Usuarios() {
                   <select 
                     value={editForm.role} 
                     onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
+                    className="w-full px-3 py-2 border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                     disabled={editingUser.role === 'super_admin'}
                   >
-                    <option value="admin">Admin do Tenet</option>
-                    <option value="user">Usuário</option>
+                    <option value="admin" className="bg-[#1A1A1A] text-white">Admin do Tenet</option>
+                    <option value="user" className="bg-[#1A1A1A] text-white">Usuário</option>
                   </select>
                 </div>
               </div>
@@ -443,7 +443,7 @@ export default function Usuarios() {
                       type={showPassword ? 'text' : 'password'}
                       value={editForm.nova_senha} 
                       onChange={(e) => setEditForm({ ...editForm, nova_senha: e.target.value })}
-                      className="w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
+                      className="w-full px-3 py-2 pr-10 border border-white/20 rounded-lg focus:ring-2 focus:ring-cyan-500 bg-[#1A1A1A] text-white"
                       placeholder="Nova senha (mín. 6 caracteres)"
                       minLength={6}
                     />
