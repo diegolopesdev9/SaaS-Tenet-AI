@@ -386,18 +386,39 @@ export default function Dashboard({ agencyId }) {
       {/* Status Breakdown */}
       <div className="bg-[#2D2D2D] rounded-lg shadow p-6 border border-white/10">
         <h2 className="text-lg font-semibold text-white mb-4">Leads por Status</h2>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {Object.keys(statusConfig).map((status) => {
             const config = statusConfig[status]
             const Icon = config.icon
             const count = advancedMetrics?.status_breakdown?.[status] || 0
+            
+            // Mapear cores para tema dark
+            const darkColors = {
+              'bg-gray-100 text-gray-800 border-gray-300': 'bg-gray-500/20 border-white/10',
+              'bg-blue-100 text-blue-800 border-blue-300': 'bg-blue-500/20 border-blue-500/30',
+              'bg-green-100 text-green-800 border-green-300': 'bg-green-500/20 border-green-500/30',
+              'bg-red-100 text-red-800 border-red-300': 'bg-red-500/20 border-red-500/30',
+              'bg-purple-100 text-purple-800 border-purple-300': 'bg-purple-500/20 border-purple-500/30'
+            }
+            
+            const iconColors = {
+              'bg-gray-100 text-gray-800 border-gray-300': 'text-gray-400',
+              'bg-blue-100 text-blue-800 border-blue-300': 'text-blue-400',
+              'bg-green-100 text-green-800 border-green-300': 'text-green-400',
+              'bg-red-100 text-red-800 border-red-300': 'text-red-400',
+              'bg-purple-100 text-purple-800 border-purple-300': 'text-purple-400'
+            }
+            
+            const darkColor = darkColors[config.color] || 'bg-gray-500/20 border-white/10'
+            const iconColor = iconColors[config.color] || 'text-gray-400'
+            
             return (
-              <div key={status} className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${config.color}`}>
-                <Icon className="w-5 h-5 text-white" />
-                <div>
-                  <p className="text-xs font-medium text-gray-300">{config.label}</p>
-                  <p className="text-lg font-bold text-white">{count}</p>
+              <div key={status} className={`${darkColor} rounded-lg p-4 text-center border`}>
+                <div className={`${iconColor} mb-2`}>
+                  <Icon className="w-6 h-6 mx-auto" />
                 </div>
+                <div className="text-sm text-gray-400 mb-1">{config.label}</div>
+                <div className="text-2xl font-bold text-white">{count}</div>
               </div>
             )
           })}
