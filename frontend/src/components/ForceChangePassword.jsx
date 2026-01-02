@@ -1,0 +1,146 @@
+
+import React, { useState } from 'react';
+import { Lock, Eye, EyeOff, AlertCircle, Loader2, Shield } from 'lucide-react';
+import api from '../services/api';
+import authService from '../services/auth';
+
+export default function ForceChangePassword({ user, onPasswordChanged }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [form, setForm] = useState({
+    nova_senha: '',
+    confirmar_senha: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (form.nova_senha.length < 6) {
+      setError('A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    if (form.nova_senha !== form.confirmar_senha) {
+      setError('As senhas não coincidem');
+      return;
+    }
+
+    // Não permitir manter a senha padrão
+    if (form.nova_senha === 'Admin@123') {
+      setError('Você não pode usar a senha padrão. Escolha uma senha diferente.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post('/auth/change-password', {
+        nova_senha: form.nova_senha
+      });
+
+      // Atualizar usuário no localStorage
+      const updatedUser = { ...user, deve_alterar_senha: false };
+      localStorage.setItem('sdr_user', JSON.stringify(updatedUser));
+      
+      onPasswordChanged();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Erro ao alterar senha');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-500/20 rounded-full mb-4">
+            <Shield className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white">Alterar Senha</h1>
+          <p className="text-gray-400 mt-2">
+            Por segurança, você precisa criar uma nova senha para continuar
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-[#2D2D2D] rounded-2xl p-6 border border-white/10">
+          {error && (
+            <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-center gap-3 text-red-400">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Nova Senha
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.nova_senha}
+                  onChange={(e) => setForm({ ...form, nova_senha: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full pl-10 pr-12 py-3 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Confirmar Nova Senha
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.confirmar_senha}
+                  onChange={(e) => setForm({ ...form, confirmar_senha: e.target.value })}
+                  placeholder="Repita a nova senha"
+                  className="w-full pl-10 pr-4 py-3 bg-[#1A1A1A] border border-white/20 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-cyan-500 text-black font-semibold rounded-lg hover:bg-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Alterando...
+                  </>
+                ) : (
+                  'Alterar Senha'
+                )}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <p className="text-yellow-400 text-sm">
+              💡 Dica: Use uma senha forte com letras, números e símbolos
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
