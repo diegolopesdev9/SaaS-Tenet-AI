@@ -33,15 +33,15 @@ export default function TokenIndicator() {
   const color = getColor();
   
   const bgColors = {
-    red: 'bg-red-100 border-red-300',
-    yellow: 'bg-yellow-100 border-yellow-300',
-    green: 'bg-green-100 border-green-300'
+    red: 'bg-[#1A1A1A] border-white/10',
+    yellow: 'bg-[#1A1A1A] border-white/10',
+    green: 'bg-[#1A1A1A] border-white/10'
   };
   
   const textColors = {
-    red: 'text-red-700',
-    yellow: 'text-yellow-700',
-    green: 'text-green-700'
+    red: 'text-gray-300',
+    yellow: 'text-gray-300',
+    green: 'text-gray-300'
   };
   
   const barColors = {
@@ -56,21 +56,21 @@ export default function TokenIndicator() {
       className={`w-full p-3 rounded-lg border ${bgColors[color]} hover:opacity-80 transition-opacity text-left`}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className={`text-xs font-medium ${textColors[color]}`}>
-          ⚡ Tokens
+        <span className="text-xs font-medium text-gray-300">
+          <span className="text-yellow-400">⚡</span> Tokens
         </span>
-        <span className={`text-xs font-bold ${textColors[color]}`}>
+        <span className="text-xs font-bold text-gray-400">
           {usage.percentage_used.toFixed(0)}%
         </span>
       </div>
-      <div className="w-full bg-white/50 rounded-full h-1.5">
+      <div className="w-full bg-gray-700 rounded-full h-1.5">
         <div 
           className={`h-1.5 rounded-full ${barColors[color]}`}
           style={{ width: `${Math.min(usage.percentage_used, 100)}%` }}
         />
       </div>
       {usage.is_over_limit && (
-        <span className="text-xs text-red-600 mt-1 block">⚠️ Limite excedido</span>
+        <span className="text-xs text-gray-500 mt-1 block">⚠️ Limite excedido</span>
       )}
     </button>
   );
