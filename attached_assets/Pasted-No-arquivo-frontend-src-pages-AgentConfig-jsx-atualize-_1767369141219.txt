@@ -1,0 +1,59 @@
+No arquivo frontend/src/pages/AgentConfig.jsx, atualize para o tema dark.
+
+=== SUBSTITUIÇÕES: ===
+
+1. HEADER:
+- Título: text-gray-900 → text-white
+- Subtítulo: text-gray-500 → text-gray-400
+
+2. TABS DE NAVEGAÇÃO:
+- Container: bg-white border-gray-200 → bg-[#2D2D2D] border-white/10
+- Tab inativa: text-gray-500 hover:text-gray-700 → text-gray-400 hover:text-white
+- Tab ativa: text-blue-600 border-blue-600 → text-cyan-400 border-cyan-400
+- Border bottom: border-gray-200 → border-white/10
+
+3. CARDS DE CONFIGURAÇÃO:
+- Container: bg-white → bg-[#2D2D2D]
+- Border: border-gray-200 → border-white/10
+- Título da seção: text-gray-900 → text-white
+- Descrição: text-gray-500 → text-gray-400
+
+4. FORMULÁRIOS:
+- Labels: text-gray-700 → text-gray-300
+- Inputs: bg-white border-gray-300 → bg-[#1A1A1A] border-white/20 text-white
+- Textarea: bg-white border-gray-300 → bg-[#1A1A1A] border-white/20 text-white
+- Placeholders: placeholder-gray-400 → placeholder-gray-500
+- Focus: focus:ring-blue-500 focus:border-blue-500 → focus:ring-cyan-500 focus:border-cyan-500
+
+5. HELPER TEXT:
+text-gray-500 text-sm → text-gray-500 text-sm
+
+6. SEÇÃO DE PERSONALIDADE:
+- Cards de opção: bg-gray-50 border-gray-200 → bg-[#1A1A1A] border-white/20
+- Card selecionado: border-blue-500 bg-blue-50 → border-cyan-500 bg-cyan-500/10
+- Texto do card: text-gray-700 → text-gray-300
+
+7. PREVIEW DO PROMPT:
+- Container: bg-gray-100 → bg-[#1A1A1A]
+- Border: border-gray-200 → border-white/10
+- Texto: text-gray-800 → text-gray-300
+- Code/monospace: font-mono
+
+8. BOTÕES:
+- Salvar: bg-blue-600 → bg-cyan-500 text-black
+- Cancelar: bg-gray-100 text-gray-700 → bg-white/10 text-gray-300
+- Reset: text-red-600 → text-red-400
+
+9. TOGGLE SWITCHES:
+- Track off: bg-gray-200 → bg-gray-600
+- Track on: bg-blue-600 → bg-cyan-500
+- Thumb: bg-white (manter)
+
+10. BADGES DE TIPO DE AGENTE:
+- SDR: bg-blue-100 text-blue-700 → bg-cyan-500/20 text-cyan-400
+- Suporte: bg-green-100 text-green-700 → bg-green-500/20 text-green-400
+- RH: bg-purple-100 text-purple-700 → bg-purple-500/20 text-purple-400
+- Vendas: bg-orange-100 text-orange-700 → bg-orange-500/20 text-orange-400
+
+
+NÃO altere a lógica de salvamento ou validação.
