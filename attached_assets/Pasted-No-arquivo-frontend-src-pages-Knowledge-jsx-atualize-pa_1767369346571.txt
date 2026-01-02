@@ -1,0 +1,57 @@
+No arquivo frontend/src/pages/Knowledge.jsx, atualize para o tema dark.
+
+=== SUBSTITUIÇÕES: ===
+
+1. HEADER:
+- Título: text-gray-900 → text-white
+- Subtítulo: text-gray-500 → text-gray-400
+
+2. ÁREA DE UPLOAD:
+- Container: bg-white border-gray-300 border-dashed → bg-[#2D2D2D] border-white/30 border-dashed
+- Hover: hover:border-blue-500 hover:bg-blue-50 → hover:border-cyan-500 hover:bg-cyan-500/5
+- Ícone: text-gray-400 → text-gray-500
+- Texto principal: text-gray-600 → text-gray-300
+- Texto secundário: text-gray-400 → text-gray-500
+
+3. LISTA DE DOCUMENTOS:
+- Container: bg-white → bg-[#2D2D2D]
+- Border: border-gray-200 → border-white/10
+- Item hover: hover:bg-gray-50 → hover:bg-white/5
+
+4. ITEM DE DOCUMENTO:
+- Nome do arquivo: text-gray-900 → text-white
+- Tamanho/Data: text-gray-500 → text-gray-400
+- Ícone do tipo: text-gray-400 → text-gray-500
+
+5. BADGES DE TIPO DE ARQUIVO:
+- PDF: bg-red-100 text-red-700 → bg-red-500/20 text-red-400
+- DOC/DOCX: bg-blue-100 text-blue-700 → bg-blue-500/20 text-blue-400
+- TXT: bg-gray-100 text-gray-700 → bg-gray-500/20 text-gray-400
+- CSV/Excel: bg-green-100 text-green-700 → bg-green-500/20 text-green-400
+
+6. STATUS DE PROCESSAMENTO:
+- Processando: bg-yellow-100 text-yellow-700 → bg-yellow-500/20 text-yellow-400
+- Processado: bg-green-100 text-green-700 → bg-green-500/20 text-green-400
+- Erro: bg-red-100 text-red-700 → bg-red-500/20 text-red-400
+
+7. BOTÕES:
+- Upload: bg-blue-600 → bg-cyan-500 text-black
+- Deletar: text-red-600 hover:text-red-800 → text-red-400 hover:text-red-300
+- Visualizar: text-blue-600 → text-cyan-400
+
+8. BARRA DE PROGRESSO (upload):
+- Track: bg-gray-200 → bg-gray-700
+- Fill: bg-blue-600 → bg-cyan-500
+
+9. EMPTY STATE:
+- Ícone: text-gray-300 → text-gray-600
+- Texto: text-gray-500 → text-gray-400
+
+10. MODAL DE PREVIEW:
+- Background: bg-white → bg-[#2D2D2D]
+- Border: border-gray-200 → border-white/10
+- Título: text-gray-900 → text-white
+- Conteúdo: text-gray-700 → text-gray-300
+
+
+NÃO altere a lógica de upload ou processamento.
