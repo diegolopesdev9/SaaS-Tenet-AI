@@ -1,0 +1,57 @@
+No arquivo frontend/src/pages/Integrations.jsx, atualize para o tema dark.
+
+=== SUBSTITUIÇÕES: ===
+
+1. HEADER DA PÁGINA:
+- Título: text-gray-900 → text-white
+- Subtítulo: text-gray-500 → text-gray-400
+
+2. CARDS DE INTEGRAÇÃO:
+- Container: bg-white border-gray-200 → bg-[#2D2D2D] border-white/10
+- Shadow: shadow-sm → shadow-sm (manter)
+- Hover: hover:shadow-md → hover:shadow-lg hover:border-cyan-500/30
+
+3. HEADER DO CARD:
+- Título da integração: text-gray-900 → text-white
+- Descrição: text-gray-500 → text-gray-400
+
+4. ÍCONES DAS INTEGRAÇÕES:
+- WhatsApp: manter bg-green-100 text-green-600 ou usar bg-green-500/20 text-green-400
+- Google Calendar: manter cores do Google ou usar bg-blue-500/20 text-blue-400
+- Google Sheets: manter cores do Google ou usar bg-green-500/20 text-green-400
+- CRMs: bg-blue-100 text-blue-600 → bg-cyan-500/20 text-cyan-400
+
+5. STATUS DE CONEXÃO:
+- Conectado: bg-green-100 text-green-700 → bg-green-500/20 text-green-400
+- Desconectado: bg-gray-100 text-gray-600 → bg-gray-500/20 text-gray-400
+- Erro: bg-red-100 text-red-700 → bg-red-500/20 text-red-400
+- Conectando: bg-yellow-100 text-yellow-700 → bg-yellow-500/20 text-yellow-400
+
+6. BOTÕES:
+- Conectar: bg-blue-600 text-white → bg-cyan-500 text-black
+- Desconectar: bg-red-100 text-red-700 → bg-red-500/20 text-red-400 hover:bg-red-500/30
+- Configurar: bg-gray-100 text-gray-700 → bg-white/10 text-gray-300
+
+7. QR CODE (WhatsApp):
+- Container: bg-white → bg-[#1A1A1A]
+- Border: border-gray-200 → border-white/10
+- Texto instrução: text-gray-600 → text-gray-400
+
+8. FORMULÁRIOS DE CONFIGURAÇÃO:
+- Labels: text-gray-700 → text-gray-300
+- Inputs: bg-white border-gray-300 → bg-[#1A1A1A] border-white/20 text-white
+- Hints: text-gray-500 → text-gray-500
+
+9. SEÇÕES/ACCORDION:
+- Header: bg-gray-50 → bg-[#1A1A1A]
+- Content: bg-white → bg-[#2D2D2D]
+- Border: border-gray-200 → border-white/10
+
+10. MENSAGENS DE STATUS:
+- Info: bg-blue-50 text-blue-700 → bg-blue-500/20 text-blue-400
+- Success: bg-green-50 text-green-700 → bg-green-500/20 text-green-400
+- Warning: bg-yellow-50 text-yellow-700 → bg-yellow-500/20 text-yellow-400
+- Error: bg-red-50 text-red-700 → bg-red-500/20 text-red-400
+
+
+NÃO altere a lógica de conexão das integrações.
