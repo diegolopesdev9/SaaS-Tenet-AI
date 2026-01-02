@@ -392,6 +392,11 @@ class CRMService:
     ) -> Dict[str, Any]:
         """Envia lead para todos os CRMs ativos da agência."""
         
+        # Validar conversa_id
+        if not conversa_id:
+            logger.warning(f"conversa_id ausente para tenet {tenet_id}, gerando fallback")
+            conversa_id = "unknown"
+        
         integrations = await self.get_active_integrations(tenet_id)
         
         if not integrations:

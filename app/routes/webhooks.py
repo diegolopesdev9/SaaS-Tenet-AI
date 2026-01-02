@@ -18,6 +18,7 @@ from app.services.notification_service import NotificationService
 from app.services.tenet_service import AgencyService
 from app.services.admin_whatsapp_service import admin_whatsapp_service
 from app.services.token_tracking_service import TokenTrackingService
+from app.services.google_sheets_service import GoogleSheetsService
 from app.database import get_supabase_client
 from app.config import settings
 
@@ -257,12 +258,17 @@ async def receive_whatsapp_webhook(request: Request):
             logger.warning(f"Tenet {agency_id} sem tokens disponíveis")
             # Enviar mensagem informando que acabou o limite
             limit_message = "Olá! No momento estamos com nossa capacidade de atendimento no limite. Por favor, tente novamente mais tarde ou entre em contato por outro canal. Obrigado pela compreensão! 🙏"
-            await whatsapp_service.send_text_message(
-                phone_number=sender_phone,
-                message=limit_message,
-                instance_name=instance_name
-            )
-            return {"status": "limit_reached"}
+        # Enviar resposta via WhatsApp
+        whatsapp_service_instance = WhatsAppService(
+            evolution_api_url=settings.EVOLUTION_API_URL,
+            evolution_api_key=settings.EVOLUTION_API_KEY
+        )
+        await whatsapp_service_instance.send_text_message(
+            phone_number=sender_phone,
+            message=limit_message,
+            instance_name=instance_name
+        )
+        return {"status": "limit_reached"}
 
         # ============================================
         # GERAÇÃO DE RESPOSTA COM IA
@@ -293,61 +299,11 @@ async def receive_whatsapp_webhook(request: Request):
         # Sanitizar mensagem para uso seguro com IA
         sanitized_message, _ = sanitize_for_ai(message_text)
 
-        # Gerar resposta com histórico, contexto e configurações personalizadas
-        ai_result = await ai_service.generate_response(
-            message=sanitized_message,
-            agency_name=agency.get("nome", "Agência"),
-            agency_prompt=agency.get("prompt_config"),
-            conversation_history=history_formatted,
-            lead_data=known_lead_data,
-            agent_config=agent_config
-        )
-
-        ai_response = ai_result.get("response", "")
-        extracted_data = ai_result.get("extracted_data", {})
-
-        logger.info(f"Resposta IA gerada: {ai_response[:100]}...")
-
-        if extracted_data:
-            logger.info(f"Dados extraídos: {extracted_data}")
-
+        # Inicializar serviços
+        ai_service = AIService()
 
         # ============================================
-        # ENVIO DA RESPOSTA
-        # ============================================
-
-        # Inicializar serviço de WhatsApp
-        whatsapp_service = WhatsAppService(
-            evolution_api_url=settings.EVOLUTION_API_URL,
-            evolution_api_key=settings.EVOLUTION_API_KEY
-        )
-
-        # Enviar resposta
-        send_success = await whatsapp_service.send_text_message(
-            phone_number=sender_phone,
-            message=ai_response,
-            instance_name=instance_name
-        )
-
-        if not send_success:
-            logger.error("Falha ao enviar resposta via WhatsApp")
-            raise HTTPException(status_code=500, detail="Falha ao enviar resposta")
-
-        logger.info("Mensagem processada e enviada com sucesso")
-
-        # ============================================
-        # ATUALIZAÇÃO DO HISTÓRICO
-        # ============================================
-        await conversation_service.update_conversation_history(
-            tenet_id=agency_id,
-            lead_phone=sender_phone,
-            user_message=message_text,
-            assistant_message=ai_result.get("response", ""),
-            lead_data=ai_result.get("extracted_data", {})
-        )
-
-        # ============================================
-        # ENVIO PARA CRMs (se lead qualificado)
+        # VERIFICAÇÃO DE TOKENS
         # ============================================
 
         # Verificar se temos dados suficientes para enviar ao CRM
@@ -372,7 +328,7 @@ async def receive_whatsapp_webhook(request: Request):
                 # Enviar para CRMs ativos
                 crm_result = await crm_service.send_lead_to_crms(
                     tenet_id=agency_id,
-                    conversa_id=conversation_data.get("conversa_id"),
+                    conversa_id=str(conversation_data.get("conversa_id", "")),
                     lead_data=crm_lead_data
                 )
 
