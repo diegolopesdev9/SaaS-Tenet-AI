@@ -99,8 +99,12 @@ export default function Conversations({ agencyId }) {
 
   // Função para obter badge de status
   const getStatusBadge = (status) => {
-    // Updated badge styles for dark theme
     const badges = {
+      iniciada: <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-400">Iniciada</span>,
+      em_andamento: <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-500/20 text-blue-400">Em Andamento</span>,
+      qualificado: <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-400">Qualificado</span>,
+      perdido: <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-500/20 text-red-400">Perdido</span>,
+      agendado: <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-400">Agendado</span>,
       ativo: <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-400">Ativo</span>,
       concluido: <span className="px-2 py-1 text-xs font-medium rounded-full bg-cyan-500/20 text-cyan-400">Concluído</span>,
       inativo: <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-500/20 text-gray-400">Inativo</span>
@@ -133,12 +137,12 @@ export default function Conversations({ agencyId }) {
   })
 
   return (
-    <div className="space-y-6 p-6 bg-[#1A1A1A] min-h-screen"> {/* Added dark background */}
+    <div className="space-y-6 p-6 bg-[#1A1A1A] min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Conversas</h1> {/* Changed text color */}
-          <p className="mt-1 text-sm text-gray-400"> {/* Changed text color */}
+          <h1 className="text-2xl font-bold text-white">Conversas</h1>
+          <p className="mt-1 text-sm text-gray-400">
             {total} {total === 1 ? 'conversa encontrada' : 'conversas encontradas'}
           </p>
         </div>
@@ -164,7 +168,7 @@ export default function Conversations({ agencyId }) {
               placeholder="Buscar por nome, empresa ou telefone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#1A1A1A] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#2D2D2D] border border-white/20 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             />
           </div>
 
@@ -178,8 +182,8 @@ export default function Conversations({ agencyId }) {
                 onClick={() => setFilter(f.value)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   filter === f.value
-                    ? 'bg-cyan-600 text-white' // Dark theme active filter
-                    : 'bg-[#3A3A3A] text-white hover:bg-[#4A4A4A]' // Dark theme inactive filter
+                    ? 'bg-cyan-500 text-black'
+                    : 'bg-[#2D2D2D] text-white hover:bg-white/10 border border-white/20'
                 }`}
               >
                 {f.label}
@@ -194,13 +198,13 @@ export default function Conversations({ agencyId }) {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value="all" className="bg-[#1A1A1A] text-white">Todos</option>
-                <option value="em_andamento" className="bg-[#1A1A1A] text-white">Em Andamento</option>
-                <option value="qualificado" className="bg-[#1A1A1A] text-white">Qualificado</option>
-                <option value="agendado" className="bg-[#1A1A1A] text-white">Agendado</option>
-                <option value="perdido" className="bg-[#1A1A1A] text-white">Perdido</option>
+                <option value="all" className="bg-[#2D2D2D] text-white">Todos</option>
+                <option value="em_andamento" className="bg-[#2D2D2D] text-white">Em Andamento</option>
+                <option value="qualificado" className="bg-[#2D2D2D] text-white">Qualificado</option>
+                <option value="agendado" className="bg-[#2D2D2D] text-white">Agendado</option>
+                <option value="perdido" className="bg-[#2D2D2D] text-white">Perdido</option>
               </select>
             </div>
             <div>
@@ -208,11 +212,11 @@ export default function Conversations({ agencyId }) {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value="last_message" className="bg-[#1A1A1A] text-white">Última Mensagem</option>
-                <option value="created_at" className="bg-[#1A1A1A] text-white">Data de Criação</option>
-                <option value="name" className="bg-[#1A1A1A] text-white">Nome do Contato</option>
+                <option value="last_message" className="bg-[#2D2D2D] text-white">Última Mensagem</option>
+                <option value="created_at" className="bg-[#2D2D2D] text-white">Data de Criação</option>
+                <option value="name" className="bg-[#2D2D2D] text-white">Nome do Contato</option>
               </select>
             </div>
             <div>
@@ -220,10 +224,10 @@ export default function Conversations({ agencyId }) {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="w-full px-3 py-2 bg-[#1A1A1A] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-3 py-2 bg-[#2D2D2D] border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
               >
-                <option value="desc" className="bg-[#1A1A1A] text-white">Decrescente</option>
-                <option value="asc" className="bg-[#1A1A1A] text-white">Crescente</option>
+                <option value="desc" className="bg-[#2D2D2D] text-white">Decrescente</option>
+                <option value="asc" className="bg-[#2D2D2D] text-white">Crescente</option>
               </select>
             </div>
           </div>
@@ -233,17 +237,17 @@ export default function Conversations({ agencyId }) {
       {/* Lista de conversas */}
       <div className="bg-[#2D2D2D] rounded-lg border border-white/10 overflow-hidden shadow-sm">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" /> {/* Changed loader color */}
-            <p className="mt-4 text-gray-400">Carregando conversas...</p> {/* Changed text color */}
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+            <p className="mt-4 text-gray-400">Carregando conversas...</p>
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <Users className="w-16 h-16 text-gray-500 mx-auto mb-4" /> {/* Changed icon color */}
-            <h3 className="text-lg font-semibold text-white mb-2"> {/* Changed text color */}
+            <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">
               Nenhuma conversa encontrada
             </h3>
-            <p className="text-gray-400"> {/* Changed text color */}
+            <p className="text-gray-400">
               {search ? 'Tente ajustar sua busca' : 'As conversas aparecerão aqui quando iniciadas'}
             </p>
           </div>
@@ -268,12 +272,12 @@ export default function Conversations({ agencyId }) {
                   {/* Informações do lead */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-semibold text-white truncate"> {/* Changed text color */}
+                      <h3 className="text-sm font-semibold text-white truncate">
                         {leadName}
                       </h3>
                       {getStatusBadge(conv.lead_status)}
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-400"> {/* Changed text color */}
+                    <div className="flex items-center gap-3 text-sm text-gray-400">
                       <span className="truncate">{leadPhone}</span>
                       {leadCompany && (
                         <>
@@ -286,11 +290,11 @@ export default function Conversations({ agencyId }) {
 
                   {/* Mensagens e seta */}
                   <div className="flex items-center gap-4 flex-shrink-0">
-                    <div className="flex items-center gap-2 text-sm text-gray-400"> {/* Changed text color */}
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
                       <MessageSquare className="w-4 h-4" />
                       <span>{conv.total_mensagens || 0}</span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-gray-400 transition-colors" /> {/* Changed icon color */}
+                    <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-cyan-400 transition-colors" />
                   </div>
                 </Link>
               )
