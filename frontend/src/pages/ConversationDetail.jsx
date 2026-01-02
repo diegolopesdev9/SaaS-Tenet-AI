@@ -66,27 +66,27 @@ export default function ConversationDetail({ agencyId }) {
   const statusConfig = {
     iniciada: {
       label: 'Iniciada',
-      color: 'bg-gray-100 text-gray-800 border-gray-300',
+      color: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
       icon: Clock
     },
     em_andamento: {
       label: 'Em Andamento',
-      color: 'bg-blue-100 text-blue-800 border-blue-300',
+      color: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       icon: MessageSquare
     },
     qualificado: {
       label: 'Qualificado',
-      color: 'bg-green-100 text-green-800 border-green-300',
+      color: 'bg-green-500/20 text-green-400 border-green-500/30',
       icon: CheckCircle
     },
     perdido: {
       label: 'Perdido',
-      color: 'bg-red-100 text-red-800 border-red-300',
+      color: 'bg-red-500/20 text-red-400 border-red-500/30',
       icon: XCircle
     },
     agendado: {
       label: 'Agendado',
-      color: 'bg-purple-100 text-purple-800 border-purple-300',
+      color: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
       icon: Calendar
     }
   }
@@ -105,10 +105,10 @@ export default function ConversationDetail({ agencyId }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center py-12 bg-[#1A1A1A] min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando conversa...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Carregando conversa...</p>
         </div>
       </div>
     )
@@ -116,11 +116,11 @@ export default function ConversationDetail({ agencyId }) {
 
   if (!conversation) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">Conversa não encontrada</p>
+      <div className="text-center py-12 bg-[#1A1A1A] min-h-screen">
+        <p className="text-gray-400">Conversa não encontrada</p>
         <Link
           to="/conversas"
-          className="mt-4 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700"
+          className="mt-4 inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar para conversas
@@ -136,27 +136,27 @@ export default function ConversationDetail({ agencyId }) {
   const StatusIcon = statusInfo.icon
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-[#1A1A1A] min-h-screen p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
             to="/conversas"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-400" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-white">
               {leadData.nome || 'Lead sem nome'}
             </h1>
-            <p className="text-sm text-gray-500">{conversation.lead_phone}</p>
+            <p className="text-sm text-gray-400">{conversation.lead_phone}</p>
           </div>
         </div>
         <button
           onClick={loadConversation}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#2D2D2D] border border-white/20 rounded-lg text-sm font-medium text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Atualizar
@@ -168,8 +168,8 @@ export default function ConversationDetail({ agencyId }) {
         {/* Coluna 1 - Sidebar (1/3) */}
         <div className="space-y-6">
           {/* Card Status */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Status do Lead</h2>
+          <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6">
+            <h2 className="text-sm font-semibold text-white mb-4">Status do Lead</h2>
             
             {/* Status atual */}
             <div className="mb-4">
@@ -202,16 +202,16 @@ export default function ConversationDetail({ agencyId }) {
           </div>
 
           {/* Card Dados do Lead */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Dados do Lead</h2>
+          <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6">
+            <h2 className="text-sm font-semibold text-white mb-4">Dados do Lead</h2>
             
             <div className="space-y-3">
               {leadData.nome && (
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500">Nome</p>
-                    <p className="text-sm font-medium text-gray-900">{leadData.nome}</p>
+                    <p className="text-xs text-gray-400">Nome</p>
+                    <p className="text-sm font-medium text-white">{leadData.nome}</p>
                   </div>
                 </div>
               )}
@@ -220,8 +220,8 @@ export default function ConversationDetail({ agencyId }) {
                 <div className="flex items-start gap-3">
                   <Building className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500">Empresa</p>
-                    <p className="text-sm font-medium text-gray-900">{leadData.empresa}</p>
+                    <p className="text-xs text-gray-400">Empresa</p>
+                    <p className="text-sm font-medium text-white">{leadData.empresa}</p>
                   </div>
                 </div>
               )}
@@ -230,8 +230,8 @@ export default function ConversationDetail({ agencyId }) {
                 <div className="flex items-start gap-3">
                   <Briefcase className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500">Cargo</p>
-                    <p className="text-sm font-medium text-gray-900">{leadData.cargo}</p>
+                    <p className="text-xs text-gray-400">Cargo</p>
+                    <p className="text-sm font-medium text-white">{leadData.cargo}</p>
                   </div>
                 </div>
               )}
@@ -240,8 +240,8 @@ export default function ConversationDetail({ agencyId }) {
                 <div className="flex items-start gap-3">
                   <Target className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500">Desafio</p>
-                    <p className="text-sm font-medium text-gray-900">{leadData.desafio}</p>
+                    <p className="text-xs text-gray-400">Desafio</p>
+                    <p className="text-sm font-medium text-white">{leadData.desafio}</p>
                   </div>
                 </div>
               )}
@@ -249,34 +249,34 @@ export default function ConversationDetail({ agencyId }) {
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500">Telefone</p>
-                  <p className="text-sm font-medium text-gray-900">{conversation.lead_phone}</p>
+                  <p className="text-xs text-gray-400">Telefone</p>
+                  <p className="text-sm font-medium text-white">{conversation.lead_phone}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Card Estatísticas */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Estatísticas</h2>
+          <div className="bg-[#2D2D2D] rounded-lg border border-white/10 p-6">
+            <h2 className="text-sm font-semibold text-white mb-4">Estatísticas</h2>
             
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-400">
                   <MessageSquare className="w-4 h-4" />
                   <span className="text-sm">Total de mensagens</span>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-semibold text-white">
                   {conversation.total_mensagens || 0}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-400">
                   <Clock className="w-4 h-4" />
                   <span className="text-sm">Turnos de conversa</span>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-sm font-semibold text-white">
                   {Math.floor((conversation.total_mensagens || 0) / 2)}
                 </span>
               </div>
@@ -286,19 +286,19 @@ export default function ConversationDetail({ agencyId }) {
 
         {/* Coluna 2 - Histórico (2/3) */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Histórico da Conversa</h2>
-              <p className="text-sm text-gray-500 mt-1">
+          <div className="bg-[#2D2D2D] rounded-lg border border-white/10">
+            <div className="px-6 py-4 border-b border-white/10">
+              <h2 className="text-lg font-semibold text-white">Histórico da Conversa</h2>
+              <p className="text-sm text-gray-400 mt-1">
                 {history.length} {history.length === 1 ? 'mensagem' : 'mensagens'}
               </p>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+            <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto bg-[#1A1A1A]">
               {history.length === 0 ? (
                 <div className="text-center py-8">
-                  <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">Nenhuma mensagem ainda</p>
+                  <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400">Nenhuma mensagem ainda</p>
                 </div>
               ) : (
                 history.map((msg, index) => {
@@ -312,13 +312,13 @@ export default function ConversationDetail({ agencyId }) {
                       {/* Avatar */}
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                         isUser 
-                          ? 'bg-blue-600' 
-                          : 'bg-gray-200'
+                          ? 'bg-cyan-600' 
+                          : 'bg-gray-700'
                       }`}>
                         {isUser ? (
                           <User className="w-5 h-5 text-white" />
                         ) : (
-                          <Bot className="w-5 h-5 text-gray-600" />
+                          <Bot className="w-5 h-5 text-gray-300" />
                         )}
                       </div>
 
@@ -326,8 +326,8 @@ export default function ConversationDetail({ agencyId }) {
                       <div className={`flex-1 max-w-[70%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
                         <div className={`px-4 py-3 rounded-lg ${
                           isUser 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-900'
+                            ? 'bg-cyan-600 text-white' 
+                            : 'bg-[#2D2D2D] text-white border border-white/10'
                         }`}>
                           <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                         </div>
