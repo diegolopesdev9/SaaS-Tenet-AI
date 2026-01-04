@@ -64,7 +64,6 @@ limiter = Limiter(
     key_func=get_client_identifier,
     default_limits=["200/minute", "1000/hour"],  # Limites globais
     storage_uri="memory://",  # Em produção, usar Redis
-    strategy="fixed-window-elastic-expiry"
 )
 
 # Limites específicos por tipo de endpoint
