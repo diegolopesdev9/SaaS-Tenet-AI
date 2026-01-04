@@ -1,7 +1,15 @@
 """
 Rotas de autenticação.
 """
-from app.utils.logger import get_logger, masker
+from datetime import timedelta, datetime, timezone
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, EmailStr, Field
+from passlib.context import CryptContext
+from app.utils.logger import get_logger
+from app.utils.rate_limit import limiter, RATE_LIMITS
+from app.services.auth_service import AuthService, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.database import get_supabase_client
 
 logger = get_logger(__name__)
 
@@ -60,13 +68,13 @@ async def login(request: Request, credentials: LoginRequest):
     """
     Realiza login e retorna token JWT.
     """
-    logger.info(f"Tentativa de login: {masker.mask_email(credentials.email)}")
+    logger.info(f"Tentativa de login: {credentials.email[:3]}***@***")
 
     auth_service = AuthService()
     user = await auth_service.authenticate_user(credentials.email, credentials.password)
 
     if not user:
-        logger.warning(f"Login falhou: {masker.mask_email(credentials.email)}")
+        logger.warning(f"Login falhou: {credentials.email[:3]}***@***")
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
 
     # Criar token
@@ -116,7 +124,7 @@ async def register(request: Request, user_data: UserCreate):
     """
     Registra novo usuário (usar apenas para setup inicial).
     """
-    logger.info(f"Registro de usuário: {masker.mask_email(user_data.email)}")
+    logger.info(f"Registro de usuário: {user_data.email[:3]}***@***")
 
     auth_service = AuthService()
     user = await auth_service.create_user(

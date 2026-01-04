@@ -95,7 +95,7 @@ app.add_middleware(RequestIDMiddleware)
 # Include routers
 app.include_router(health.router)
 app.include_router(webhooks.router)
-app.include_router(lgpd.router)
+app.include_router(lgpd_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(super_admin_router)
